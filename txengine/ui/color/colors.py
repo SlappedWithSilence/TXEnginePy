@@ -4,7 +4,10 @@ from loguru import logger
 text_colors: [str, list[str]] = {"item_name": ["orange"],
                                  "item_quantity": ["cyan"],
                                  "item_desc": ["italic"],
-                                 "item_value": ["green"]
+                                 "item_value": ["green"],
+                                 "stat_name": [],
+                                 "stat_value": ["green"],
+                                 "generic_value": ["green"]
                                  }
 
 
