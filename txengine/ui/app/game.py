@@ -71,11 +71,30 @@ class Game(App):
         """Called when user hits 'b' key."""
         self.show_bar = not self.show_bar
 
+    def action_submit(self):
+        """Submit user input to game logic."""
+
+        # Check if cooldown has been lifted
+
+        # Check if value is valid
+
+        # Send to game logic
+
+    def action_save(self):
+        """Save game progress to disk"""
+
+        # Check if saving is allowed right now
+
+        # Dump to disk
+
+
     # Event
     async def on_load(self) -> None:
         """Bind keys"""
         await self.bind("b", "toggle_sidebar", "Toggle summary")
         await self.bind("q", "quit", "Quit")
+        await self.bind("g", "submit", "Submit")
+        await self.bind("s", "save", "Save")
 
         """Initialize instance variables"""
         self.summary_side_bar = SummarySideBar()
@@ -96,6 +115,9 @@ class Game(App):
         # Set up sidebar
         await self.view.dock(self.summary_side_bar, edge="left", size=40, z=1)
 
-        await self.game_text_output.set_content(MenuElement(["an option", "another option"], "Some Options"))
+        await self.game_text_output.set_content(
+            MenuElement(["an option", "another option"], header="[blue][italic]Some Options[/italic][/blue]"),
+            self.name
+        )
 
         self.summary_side_bar.layout_offset_x = -40
