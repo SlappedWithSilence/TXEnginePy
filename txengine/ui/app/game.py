@@ -1,14 +1,15 @@
+import time
+
 from textual.app import App
 from textual.reactive import Reactive
 from textual.widgets import Footer
 from textual_inputs import IntegerInput
 
-from ..widgets.game_text_output import GameTextOutput
+from ..widgets.game_text_output import GameTextOutput, MenuElement
 from ..widgets.side_bar import SummarySideBar, HistorySideBar
 
 
 class Game(App):
-
     #################
     # Class Members #
     #################
@@ -54,6 +55,12 @@ class Game(App):
     # Textual Functions #
     #####################
 
+    # Handlers
+    def handle_game_text_change(self):
+        """Add the on-screen text to the history"""
+        prefix = self.game_text_output.current_source or self.name
+        self.text_history.append(f"[{prefix}]{self.game_text_output.current_text}")
+
     # Watchers
     def watch_show_bar(self, show_bar: bool) -> None:
         """Called when show_bar changes."""
@@ -89,6 +96,6 @@ class Game(App):
         # Set up sidebar
         await self.view.dock(self.summary_side_bar, edge="left", size=40, z=1)
 
-        self.summary_side_bar.layout_offset_x = -40
+        await self.game_text_output.set_content(MenuElement(["an option", "another option"], "Some Options"))
 
-        await self.game_text_output.set_content("Some Text", self.name)
+        self.summary_side_bar.layout_offset_x = -40
