@@ -1,3 +1,4 @@
 textual
 textual-inputs
 rich
+loguru
