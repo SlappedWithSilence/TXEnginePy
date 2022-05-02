@@ -1,4 +1,4 @@
-from txengine.util.string_util import c_tag, o_tag
+from ...util.string_util import c_tag, o_tag
 from loguru import logger
 
 text_colors: [str, list[str]] = {"item_name": ["orange"],
@@ -7,7 +7,9 @@ text_colors: [str, list[str]] = {"item_name": ["orange"],
                                  "item_value": ["green"],
                                  "stat_name": [],
                                  "stat_value": ["green"],
-                                 "generic_value": ["green"]
+                                 "generic_value": ["green"],
+                                 "menu_opt_number": ["bold"],
+                                 "menu_opt_text": []
                                  }
 
 
