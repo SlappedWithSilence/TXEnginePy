@@ -1,7 +1,7 @@
-from txengine.systems.item.effect.effect import Effect
-from txengine.ui.color.colors import c_form
-from txengine.systems.item.mixins.usable import UsableMixin
-from txengine.systems.item.mixins.equipment import EquipmentMixin
+from src.txengine.systems.item.effect.effect import Effect
+from src.txengine.ui.color.colors import c_form
+from src.txengine.systems.item.mixins.usable import UsableMixin
+from src.txengine.systems.item.mixins.equipment import EquipmentMixin
 
 
 class Item:

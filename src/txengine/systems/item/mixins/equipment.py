@@ -1,4 +1,4 @@
-from txengine.structures.enums import EquipmentType
+from src.txengine.structures.enums import EquipmentType
 
 
 class EquipmentMixin:

@@ -1,4 +1,4 @@
-from txengine.systems.item.effect.effect import Effect
+from src.txengine.systems.item.effect.effect import Effect
 
 
 class UsableMixin:

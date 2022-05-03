@@ -3,10 +3,11 @@ from typing import Union
 
 from rich.console import RenderableType
 from rich.panel import Panel
-from textual.message import Message
 from textual.widget import Widget
 
+from ..app.events import GameTextChange
 from ..color.colors import c_form
+
 
 class GameTextElement(ABC):
 
@@ -19,7 +20,7 @@ class GameTextElement(ABC):
 
 class MenuElement(GameTextElement):
 
-    def __init__(self,  opts: list[str], source: str = None, header: str = None):
+    def __init__(self, opts: list[str], source: str = None, header: str = None):
         super().__init__(source)
 
         # Check for valid opts
@@ -43,10 +44,6 @@ class MenuElement(GameTextElement):
         return base
 
 
-class GameTextChange(Message, bubble=True):
-    _handler: str = "handle_game_text_change"
-
-
 class GameTextOutput(Widget):
     current_source: str = None
     current_text: str = None
@@ -62,9 +59,6 @@ class GameTextOutput(Widget):
             self.current_text = content.unpack()
 
         self.current_source = source
-
-
-
 
     def render(self) -> RenderableType:
         return Panel(self.current_text or "", title=self.current_source)

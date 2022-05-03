@@ -3,7 +3,7 @@ from typing import Union
 from ..util.string_util import o_tag, c_tag
 from loguru import logger
 
-text_colors: dict = {"item_name": ["orange"],
+text_colors: dict[str, list[str]] = {"item_name": ["orange"],
                      "item_quantity": ["cyan"],
                      "item_desc": ["italic"],
                      "item_value": ["green"],

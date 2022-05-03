@@ -1,4 +1,4 @@
-from ui.app.game import Game
+from txengine.ui.app.game import Game
 
 
 if __name__ == "__main__":

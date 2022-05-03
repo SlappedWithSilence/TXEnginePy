@@ -2,11 +2,14 @@ import time
 
 from textual.app import App
 from textual.reactive import Reactive
-from textual.widgets import Footer
+from textual.views import GridView
+from textual.widgets import Footer, ScrollView
 from textual_inputs import IntegerInput
 
+from ..widgets.button import TriggerButton
 from ..widgets.game_text_output import GameTextOutput, MenuElement
 from ..widgets.side_bar import SummarySideBar, HistorySideBar
+from ...structures.game_logic import GameLogic
 
 
 class Game(App):
@@ -39,6 +42,9 @@ class Game(App):
         self.user_input = IntegerInput(name="user_input", title="Input")
         self.game_text_output = GameTextOutput(name="game_text_output")
 
+        # Game Logic
+        self.game_logic:GameLogic = None
+
     ####################
     # Helper Functions #
     ####################
@@ -49,8 +55,18 @@ class Game(App):
         self.root_grid.add_row("input")
         self.root_grid.add_areas(input="center,input", output="center,output")
         self.root_grid.add_widget(self.game_text_output, "output")
-        self.root_grid.add_widget(self.user_input, "input")
+        # self.root_grid.add_widget(self.user_input, "input")
 
+    def __mount_options(self):
+        button_grid = GridView()
+        button_grid.grid.add_column("center")
+        for i, option in enumerate(self.game_logic.options):
+            button_grid.grid.add_row(f"row_{i}")
+            d = {f"button_{i}": f"center,row_{i}"}
+            button_grid.grid.add_areas(**d)
+            tb = TriggerButton(name=f"button_{i}", text=option)
+            button_grid.grid.add_widget()
+        self.user_input = ScrollView()
     #####################
     # Textual Functions #
     #####################
@@ -87,13 +103,11 @@ class Game(App):
 
         # Dump to disk
 
-
     # Event
     async def on_load(self) -> None:
         """Bind keys"""
         await self.bind("b", "toggle_sidebar", "Toggle summary")
         await self.bind("q", "quit", "Quit")
-        await self.bind("g", "submit", "Submit")
         await self.bind("s", "save", "Save")
 
         """Initialize instance variables"""
