@@ -3,16 +3,16 @@ from typing import Union
 from ..util.string_util import o_tag, c_tag
 from loguru import logger
 
-text_colors = {"item_name": ["orange"],
-               "item_quantity": ["cyan"],
-               "item_desc": ["italic"],
-               "item_value": ["green"],
-               "stat_name": [],
-               "stat_value": ["green"],
-               "generic_value": ["green"],
-               "menu_opt_number": ["bold"],
-               "menu_opt_text": []
-               }
+text_colors: dict = {"item_name": ["orange"],
+                     "item_quantity": ["cyan"],
+                     "item_desc": ["italic"],
+                     "item_value": ["green"],
+                     "stat_name": [],
+                     "stat_value": ["green"],
+                     "generic_value": ["green"],
+                     "menu_opt_number": ["bold"],
+                     "menu_opt_text": []
+                     }
 
 
 def c_form(text: str, form: str) -> str:
@@ -28,7 +28,7 @@ def c_form(text: str, form: str) -> str:
     suffix = ""
 
     for tag in text_colors[form]:
-        prefix = f"{prefix}[{tag}]"
-        suffix = f"{suffix}[{tag}]"
+        prefix = f"{prefix}{o_tag(tag)}"
+        suffix = f"{suffix}{c_tag(tag)}"
 
     return f"{prefix}{text}{suffix}"
