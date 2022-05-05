@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Union
+from typing import Union, Optional
 
 from rich.console import RenderableType
 from rich.panel import Panel
@@ -48,7 +48,7 @@ class GameTextOutput(Widget):
     current_source: str = None
     current_text: str = None
 
-    async def set_content(self, content: Union[str, GameTextElement], source: Union[str, None]):
+    async def set_content(self, content: Union[str, GameTextElement], source: Optional[str, None]):
 
         if self.current_text and self.current_text != "":
             await self.emit(GameTextChange(self))

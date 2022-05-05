@@ -2,14 +2,11 @@ import time
 
 from textual.app import App
 from textual.reactive import Reactive
-from textual.views import GridView
-from textual.widgets import Footer, ScrollView
+from textual.widgets import Footer
 from textual_inputs import IntegerInput
 
-from ..widgets.button import TriggerButton
 from ..widgets.game_text_output import GameTextOutput, MenuElement
 from ..widgets.side_bar import SummarySideBar, HistorySideBar
-from ...structures.game_logic import GameLogic
 
 
 class Game(App):
@@ -40,10 +37,8 @@ class Game(App):
 
         # Text IO elements
         self.user_input = IntegerInput(name="user_input", title="Input")
-        self.game_text_output = GameTextOutput(name="game_text_output")
-
-        # Game Logic
-        self.game_logic:GameLogic = None
+        self.game_dialog_pane = GameTextOutput(name="game_dialog_pane")
+        self.game_menu_pane = GameTextOutput(name="game_menu_pane")
 
     ####################
     # Helper Functions #
@@ -51,22 +46,17 @@ class Game(App):
 
     def __init_text_io(self):
         self.root_grid.add_column("center")
-        self.root_grid.add_row("output")
-        self.root_grid.add_row("input")
-        self.root_grid.add_areas(input="center,input", output="center,output")
-        self.root_grid.add_widget(self.game_text_output, "output")
-        # self.root_grid.add_widget(self.user_input, "input")
+        self.root_grid.add_row("dialog_pane")
+        self.root_grid.add_row("menu_pane")
+        self.root_grid.add_row("input_box")
+        self.root_grid.add_areas(input="center,input_box",
+                                 dialog_pane="center,dialog_pane",
+                                 menu_pane="center,menu_pane"
+                                 )
+        self.root_grid.add_widget(self.game_dialog_pane, "dialog_pane")
+        self.root_grid.add_widget(self.game_menu_pane, "menu_pane")
+        self.root_grid.add_widget(self.user_input, "input")
 
-    def __mount_options(self):
-        button_grid = GridView()
-        button_grid.grid.add_column("center")
-        for i, option in enumerate(self.game_logic.options):
-            button_grid.grid.add_row(f"row_{i}")
-            d = {f"button_{i}": f"center,row_{i}"}
-            button_grid.grid.add_areas(**d)
-            tb = TriggerButton(name=f"button_{i}", text=option)
-            button_grid.grid.add_widget()
-        self.user_input = ScrollView()
     #####################
     # Textual Functions #
     #####################
@@ -74,8 +64,8 @@ class Game(App):
     # Handlers
     def handle_game_text_change(self):
         """Add the on-screen text to the history"""
-        prefix = self.game_text_output.current_source or self.name
-        self.text_history.append(f"[{prefix}]{self.game_text_output.current_text}")
+        prefix = self.game_dialog_pane.current_source or self.name
+        self.text_history.append(f"[{prefix}]{self.game_dialog_pane.current_text}")
 
     # Watchers
     def watch_show_bar(self, show_bar: bool) -> None:
@@ -86,22 +76,6 @@ class Game(App):
     def action_toggle_sidebar(self) -> None:
         """Called when user hits 'b' key."""
         self.show_bar = not self.show_bar
-
-    def action_submit(self):
-        """Submit user input to game logic."""
-
-        # Check if cooldown has been lifted
-
-        # Check if value is valid
-
-        # Send to game logic
-
-    def action_save(self):
-        """Save game progress to disk"""
-
-        # Check if saving is allowed right now
-
-        # Dump to disk
 
     # Event
     async def on_load(self) -> None:
@@ -129,7 +103,7 @@ class Game(App):
         # Set up sidebar
         await self.view.dock(self.summary_side_bar, edge="left", size=40, z=1)
 
-        await self.game_text_output.set_content(
+        await self.game_dialog_pane.set_content(
             MenuElement(["an option", "another option"], header="[blue][italic]Some Options[/italic][/blue]"),
             self.name
         )
