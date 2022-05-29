@@ -1,8 +1,7 @@
 from .action import Action
-from ...structures.game_logic import GameLogic
 
 
-class Room(GameLogic):
+class Room:
     """A room represents a scene in TXEngine. The user may interact with a number of functions inside any given room.
 
     A room's contents are defined by which Actions it contains. A room may contain any number of actions. Every room,

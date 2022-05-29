@@ -20,3 +20,4 @@ class Action(ABC):
     def perform(self):
         """Executes the logic associated with this action. Subclasses of Action must define this function."""
         pass
+
