@@ -17,15 +17,9 @@ class Room:
         self.on_first_enter_text: str = on_first_enter_text
         self.ignore_default_actions: bool = ignore_default_actions
 
-    def enter(self):
-        pass
-
-    def submit(self, user_input: int) -> [str, None]:
-
-        if user_input > len(self.actions):
-            return None
-
-        self.actions[user_input].perform()
+    def enter(self) -> None:
+        while True:
+            pass
 
     @property
     def options(self) -> list[str]:
