@@ -1,5 +1,3 @@
-from txengine.ui.app.game import Game
-
 # Global Values
 DEBUG = True
 
