@@ -3,16 +3,18 @@ from typing import Union
 from src.txengine.systems.room.room import Room
 from src.txengine.systems.player import player
 
+from rich import print
+
 
 class RoomManager:
     """Manages the information related to rooms and dispatches the player into them."""
 
-    visited_rooms: list[int]
+    visited_rooms: set[int]
     rooms = dict[int, Room]
 
-    def __init__(self, visited_rooms: Union[list[int], None] = None,
+    def __init__(self, visited_rooms: Union[set[int], None] = None,
                  rooms: Union[dict[int, Room], None] = None) -> None:
-        self.visited_rooms = visited_rooms or []
+        self.visited_rooms = visited_rooms or set()
         self.rooms = rooms or {}
 
     def start_room_loop(self) -> None:
@@ -20,6 +22,13 @@ class RoomManager:
 
         while True:
             if player.room_index in self.rooms:
+
+                # Handle first-entry
+                if player.room_index not in self.visited_rooms:
+                    print(self.rooms[player.room_index].on_first_enter_text)
+                    self.visited_rooms.add(player.room_index)
+
+                # Start inner room-loop
                 self.rooms[player.room_index].enter()
 
             else:

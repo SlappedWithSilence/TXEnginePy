@@ -5,6 +5,12 @@ from loguru import logger
 tag_map: [str, list[str]] = {}
 
 
+def init_default_tag_map() -> None:
+    tag_map["index"] = ["orange", "bold"]
+    tag_map["listed_option"] = []
+    tag_map["input_query"] = ["italic"]
+
+
 def load_tag_styles(path: str) -> None:
     """Load tag styles from a JSON file at 'path'"""
     logger.debug("Not implemented!")
