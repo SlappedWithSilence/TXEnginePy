@@ -93,10 +93,31 @@ class MoneyEvent(Event):
         super().__init__(properties)
 
         if len(properties) != 1:
-            raise ValueError(f"Money must have exactly one property! Got {len(properties)}")
+            raise ValueError(f"MoneyEvent must have exactly one property! Got {len(properties)}")
 
+    # TODO: Implement MoneyEvent logic
     def logic(self) -> None:
         # If quantity > 0, set gain message
         # If quantity < 0 set loss message
         # Set currency
         pass
+
+
+class RecipeEvent(Event):
+
+    def __init__(self, properties: list[str]):
+        super().__init__(properties)
+
+        if len(properties) != 1:
+            raise ValueError(f"RecipeEvent must have exactly one property! Got {len(properties)}")
+
+        self._text = style("You learned a new recipe!", "player_improvement")
+
+    # TODO: Implement RecipeEvent logic
+    def logic(self) -> None:
+        # Add given recipe to learned recipes
+        try:
+            recipe_id = int(self._properties[0])
+
+        except TypeError:
+            raise ValueError("RecipeEvent's properties must be typed [int]!")
