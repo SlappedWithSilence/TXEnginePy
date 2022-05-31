@@ -1,6 +1,6 @@
 from .action import Action
-from src.txengine.ui.color import style
-from src.txengine.ui.input_tools import input_int
+from ...ui.color import style
+from ...ui.input_tools import input_int
 
 from rich import print
 from rich.panel import Panel
@@ -15,7 +15,7 @@ class Room:
 
     def __init__(self, room_id: int, name: str, actions: list, on_first_enter_actions=None,
                  on_first_enter_text: str = None, text: str = None, ignore_default_actions: bool = False):
-        super().__init__(name)
+        super().__init__()
         self.id: int = room_id  # Unique mapping ID
         self.on_first_enter_actions: list = on_first_enter_actions or []  # Actions that trigger only on first enter
         self.actions: list[Action] = actions  # Actions available for selections

@@ -1,7 +1,7 @@
 from typing import Union
 
-from src.txengine.systems.room.room import Room
-from src.txengine.systems.player import player
+from .room import Room
+from ..player import player
 
 from rich import print
 
