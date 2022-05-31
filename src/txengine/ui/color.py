@@ -8,7 +8,10 @@ tag_map: [str, list[str]] = {}
 def init_default_tag_map() -> None:
     tag_map["index"] = ["orange", "bold"]
     tag_map["listed_option"] = []
-    tag_map["input_query"] = ["italic"]
+    tag_map["input_query"] = ["italic"],
+    tag_map["player_improvement"] = ["bold", "green"]
+    tag_map["ability"] = ["cyan", "bold"]
+    tag_map["item"] = ["pink"]
 
 
 def load_tag_styles(path: str) -> None:
@@ -46,6 +49,8 @@ def wrap(text: str, tag: Union[list[str], str]) -> str:
 
 
 def style(text: str, tag_style: str) -> str:
+    global tag_map
+
     """Automatically wrap text in a pre-defined style"""
 
     if tag_style not in tag_map:
