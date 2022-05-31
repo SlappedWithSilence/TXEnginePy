@@ -14,7 +14,7 @@ game_files: dict[str, str] = {
     "item": "items.json",
     "room": "rooms.json",
     "conversation": "conversations.json",
-    "player_resource": "player_resources.json",
+    "stat": "stats.json",
     "combat_entity": "combat_entities.json",
     "recipe": "recipes.json",
     "skill": "skills.json",
@@ -29,7 +29,7 @@ conversation_map: dict[int, any] = {}  # TODO: Add typing
 combat_entity_map: dict[int, any] = {}  # TODO: Add typing
 
 # str-indexed
-player_resources: dict[str, tuple[int, int]] = {}
+stats_map: dict[str, tuple[int, int]] = {}
 ability_map: dict[str, any] = {}  # TODO: Add typing
 
 
