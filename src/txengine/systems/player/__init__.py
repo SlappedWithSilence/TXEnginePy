@@ -1,26 +1,22 @@
 from typing import Union
 
-from src.txengine.systems.stats.stats import Stat
-from src.txengine.systems.player.resource import Stat
+from ..stats.stats import Stat
 
 
 class Player:
     name: str
-    resources: dict[str, Stat]
+    stats: dict[str, Stat]
+    skills: dict[str, any]  # TODO: Update typing after skills class is created
     room_index: int
 
-    def __init__(self, name: str = "Player",
-                 resources: Union[dict[str, Stat], None] = None,
+    def __init__(self, stats: dict[str, Stat],
+                 name: str = "Player",
                  room_index: int = 0
                  ) -> None:
 
-        self.name = name
-        self.room_index = room_index
-
-        if not resources:
-            self.resources = {}
-        else:
-            self.resources = resources
+        self.name: str = name
+        self.room_index: int = room_index
+        self.stats: dict[str, Stat] = stats
 
 
-player = Player()
+player = Player(stats={})
