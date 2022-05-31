@@ -1,3 +1,3 @@
-from stats import Player
+from .stats import Player
 
 player = Player()

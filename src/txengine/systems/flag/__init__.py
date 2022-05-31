@@ -1,0 +1,1 @@
+flags: dict[str, bool] = {}
