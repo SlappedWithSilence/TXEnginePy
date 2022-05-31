@@ -1,6 +1,6 @@
 from typing import Union
 
-from src.txengine.systems.player.resource import PlayerResource
+from .resource import PlayerResource
 
 
 class Player:
