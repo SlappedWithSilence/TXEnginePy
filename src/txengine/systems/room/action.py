@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Union
 
-from src.txengine.systems.event.events import Event
+from ..event.events import Event
 
 
 class Action(ABC):
