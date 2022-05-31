@@ -5,7 +5,7 @@ from ..systems.item.item import Item
 
 config: dict[str, any] = {
     "debug": False,
-    "primary_player_resource": "health",
+    "primary_stat": "health",
     "primary_skill": "combat",
     "primary_current": "cash-cash-money"
 }
