@@ -1,4 +1,8 @@
+from ...ui.color import wrap, style
+
 from typing import Union
+
+from rich import print
 
 
 class Stat:
@@ -27,7 +31,7 @@ class Stat:
 
         return False
 
-    def adjust(self, quantity: Union[int, float]) -> int:
+    def adjust(self, quantity: Union[int, float], verbose: bool = False) -> int:
         """Alter the quantity of 'current' by 'quantity'
 
             if 'quantity' is an int, simply increment
@@ -35,7 +39,7 @@ class Stat:
 
             In both cases, the floor for 'current' is zero, and the ceiling is 'maximum'
         """
-
+        old_current = self.current
         if type(quantity) == int:
             self.current = max(min(self.maximum, self.current + quantity), 0)
 
@@ -44,6 +48,13 @@ class Stat:
             self.current = max(min(self.maximum, self.current + int(term)), 0)
         else:
             raise TypeError(f"PlayerResource.adjust accepts only int and float! {type(quantity)} is not supported!")
+
+        adjustment = self.current - old_current
+        if verbose:
+            if adjustment > 0:
+                print(style(f"You gained {adjustment} {self.name}!", "stat_change_up"))
+            else:
+                print(style(f"You lost {adjustment} {self.name}!", "stat_change_down"))
 
         return self.current
 
