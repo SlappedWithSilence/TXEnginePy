@@ -12,6 +12,8 @@ def init_default_tag_map() -> None:
     tag_map["player_improvement"] = ["bold", "green"]
     tag_map["ability"] = ["cyan", "bold"]
     tag_map["item"] = ["pink"]
+    tag_map["stat_change_up"] = ["green"]
+    tag_map["stat_change_down"] = ["red"]
 
 
 def load_tag_styles(path: str) -> None:
