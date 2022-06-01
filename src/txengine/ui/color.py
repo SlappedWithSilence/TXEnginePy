@@ -11,7 +11,9 @@ def init_default_tag_map() -> None:
     tag_map["input_query"] = ["italic"],
     tag_map["player_improvement"] = ["bold", "green"]
     tag_map["ability"] = ["cyan", "bold"]
-    tag_map["item"] = ["pink"]
+    tag_map["item_name"] = ["pink"]
+    tag_map["item_desc"] = ["italic"]
+    tag_map["item_value"] = ["yellow"]
     tag_map["stat_change_up"] = ["green"]
     tag_map["stat_change_down"] = ["red"]
 

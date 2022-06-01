@@ -1,7 +1,7 @@
-from src.txengine.systems.item.effect.effect import Effect
-from src.txengine.ui.color.colors import c_form
-from src.txengine.systems.item.mixins.usable import UsableMixin
-from src.txengine.systems.item.mixins.equipment import EquipmentMixin
+from ..effect.effect import Effect
+from ...ui.color import style
+from .mixins.usable import UsableMixin
+from .mixins.equipment import EquipmentMixin
 
 
 class Item:
@@ -15,9 +15,9 @@ class Item:
     @property
     def summary(self):
         """Returns a formatted string containing pertinent information about the item."""
-        return c_form(self.name, "item_name") + "\n" \
-               + c_form(self.desc, "item_desc") + "\n" \
-               + "Value: " + c_form(str(self.value), "item_value")
+        return style(self.name, "item_name") + "\n" \
+               + style(self.desc, "item_desc") + "\n" \
+               + "Value: " + style(str(self.value), "item_value")
 
 
 class Usable(Item, UsableMixin):
@@ -41,5 +41,5 @@ class Equipment(Item, EquipmentMixin):
     @property
     def summary(self):
         return super().summary + "\n" \
-            + c_form("attack", "stat_name") + ": " + c_form(str(self.damage_bonus), "stat_value") + "\n" \
-            + c_form("defense", "stat_name") + ": " + c_form(str(self.damage_resistance), "stat_value") + "\n"
+               + style("attack", "stat_name") + ": " + style(str(self.damage_bonus), "stat_value") + "\n" \
+               + style("defense", "stat_name") + ": " + style(str(self.damage_resistance), "stat_value") + "\n"
