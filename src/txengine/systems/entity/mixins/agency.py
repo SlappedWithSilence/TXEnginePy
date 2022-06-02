@@ -5,6 +5,7 @@ from ....ui.color import style
 
 from rich import print
 
+
 class AgencyMixin:
     """ An entity that inherits from AgencyMixin is capable of taking part in combat and making turn choices
         An entity that inherits from AgencyMixin is also capable of wearing equipment.
