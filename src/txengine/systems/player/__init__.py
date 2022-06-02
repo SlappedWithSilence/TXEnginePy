@@ -1,22 +1,14 @@
 from typing import Union
+from ..entity.entity import Entity
 
-from ..stats.stats import Stat
+from ..entity.resource import EntityResource
 
 
-class Player:
-    name: str
-    stats: dict[str, Stat]
-    skills: dict[str, any]  # TODO: Update typing after skills class is created
+class Player(Entity):
     room_index: int
 
-    def __init__(self, stats: dict[str, Stat],
-                 name: str = "Player",
-                 room_index: int = 0
-                 ) -> None:
-
-        self.name: str = name
-        self.room_index: int = room_index
-        self.stats: dict[str, Stat] = stats
+    def __init__(self, name: str, resources: dict[str, EntityResource], skills: dict[str, any]):
+        super().__init__(name, resources, skills)
 
 
-player = Player(stats={})
+player = Player(name="Player", resources={}, skills={})

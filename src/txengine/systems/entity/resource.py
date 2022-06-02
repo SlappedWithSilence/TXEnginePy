@@ -1,11 +1,11 @@
-from ...ui.color import wrap, style
+from ...ui.color import style
 
 from typing import Union
 
 from rich import print
 
 
-class Stat:
+class EntityResource:
     """Represents a resource to be used by the player."""
 
     def __init__(self, name: str, description: str, maximum: int, current: int):

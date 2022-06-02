@@ -14,7 +14,7 @@ game_files: dict[str, str] = {
     "item": "items.json",
     "room": "rooms.json",
     "conversation": "conversations.json",
-    "stat": "stats.json",
+    "stat": "entity.json",
     "combat_entity": "combat_entities.json",
     "recipe": "recipes.json",
     "skill": "skills.json",
