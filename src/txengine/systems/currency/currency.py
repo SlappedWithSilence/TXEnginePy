@@ -1,3 +1,6 @@
+from typing import Union
+
+
 class Currency:
     """Currency records information about money an entity owns.
 
@@ -67,9 +70,24 @@ class Currency:
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
 
+    def adjust(self, amount: Union[int, float]):
+        """ Adjust quantity by 'amount'.
+
+            If amount is an int, simply add it to 'quantity'.
+            If amount is a float, multiply 'quantity' by it.
+        """
+        if type(amount) == int:
+            self.quantity = self.quantity + amount
+
+        elif type(amount) == float:
+            self.quantity = int(self.quantity * amount)
+
+    def set(self, quantity: int):
+        """Set 'quantity' to the passed value."""
+        self.quantity = quantity
+
 
 if __name__ == "__main__":
-
     stages = {"cents": 1, "dollars": 100}
     currency = Currency("USD", stages, quantity=533)
     currency_2 = Currency("USD", stages, quantity=15)
@@ -79,6 +97,6 @@ if __name__ == "__main__":
     print(currency + currency_2)
     print(currency + 55)
 
-    stages = {"bronze" : 1, "silver" : 100, "gold" : 1000}
+    stages = {"bronze": 1, "silver": 100, "gold": 1000}
     currency = Currency("Imperial", stages, 66021)
     print(currency)
