@@ -60,6 +60,13 @@ class Currency:
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
 
+    def __divmod__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            return Currency(self.name, self.stages, int(self.quantity / other))
+
+        else:
+            raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
+
 
 if __name__ == "__main__":
 
