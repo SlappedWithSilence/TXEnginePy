@@ -16,6 +16,7 @@ def init_default_tag_map() -> None:
     tag_map["item_value"] = ["yellow"]
     tag_map["stat_change_up"] = ["green"]
     tag_map["stat_change_down"] = ["red"]
+    tag_map["error"] = ["bold", "red"]
 
 
 def load_tag_styles(path: str) -> None:

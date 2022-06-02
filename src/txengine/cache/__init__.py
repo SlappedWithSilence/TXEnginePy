@@ -22,6 +22,7 @@ game_files: dict[str, str] = {
 }
 
 # Game-Resource caches
+#   Do NOT access these unless strictly necessary.
 
 # int-indexed
 item_map: dict[int, Item] = {}
