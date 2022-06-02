@@ -11,9 +11,10 @@ class AgencyMixin:
         An entity that inherits from AgencyMixin is also capable of wearing equipment.
     """
 
-    def __init__(self, equipment: dict[EquipmentType, int], mode: int = 0):
-        self.equipment = equipment
-        self.mode = mode
+    def __init__(self, equipment: dict[EquipmentType, int], abilities: set[str], mode: int = 0):
+        self.equipment: dict[EquipmentType, int] = equipment
+        self.mode: int = mode
+        self.abilities: set[str] = abilities
 
     def take_turn(self, combat_context: any) -> any:
         """The entity calculates the next combat action to take and returns it"""
@@ -22,6 +23,7 @@ class AgencyMixin:
     def equip_item(self, item_id) -> [int, None]:
         """ Attempts to auto-equip a given item to the entity.
 
+            If an item already exists in that slot, it gets auto-unequipped.
         """
         item = reference(item_id)  # Get a reference to the item object for the given id
         if isinstance(item, EquipmentMixin):  # Check if its an Equipment
@@ -35,3 +37,8 @@ class AgencyMixin:
 
         else:
             print(style(f"Cannot equip {item_name(item_id)}!", "error"))
+
+    def unequip_item(self, slot: EquipmentType) -> int:
+        unequipped_item = reference(self.equipment[slot]).id
+        self.equipment[slot] = None
+        return unequipped_item

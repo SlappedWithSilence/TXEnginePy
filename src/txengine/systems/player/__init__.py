@@ -16,12 +16,11 @@ class Player(Entity, WalletMixin, AgencyMixin):
                  skills: dict[str, any],
                  currencies: Union[list[Currency], dict[str, Currency]],
                  equipment: dict[EquipmentType, int]):
-        super().__init__(name, resources, skills, equipment)
+        super().__init__(name, resources, skills)
         super().__init__(currencies)
 
     def take_turn(self, combat_context: any) -> any:
         pass
-
 
 
 player = Player(name="Player", resources={}, skills={}, currencies=[], equipment={})
