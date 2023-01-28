@@ -17,19 +17,19 @@ class RoomManager:
         self.visited_rooms = visited_rooms or set()
         self.rooms = rooms or {}
 
-    def start_room_loop(self) -> None:
-        """Starts the main game loop."""
+def start_room_loop() -> RoomManager:
+    """Starts the main game loop."""
 
-        while True:
-            if player.room_index in self.rooms:
+    while True:
+        if player.room_index in self.rooms:
 
-                # Handle first-entry
-                if player.room_index not in self.visited_rooms:
-                    print(self.rooms[player.room_index].on_first_enter_text)
-                    self.visited_rooms.add(player.room_index)
+            # Handle first-entry
+            if player.room_index not in self.visited_rooms:
+                print(self.rooms[player.room_index].on_first_enter_text)
+                self.visited_rooms.add(player.room_index)
 
-                # Start inner room-loop
-                self.rooms[player.room_index].enter()
+            # Start inner room-loop
+            self.rooms[player.room_index].enter()
 
-            else:
-                raise ValueError(f"Player room index {player.room_index} is out bounds!")
+        else:
+            raise ValueError(f"Player room index {player.room_index} is out bounds!")

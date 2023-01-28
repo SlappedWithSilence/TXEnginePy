@@ -1,4 +1,4 @@
-textual
-textual-inputs
-rich
 loguru
+pytest
+fastapi
+uvicorn[standard]

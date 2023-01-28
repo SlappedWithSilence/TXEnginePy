@@ -12,3 +12,9 @@ class EquipmentType(enum.Enum):
     # Jewelry
     RING = 6,
     NECKLACE = 7
+
+
+class InputType(enum.Enum):
+    AFFIRMATIVE = 0,
+    INT = 1,
+    STR = 2

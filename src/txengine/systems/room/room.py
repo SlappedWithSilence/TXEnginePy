@@ -2,9 +2,6 @@ from .action import Action
 from ...ui.color import style
 from ...ui.input_tools import input_int
 
-from rich import print
-from rich.panel import Panel
-
 
 class Room:
     """A room represents a scene in TXEngine. The user may interact with a number of functions inside any given room.
@@ -25,10 +22,7 @@ class Room:
 
     def enter(self) -> None:
         """Enter a loop that only ends when the user selects an ExitAction"""
-        print(self.text)
-        while True:
-            print(Panel(self.options))
-            next_action = input_int(min_value=0, max_value=len(self.actions) - 1)
+        pass
 
     @property
     def visible_actions(self) -> list[Action]:

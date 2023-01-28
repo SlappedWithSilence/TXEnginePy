@@ -1,5 +1,3 @@
-from rich import print
-
 from .color import style, wrap
 
 

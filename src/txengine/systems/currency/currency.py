@@ -6,7 +6,7 @@ class Currency:
 
     Currency objects have a name, quantity, and one or more stages.
     A stage describes a quantified grouping. For example, USD has a stage of "cents: 1" and "dollars: 100"
-    A Currency must have a stage with a value of 1.
+    A Currency must have a first stage with a value of 1.
     """
 
     def __init__(self, name: str, stages: dict[str, int], quantity: int = 0, allow_negative: bool = False):
@@ -33,12 +33,15 @@ class Currency:
         return base
 
     def __add__(self, other):
+
+        # If (Currency + Currency)
         if isinstance(other, type(self)):
             if self.name != other.name:
                 raise ValueError(f"Cannot add currencies of different names! {self.name}, {other.name}")
 
             return Currency(self.name, self.stages, self.quantity + other.quantity)
 
+        # If (Currency + Int)
         elif isinstance(other, int):
             return Currency(self.name, self.stages, self.quantity + other)
 
@@ -46,15 +49,19 @@ class Currency:
             raise TypeError(f"Cannot add {type(self)} and {type(other)}!")
 
     def __sub__(self, other):
+
+        # If (Currency - Currency)
         if isinstance(other, type(self)):
             if self.name != other.name:
-                raise ValueError(f"Cannot add currencies of different names! {self.name}, {other.name}")
+                raise ValueError(f"Cannot subtract currencies of different names! {self.name}, {other.name}")
 
             return Currency(self.name, self.stages, self.quantity - other.quantity)
+
+        # If (Currency - Int)
         elif isinstance(other, int):
             return Currency(self.name, self.stages, self.quantity - other)
         else:
-            raise TypeError(f"Cannot add {type(self)} and {type(other)}!")
+            raise TypeError(f"Cannot subtract  {type(self)} and {type(other)}!")
 
     def __mul__(self, other):
         if isinstance(other, int) or isinstance(other, float):
@@ -73,8 +80,8 @@ class Currency:
     def adjust(self, amount: Union[int, float]):
         """ Adjust quantity by 'amount'.
 
-            If amount is an int, simply add it to 'quantity'.
-            If amount is a float, multiply 'quantity' by it.
+            If amount is an int, simply add it to 'quantity' (flat adjustment).  2 + 3 = 5
+            If amount is a float, multiply 'quantity' by it (percent adjustment). 2 x 0.5 = 1
         """
         if type(amount) == int:
             self.quantity = self.quantity + amount
@@ -84,7 +91,11 @@ class Currency:
 
     def set(self, quantity: int):
         """Set 'quantity' to the passed value."""
-        self.quantity = quantity
+
+        if type(quantity) == int:
+            self.quantity = quantity
+        else:
+            raise TypeError(f"Cannot set a Currency's quantity to type {type(quantity)}! Must be of type int.")
 
 
 if __name__ == "__main__":
