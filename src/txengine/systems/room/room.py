@@ -1,9 +1,9 @@
 from .action import Action
+from ...structures.state_device import StateDevice
 from ...ui.color import style
-from ...ui.input_tools import input_int
 
 
-class Room:
+class Room (StateDevice):
     """A room represents a scene in TXEngine. The user may interact with a number of functions inside any given room.
 
     A room's contents are defined by which Actions it contains. A room may contain any number of actions. Every room,
