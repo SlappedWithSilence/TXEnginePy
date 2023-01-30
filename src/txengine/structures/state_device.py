@@ -1,5 +1,6 @@
 from src.txengine.structures import enums
 from src.txengine.structures.enums import InputType
+from src.txengine.structures.messages import StringContent
 
 
 class StateDevice:
