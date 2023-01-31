@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Dict
 
-from src.txengine.structures.enums import InputType
+from .enums import InputType
 
 
 @dataclass
@@ -40,8 +40,12 @@ class Frame:
 
     components: dict[str, any]
     input_type: InputType
-    input_range: dict[str: any] = field(default_factory=Dict)
+    input_range: dict[str: any] = field(default_factory=dict)
     frame_type: str = "Generic"
 
     def __json__(self) -> dict[str, any]:
         return {"frame_type": self.frame_type, "input_type": self.input_type.name} | self.components | self.input_range
+
+    @property
+    def json(self) -> dict[str,  any]:
+        return self.__json__()
