@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Dict
+
+from src.txengine.structures.enums import InputType
 
 
 @dataclass
@@ -35,8 +37,11 @@ class Frame:
     """
     An object that contains organized data for a Game Frame.
     """
-    frame_type: str
+
     components: dict[str, any]
+    input_type: InputType
+    input_range: dict[str: any] = field(default_factory=Dict)
+    frame_type: str = "Generic"
 
     def __json__(self) -> dict[str, any]:
-        return {"form_type": self.frame_type} | self.components
+        return {"frame_type": self.frame_type, "input_type": self.input_type.name} | self.components | self.input_range

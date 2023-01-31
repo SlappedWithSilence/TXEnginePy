@@ -1,12 +1,12 @@
 from src.txengine.structures import enums
 from src.txengine.structures.enums import InputType
-from src.txengine.structures.messages import StringContent
+from src.txengine.structures.messages import StringContent, Frame
 
 
 class StateDevice:
 
     def __init__(self, input_type: InputType, input_range: dict[str, any] = None) -> None:
-        self.str_buffer: list[str] = []
+        self.str_buffer: list[StringContent] = []
         self.input_type: InputType = input_type
         self.input_range: dict[str: any] = input_range or {"upper_limit": None,
                                                            "lower_limit": None,
@@ -14,7 +14,7 @@ class StateDevice:
                                                            }
 
     @property
-    def val(self) -> list[str]:
+    def val(self) -> list[StringContent]:
         return self.str_buffer
 
     @property
@@ -71,3 +71,10 @@ class StateDevice:
                                                                        upper_limit: {upper_limit}\n
                                                                        length: {length}
                               """)
+
+    @property
+    def components(self) -> dict[str, any]:
+        raise NotImplementedError
+
+    def to_frame(self) -> Frame:
+        return Frame(self.components, self.input_type, self.input_range, self.__class__.__name__)
