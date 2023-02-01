@@ -1,17 +1,14 @@
-import dataclasses
-from pydantic.dataclasses import dataclass, Field
-from typing import List, Dict
+from pydantic import BaseModel
 
-from .enums import InputType
+from enums import InputType
 
 
-@dataclass
-class StringContent:
+class StringContent(BaseModel):
     """
     An object that stores a string alongside formatting data.
     """
     value: str
-    formatting: List[str] = dataclasses.field(default_factory=List)
+    formatting: list[str]
 
     def __str__(self) -> str:
         return self.value
@@ -19,29 +16,30 @@ class StringContent:
     def __add__(self, other):
 
         if type(other) == str:
-            return StringContent(self.value + other, self.formatting)
+            return StringContent(value=self.value + other, formatting=self.formatting)
 
         elif type(other) == StringContent:
-            return StringContent(self.value + other.value, self.formatting + other.formatting)
+            return StringContent(value=self.value + other.value, formatting=self.formatting + other.formatting)
 
         else:
             raise TypeError()
 
 
-@dataclass
-class Frame:
+class Frame(BaseModel):
     """
     An object that contains organized data for a Game Frame.
     """
 
-    components: dict[str, any]
+    components: dict
     input_type: InputType
-    input_range: dict[str: any] = field(default_factory=dict)
+    input_range: dict
     frame_type: str = "Generic"
 
-    def __json__(self) -> dict[str, any]:
-        return {"frame_type": self.frame_type, "input_type": self.input_type.name} | self.components | self.input_range
 
-    @property
-    def json(self) -> dict[str,  any]:
-        return self.__json__()
+if __name__ == "__main__":
+    f = Frame(components={}, input_type=InputType.AFFIRMATIVE, input_range={})
+    print(f.schema())
+    print(f.json())
+
+    s = StringContent(value="This is a StringContent", formatting=["bold", "blue"])
+    print(s.json())
