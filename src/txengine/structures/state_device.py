@@ -1,31 +1,26 @@
 import weakref
 
+from pydantic import BaseModel
+
 from .enums import InputType, is_valid_range
-from .messages import StringContent, Frame
+from .messages import Frame
 
 
-class StateDevice:
-
-    def __init__(self, input_type: InputType, input_range: dict[str, any] = None) -> None:
-        self.str_buffer: list[StringContent] = []
-        self.input_type: InputType = input_type
-        self.input_range: dict[str: any] = input_range or {"upper_limit": None,
-                                                           "lower_limit": None,
-                                                           "length": None
-                                                           }
-        self.__engine = None
+class StateDevice(BaseModel):
+    input_type: InputType
+    input_range: dict[str: any] = {"upper_limit": None,
+                                   "lower_limit": None,
+                                   "length": None
+                                   }
+    __engine = None
 
     @property
     def engine(self):
         return self.__engine
 
     @engine.setter
-    def engine(self, engine) -> None:
-        self.__engine = weakref.ref(engine)
-
-    @property
-    def val(self) -> list[StringContent]:
-        return self.str_buffer
+    def engine(self, engine_in) -> None:
+        self.__engine = weakref.ref(engine_in)
 
     @property
     def domain_lower_limit(self) -> any:
@@ -84,8 +79,66 @@ class StateDevice:
 
     @property
     def components(self) -> dict[str, any]:
-        # raise NotImplementedError  # TODO: Uncomment
-        pass
+        raise NotImplementedError
+
+    def validate_input(self, input_value) -> bool:
+
+        # Input must be str matching the set of strings in the array
+        if self.input_type == InputType.AFFIRMATIVE:
+            if type(input_value) == str and str.lower(input_value) in ['y', 'n', 'yes', 'no']:
+                return True
+            else:
+                return False
+
+        # Input must be an int that is below the maximum and above the minimum
+        elif self.input_type == InputType.INT:
+            if type(input_value) == int:
+                if self.input_range["lower_limit"] and input_value < self.input_range["lower_limit"]:
+                    return False
+
+                if self.input_range["upper_limit"] and input_value > self.input_range["upper_limit"]:
+                    return False
+
+                return True
+
+        # Input must be a str shorter than length
+        elif self.input_type == InputType.STR:
+            if type(input_value) == str:
+                if self.input_range["length"] and len(input_value) <= self.input_range["length"]:
+                    return True
+
+            return False
+        else:
+            raise ValueError(f"Unknown InputType: {self.input_type.name}!")
+
+    def __logic(self, user_input: any) -> None:
+        """
+        The actual game logic. This must be overriden by subclasses.
+
+        Args:
+            user_input:
+
+        Returns: None
+
+        """
+        raise NotImplementedError("Cannot run a bare StateDevice!")
+
+    def input(self, user_input:any) -> bool:
+        """
+        Submits the user's input to the state device. The state device advances its internal logic and modifies its
+        output. If the input is not valid, it is rejected.
+
+        Args:
+            user_input: The value passed by the user
+
+        Returns: True if the input is valid, False otherwise
+
+        """
+        if self.validate_input(user_input):
+            self.__logic(user_input)
+            return True
+
+        return False
 
     def to_frame(self) -> Frame:
         return Frame(self.components, self.input_type, self.input_range, self.__class__.__name__)
