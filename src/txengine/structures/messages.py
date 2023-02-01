@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+import dataclasses
+from pydantic.dataclasses import dataclass, Field
 from typing import List, Dict
 
 from .enums import InputType
@@ -10,15 +11,10 @@ class StringContent:
     An object that stores a string alongside formatting data.
     """
     value: str
-    formatting: List[str] = field(default_factory=List)
+    formatting: List[str] = dataclasses.field(default_factory=List)
 
     def __str__(self) -> str:
         return self.value
-
-    def __json__(self) -> dict[str, any]:
-        return {"value": self.value,
-                "formatting": self.formatting
-                }
 
     def __add__(self, other):
 

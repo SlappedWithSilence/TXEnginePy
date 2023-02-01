@@ -1,4 +1,5 @@
 loguru
 pytest
 fastapi
+pydantic
 uvicorn[standard]
