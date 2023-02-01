@@ -26,4 +26,24 @@ Since TXEngine (Py)'s backend is built on top of a REST-API framework, it can ea
 TXEngine (Py) is open to contribution. Open a pull-request, and I'll do my best to review it quickly. Any PR that is poorly documented or does not adhere to the coding standards for this repository will be rejected.
 
 ## Developing
- - TBD
+
+I recommend using Jetbrains PyCharm as your IDE when developing for TXEngine. As such, these instructions will include PyCharm-specific steps.
+
+ - Clone the repository to your PC. Using command-line git: `git clone https://github.com/SlappedWithSilence/TXEnginePy`
+ - *Optional*: Create a virtual environment. To use `venv`, [see these documents](https://docs.python.org/3/library/venv.html).
+ - Install the requirements: `pip install -r requirements.txt`
+ - [Install PyCharm](https://www.jetbrains.com/pycharm/)
+ - Open TXEnginePy in PyCharm
+ - Install the [Pydantic PyCharm plugin](https://docs.pydantic.dev/pycharm_plugin/)
+ - Run the application:
+   - `cd TXEnginePy\src`
+   - `Uvicorn main::app_server --reload`
+   - For more info, [see here](https://fastapi.tiangolo.com/tutorial/first-steps/)
+
+## Aknowledgements
+
+[FastAPI](https://fastapi.tiangolo.com/)
+
+[Pydantic](https://docs.pydantic.dev/)
+
+[Rich](https://pypi.org/project/rich/)
