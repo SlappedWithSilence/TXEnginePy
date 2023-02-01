@@ -1,6 +1,8 @@
+from typing import Any
+
 from pydantic import BaseModel
 
-from enums import InputType
+from .enums import InputType
 
 
 class StringContent(BaseModel):
@@ -30,9 +32,9 @@ class Frame(BaseModel):
     An object that contains organized data for a Game Frame.
     """
 
-    components: dict
+    components: dict[str, Any]
     input_type: InputType
-    input_range: dict
+    input_range: dict[str, int | None]
     frame_type: str = "Generic"
 
 

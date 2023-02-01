@@ -20,14 +20,32 @@ class InputType(enum.Enum):
     STR = 2
 
 
-def is_valid_range(input_type: InputType, lower_limit: any = None, upper_limit: any = None, length: int = None) -> bool:
+def to_range(min_value: int = None, max_value: int = None, length: int = None) -> dict[str, int | None]:
+    """
+    Transform values into a standardized dict structure.
+
+    Args:
+        min_value:
+        max_value:
+        length:
+
+    Returns: A formatted dict containing the input values
+
+    """
+    return {"min": min_value,
+            "max": max_value,
+            "len": length
+            }
+
+
+def is_valid_range(input_type: InputType, min_value: any = None, max_value: any = None, length: int = None) -> bool:
     """
     Determine if a given input range is valid for a given InputType
 
     Parameters:
         input_type (InputType): The type of InputType to evaluate
-        lower_limit (any): optional lower limit value
-        upper_limit (any): optional upper limit value
+        min_value (any): optional lower limit value
+        max_value (any): optional upper limit value
         length (int) : optional length limit
 
     Returns:
@@ -38,21 +56,21 @@ def is_valid_range(input_type: InputType, lower_limit: any = None, upper_limit: 
         raise TypeError(f"Cannot evaluate type {type(input_type)}! Must be of type InputType")
 
     if input_type == InputType.AFFIRMATIVE:
-        return not lower_limit and not upper_limit and not length
+        return not min_value and not max_value and not length
 
     if input_type == InputType.INT:
 
         # If upper or lower is provided, it must be an int
-        if (upper_limit and not type(upper_limit) == int) or (lower_limit and not type(lower_limit) == int):
+        if (max_value and not type(max_value) == int) or (min_value and not type(min_value) == int):
             return False
 
         # If only an upper or lower limit is provided, that is valid
-        if (upper_limit and not lower_limit) or (lower_limit and not upper_limit):
+        if (max_value and not min_value) or (min_value and not max_value):
             return True
 
         # If both upper and lower limit, upper limit must be higher than lower limit
         else:
-            return upper_limit > lower_limit
+            return max_value > min_value
 
     if input_type == InputType.STR:
         return not length or (type(length) == int and length > 0)

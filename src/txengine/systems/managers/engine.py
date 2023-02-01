@@ -6,10 +6,11 @@ from ...structures.state_device import StateDevice
 class Engine:
 
     def __init__(self) -> None:
-        debug_device = StateDevice(InputType.AFFIRMATIVE)  # TODO: Remove debugging code
-
         self.state_device_stack: list[StateDevice] = []
         self.state_device_properties: dict[str, bool] = {"error": False, "recoverable": True, "terminated": False}
+
+        debug_device = StateDevice(input_type=InputType.AFFIRMATIVE)  # TODO: Remove debugging code
+        self.add_device(debug_device)
 
     def add_device(self, state_device: StateDevice) -> None:
         """
@@ -22,7 +23,7 @@ class Engine:
         Returns: None
 
         """
-        state_device.engine = self
+        state_device.set_engine(self)
         self.state_device_stack.append(state_device)
 
     def pop_device(self) -> StateDevice:
@@ -73,7 +74,7 @@ class Engine:
         Returns: The topmost device from the state_device_stack
 
         """
-        return self.state_device_stack[-1]
+        return self.state_device_stack[-1] if len(self.state_device_properties) > 0 else None
 
     def get_frame(self) -> Frame:
         """

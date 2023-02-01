@@ -1,4 +1,4 @@
-from .action import Action
+from .actiondevice import ActionDevice
 from ...structures.state_device import StateDevice
 from ...ui.color import style
 
@@ -15,7 +15,7 @@ class Room (StateDevice):
         super().__init__()
         self.id: int = room_id  # Unique mapping ID
         self.on_first_enter_actions: list = on_first_enter_actions or []  # Actions that trigger only on first enter
-        self.actions: list[Action] = actions  # Actions available for selections
+        self.actions: list[ActionDevice] = actions  # Actions available for selections
         self.on_first_enter_text: str = on_first_enter_text or ""  # Text that is played only of first enter
         self.ignore_default_actions: bool = ignore_default_actions  # If true, do not show default actions
         self.text: str = text or ""
@@ -25,7 +25,7 @@ class Room (StateDevice):
         pass
 
     @property
-    def visible_actions(self) -> list[Action]:
+    def visible_actions(self) -> list[ActionDevice]:
         """Returns a list containing only the actions that are visible in the room"""
         return [action for action in self.actions if action.visible]
 
