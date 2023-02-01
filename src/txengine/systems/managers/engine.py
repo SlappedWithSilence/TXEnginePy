@@ -9,6 +9,7 @@ class Engine:
         debug_device = StateDevice(InputType.AFFIRMATIVE)  # TODO: Remove debugging code
 
         self.state_device_stack: list[StateDevice] = []
+        self.state_device_properties: dict[str, bool] = {"error": False, "recoverable": True, "terminated": False}
 
     def add_device(self, state_device: StateDevice) -> None:
         """
@@ -76,9 +77,20 @@ class Engine:
 
     def get_frame(self) -> Frame:
         """
-        Retrieves the current logical frame. Not to be confused with submit_input.
+        Retrieves the current logical frame. Not to be confused with submit_input. If the stack needs to be adjusted, do
+        so before retrieving the next frame
 
         Returns: the current game frame
 
         """
+
+        if self.state_device_properties["error"]:
+            # TODO: Dump debugging data
+
+            if not self.state_device_properties["recoverable"]:
+                raise RuntimeError("Something went wrong with a StateDevice")
+
+        elif self.state_device_properties["terminated"] or self.state_device_properties["error"]:
+            self.pop_device()
+
         return self.get_device().to_frame()
