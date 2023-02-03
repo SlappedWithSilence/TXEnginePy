@@ -1,4 +1,5 @@
 import weakref
+from abc import abstractmethod
 from typing import Any
 
 from pydantic import BaseModel
@@ -8,9 +9,13 @@ from .messages import Frame
 
 
 class StateDevice(BaseModel):
-    input_type: InputType
-    input_range: dict[str, Any] = to_range()
     engine: Any = None  # DO NOT SET
+
+    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, **data: Any):
+        super().__init__(**data)
+
+        self.input_type: InputType = input_type
+        self.input_range: dict[str, Any] = input_range or to_range()
 
     def get_engine(self):
         return self.engine
@@ -74,8 +79,9 @@ class StateDevice(BaseModel):
                               """)
 
     @property
+    @abstractmethod
     def components(self) -> dict[str, any]:
-        raise NotImplementedError
+        pass
 
     def validate_input(self, input_value) -> bool:
 
@@ -107,7 +113,8 @@ class StateDevice(BaseModel):
         else:
             raise ValueError(f"Unknown InputType: {self.input_type.name}!")
 
-    def __logic(self, user_input: any) -> None:
+    @abstractmethod
+    def _logic(self, user_input: any) -> None:
         """
         The actual game logic. This must be overriden by subclasses.
 
@@ -117,9 +124,9 @@ class StateDevice(BaseModel):
         Returns: None
 
         """
-        raise NotImplementedError("Cannot run a bare StateDevice!")
+        pass
 
-    def input(self, user_input:any) -> bool:
+    def input(self, user_input: any) -> bool:
         """
         Submits the user's input to the state device. The state device advances its internal logic and modifies its
         output. If the input is not valid, it is rejected.
@@ -131,7 +138,7 @@ class StateDevice(BaseModel):
 
         """
         if self.validate_input(user_input):
-            self.__logic(user_input)
+            self._logic(user_input)
             return True
 
         return False
