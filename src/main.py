@@ -9,7 +9,9 @@ from fastapi import FastAPI
 # Define constants
 app_server: FastAPI = FastAPI()
 game_logic: Engine = Engine()
-error_frame = Frame({"content": "Error! Unable to retrieve Frame!"}, InputType.AFFIRMATIVE, frame_type="Error")
+error_frame = Frame(components={"content": "Error! Unable to retrieve Frame!"},
+                    input_type=InputType.AFFIRMATIVE,
+                    frame_type="Error", input_range={})
 
 
 # Define helper functions

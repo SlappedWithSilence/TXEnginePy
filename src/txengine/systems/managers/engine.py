@@ -12,6 +12,9 @@ class Engine:
         debug_device = StateDevice(input_type=InputType.AFFIRMATIVE)  # TODO: Remove debugging code
         self.add_device(debug_device)
 
+    def launch_room(self) -> None:
+        pass
+
     def add_device(self, state_device: StateDevice) -> None:
         """
         Adds a state device to the stack. This forces the engine to pull frames from the last-added state device.
