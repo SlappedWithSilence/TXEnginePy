@@ -1,6 +1,8 @@
+from ..room.room import Room
 from ...structures.enums import InputType
 from ...structures.messages import Frame
 from ...structures.state_device import StateDevice
+from ..room import room_manager
 
 
 class Engine:
@@ -13,7 +15,7 @@ class Engine:
         self.add_device(debug_device)
 
     def launch_room(self) -> None:
-        pass
+        self.add_device(Room(actions=[], name="Debug Room", owner=self, room_id=-1))  # TODO: Implement
 
     def add_device(self, state_device: StateDevice) -> None:
         """
@@ -27,9 +29,16 @@ class Engine:
 
         """
         state_device.set_engine(self)
-        self.state_device_stack.append(state_device)
 
-    def pop_device(self) -> StateDevice:
+        # If the device is a silent device, simply execute it
+        if state_device.input_type == InputType.SILENT:
+            state_device.input(None)
+
+        # If the device is not silent, add it as per usual
+        else:
+            self.state_device_stack.append(state_device)
+
+    def _pop_device(self) -> StateDevice:
         """
         Removes the most-recently-added state device from the state_device_stack
 
@@ -79,6 +88,18 @@ class Engine:
         """
         return self.state_device_stack[-1] if len(self.state_device_properties) > 0 else None
 
+    def set_dead(self, val: bool = True) -> None:
+        """
+        Sets the terminated flag.
+
+        Args:
+            val: Whether to terminate the current StateDevice
+
+        Returns: None
+
+        """
+        self.state_device_properties["terminated"] = val
+
     def get_frame(self) -> Frame:
         """
         Retrieves the current logical frame. Not to be confused with submit_input. If the stack needs to be adjusted, do
@@ -95,6 +116,6 @@ class Engine:
                 raise RuntimeError("Something went wrong with a StateDevice")
 
         elif self.state_device_properties["terminated"] or self.state_device_properties["error"]:
-            self.pop_device()
+            self._pop_device()
 
         return self.get_device().to_frame()

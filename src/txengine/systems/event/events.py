@@ -1,40 +1,37 @@
 from ..flag import flags
+from ...structures.enums import InputType
+from ...structures.state_device import StateDevice
 from ...ui.color import style
 from ..item.item_util import item_name
 from ..player import player
 
 from abc import ABC
-from typing import Union
-
-from rich import print
+from typing import Union, Any
 
 
-class Event(ABC):
+class Event(StateDevice, ABC):
 
-    def __init__(self, properties: list[str], text: Union[str, None] = None):
+    def __init__(self, properties: list[str], input_type: InputType, **data: Any):
+        super().__init__(input_type, **data)
         self._properties: list[str] = properties
-        self._text: Union[str, None] = text
-
-    def logic(self) -> None:
-        """Core logic for the Event"""
-        pass
-
-    def perform(self) -> None:
-        """Wrapper for logic that prints optional user prompting"""
-        self.logic()
-        if self._text:
-            print(self._text)
 
 
 class FlagEvent(Event):
     """An event that sets a specific flag to a given value"""
+
+    @property
+    def components(self) -> dict[str, any]:
+        pass
+
+    def _logic(self, user_input: any) -> None:
+        pass
 
     def __init__(self, properties: list[str]):
         super().__init__(properties)
         if len(properties) != 2:
             raise ValueError(f"FlagEvents must have exactly two properties! Got {len(properties)}")
 
-    def logic(self) -> None:
+    def _logic(self) -> None:
 
         try:
             flag_value = bool(self._properties)
@@ -172,4 +169,3 @@ class StatEvent(Event):
             raise TypeError("StatEvent's properties must be typed [str, int|float]!")  # still no, something's wrong
 
         player.stats[stat_name].adjust(stat_change, verbose=True)
-

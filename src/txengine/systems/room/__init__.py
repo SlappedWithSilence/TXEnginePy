@@ -15,5 +15,7 @@ class RoomManager:
         return self._current_room_index
 
 
+
+
 # Define package-level globals
 room_manager = RoomManager()

@@ -1,5 +1,9 @@
-from .action_device import ActionDevice
+import weakref
+
+from .action_device import ActionDevice, ExitAction
 from ..managers.engine import Engine
+from ...structures import enums
+from ...structures.enums import InputType
 from ...structures.state_device import StateDevice
 from ..room import room_manager
 
@@ -13,7 +17,7 @@ class Room(StateDevice):
 
     def __init__(self, room_id: int, name: str, actions: list, owner: Engine, on_first_enter_actions=None,
                  on_first_enter_text: str = None, text: str = None, ignore_default_actions: bool = False):
-        super().__init__()
+        super().__init__(input_type=InputType.INT, input_range=enums.to_range(min_value=0))
         self.name = name
         self.id: int = room_id  # Unique mapping ID
         self.on_first_enter_actions: list = on_first_enter_actions or []  # Actions that trigger only on first enter
@@ -22,11 +26,12 @@ class Room(StateDevice):
         self.ignore_default_actions: bool = ignore_default_actions  # If true, do not show default actions
         self.text: str = text or ""
         self.owner: Engine = owner
+        self.domain_max = len(self.options)
 
     @property
     def visible_actions(self) -> list[ActionDevice]:
         """Returns a list containing only the actions that are visible in the room"""
-        return [action for action in self.actions if action.visible]
+        return [weakref.proxy(action) for action in self.actions if action.visible]
 
     @property
     def options(self) -> list[str]:
@@ -40,4 +45,14 @@ class Room(StateDevice):
                 }
 
     def _logic(self, user_input: any) -> None:
-        pass
+
+        # Execute selected option
+
+        self.owner.add_device(self.visible_actions[user_input])  # Launch the selected Action as a StateDevice
+
+        # If the user selected and ExitAction, terminate the current room
+        if type(self.visible_actions[user_input] == ExitAction):
+            self.owner.set_dead()
+
+        # Update domain maximum in case an action was hidden or made visible
+        self.domain_max = len(self.options)

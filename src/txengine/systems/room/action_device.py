@@ -20,10 +20,6 @@ class ActionDevice(StateDevice, ABC):
         self.requirements: list = requirements  # All requirements must be met to execute action
         self.owner = weakref.proxy(owner)  # This is actually always a Room
 
-    def perform(self) -> None:
-        """Executes the logic associated with this action. Subclasses of Action must define this function."""
-        raise NotImplementedError
-
 
 class ExitAction(ActionDevice):
 
@@ -36,13 +32,12 @@ class ExitAction(ActionDevice):
         self.input_type = InputType.AFFIRMATIVE
         self.__on_exit: list[Event] = on_exit or []
 
-    def perform(self) -> None:
-        for event in self.__on_exit:
-            event.perform()
+
 
     # Override abstract methods
     def _logic(self, user_input: any) -> None:
-        room_manager.visit(self.owner.id)
+        room_manager.visit(self.owner.id)  # Inform the room manager that this room has now been effectively "visited".
+        self.owner.owner.set_dead()  # Set the action as dead
 
     @property
     def components(self) -> dict[str, any]:

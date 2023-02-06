@@ -85,6 +85,9 @@ class StateDevice(BaseModel):
 
     def validate_input(self, input_value) -> bool:
 
+        if self.input_type == InputType.SILENT:
+            return True
+
         # Input must be str matching the set of strings in the array
         if self.input_type == InputType.AFFIRMATIVE:
             if type(input_value) == str and str.lower(input_value) in ['y', 'n', 'yes', 'no']:
@@ -143,9 +146,24 @@ class StateDevice(BaseModel):
 
         return False
 
-    def to_frame(self) -> Frame:
+    def __frame__(self) -> Frame:
+        """
+            A method to convert a state device into a corresponding frame.
+
+            Returns: The Frame-equivalent of a given state device
+
+        """
         return Frame(components=self.components,
                      input_type=self.input_type,
                      input_range=self.input_range,
                      frame_type=self.__class__.__name__
                      )
+
+    def to_frame(self) -> Frame:
+        """
+            A method to convert a state device into a corresponding frame.
+
+            Returns: The Frame-equivalent of a given state device
+
+        """
+        return self.__frame__()
