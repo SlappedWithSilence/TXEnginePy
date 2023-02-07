@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from src.txengine.systems.currency.currency import Currency
+from src.game.systems.currency.currency import Currency
 
 currencies = {
     "USD": Currency("USD", {"cents": 1, "dollars": 100, "k": 100000, "m": 100000000}),

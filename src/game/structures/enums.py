@@ -18,7 +18,8 @@ class InputType(enum.Enum):
     AFFIRMATIVE = 0,
     INT = 1,
     STR = 2,
-    SILENT = 3
+    SILENT = 3,
+    NONE = 4
 
 
 def to_range(min_value: int = None, max_value: int = None, length: int = None) -> dict[str, int | None]:

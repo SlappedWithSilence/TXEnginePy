@@ -1,27 +1,21 @@
+import dataclasses
 import weakref
 from abc import abstractmethod
-from typing import Any
-
-from pydantic import BaseModel
-
 from .enums import InputType, is_valid_range, to_range
 from .messages import Frame
 
 
-class StateDevice(BaseModel):
-    engine: Any = None  # DO NOT SET
-
-    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, **data: Any):
-        super().__init__(**data)
-
-        self.input_type: InputType = input_type
-        self.input_range: dict[str, Any] = input_range or to_range()
+@dataclasses.dataclass
+class StateDevice:
+    input_type: InputType
+    input_range: dict[str, int] = dataclasses.field(default_factory=to_range)
+    _engine: any = None  # DO NOT SET
 
     def get_engine(self):
-        return self.engine
+        return self._engine
 
     def set_engine(self, engine_in) -> None:
-        self.engine = weakref.ref(engine_in)
+        self._engine = weakref.ref(engine_in)
 
     @property
     def domain_min(self) -> any:
