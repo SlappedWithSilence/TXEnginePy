@@ -3,6 +3,8 @@ import dataclasses
 from src.game.structures.messages import Frame
 from src.game.structures.state_device import StateDevice
 
+from loguru import logger
+
 
 @dataclasses.dataclass
 class StackState:
@@ -49,6 +51,7 @@ class GameStateController:
         Returns: The top StateDevice on the state_device_stack
 
         """
+        logger.info(f"Popping state device: {str(self.state_device_stack[-1])}")
         return self.state_device_stack.pop()
 
     def add_state_device(self, device: StateDevice) -> None:
@@ -64,6 +67,7 @@ class GameStateController:
         if type(device) != StateDevice:
             raise TypeError("device must be of type StateDevice!")
 
+        logger.info(f"Adding state device: {str(device)}")
         self.state_device_stack.append(device)
 
     # Public functions
@@ -76,7 +80,7 @@ class GameStateController:
 
         Returns: None
         """
-
+        logger.info(f"Marking {self._get_state_device()} as dead...")
         self.state_stack_properties.dead = val
 
     def get_current_frame(self) -> Frame:
