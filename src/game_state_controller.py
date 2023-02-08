@@ -54,6 +54,22 @@ class GameStateController:
         logger.info(f"Popping state device: {str(self.state_device_stack[-1])}")
         return self.state_device_stack.pop()
 
+    def deliver_input(self, user_input: any) -> bool:
+        """
+        Deliver the user's input to the top StateDevice. Returns True if the device accepts the input.
+
+        Args:
+            user_input: Input that the user delivers to the service via the API
+
+        Returns: True if the input is accepted, False otherwise.
+        """
+
+        if self._get_state_device().validate_input(user_input):
+            self._get_state_device().input(user_input)
+            return True
+
+        return False
+
     def add_state_device(self, device: StateDevice) -> None:
         """
         Appends a StateDevice to the top of the state_device_stack
