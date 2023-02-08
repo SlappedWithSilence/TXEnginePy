@@ -22,6 +22,9 @@ class InputType(enum.Enum):
     NONE = 4
 
 
+affirmative_range = ['y', 'n', 'yes', 'no']
+
+
 def to_range(min_value: int = None, max_value: int = None, length: int = None) -> dict[str, int | None]:
     """
     Transform values into a standardized dict structure.
