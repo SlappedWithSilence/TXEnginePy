@@ -1,8 +1,10 @@
 import dataclasses
 import weakref
 from abc import abstractmethod
-from .enums import InputType, is_valid_range, to_range
+from .enums import InputType, is_valid_range, to_range, affirmative_range
 from .messages import Frame
+
+from loguru import logger
 
 
 @dataclasses.dataclass
@@ -10,13 +12,15 @@ class StateDevice:
     input_type: InputType
     input_range: dict[str, int] = dataclasses.field(default_factory=to_range)
     name: str = "StateDevice"
-    _engine: any = None  # DO NOT SET
+    _controller: any = None  # This value should only be set by the GameStateController
 
-    def get_engine(self):
-        return self._engine
+    @property
+    def controller(self) -> any:
+        return self._controller
 
-    def set_engine(self, engine_in) -> None:
-        self._engine = weakref.ref(engine_in)
+    @controller.setter
+    def controller(self, engine_in) -> None:
+        self._controller = weakref.ref(engine_in)
 
     @property
     def domain_min(self) -> any:
@@ -85,18 +89,21 @@ class StateDevice:
 
         # Input must be str matching the set of strings in the array
         if self.input_type == InputType.AFFIRMATIVE:
-            if type(input_value) == str and str.lower(input_value) in ['y', 'n', 'yes', 'no']:
+            if type(input_value) == str and str.lower(input_value) in affirmative_range:
                 return True
             else:
+                logger.warning(f"[{self}]: Failed to validate input! {input_value} must be in {affirmative_range}")
                 return False
 
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
             if type(input_value) == int:
                 if self.input_range["min"] and input_value < self.input_range["min"]:
+                    logger.warning(f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
                     return False
 
                 if self.input_range["max"] and input_value > self.input_range["max"]:
+                    logger.warning(f"[{self}]: Failed to validate input! {input_value} must be <= {self.input_range['max']}")
                     return False
 
                 return True
@@ -107,6 +114,9 @@ class StateDevice:
                 if self.input_range["len"] and len(input_value) <= self.input_range["len"]:
                     return True
 
+            logger.warning(
+                f"[{self}]: Failed to validate input! {input_value} is not a str of len <= {self.input_range['len']}"
+            )
             return False
         else:
             raise ValueError(f"Unknown InputType: {self.input_type.name}!")
