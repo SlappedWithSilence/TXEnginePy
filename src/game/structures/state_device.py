@@ -9,6 +9,7 @@ from .messages import Frame
 class StateDevice:
     input_type: InputType
     input_range: dict[str, int] = dataclasses.field(default_factory=to_range)
+    name: str = "StateDevice"
     _engine: any = None  # DO NOT SET
 
     def get_engine(self):
@@ -152,6 +153,9 @@ class StateDevice:
                      input_range=self.input_range,
                      frame_type=self.__class__.__name__
                      )
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.__class__.name})"
 
     def to_frame(self) -> Frame:
         """
