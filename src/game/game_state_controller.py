@@ -1,7 +1,7 @@
 import dataclasses
 
-from src.game.structures.messages import Frame
-from src.game.structures.state_device import StateDevice
+from .structures.messages import Frame
+from .structures.state_device import StateDevice
 
 from loguru import logger
 
@@ -42,6 +42,8 @@ class GameStateController:
         Returns: The requested StateDevice
 
         """
+        if len(self.state_device_stack) < 1:
+            raise ValueError("No StateDevice loaded!")
         return self.state_device_stack[idx]
 
     def _pop_state_device(self) -> StateDevice:
