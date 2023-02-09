@@ -1,11 +1,9 @@
 import os.path
 
-from .structures.messages import Frame
-from ..game import game_state_controller
-
 from omegaconf import OmegaConf, DictConfig
 
-conf_path: str = "./config/conf.yaml"
+conf_path: str = "./config/"
+conf_file_path: str = "conf.yaml"
 
 
 class Engine:
@@ -19,7 +17,7 @@ class Engine:
 
         # Load config values
         if os.path.exists(conf_path):
-            self.conf = OmegaConf.load(conf_path)
+            self.conf = OmegaConf.load(conf_path + conf_file_path)
 
         else:
             self.conf = OmegaConf.create(self.get_default_conf())
@@ -40,26 +38,6 @@ class Engine:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._shutdown()
 
-    @staticmethod
-    def get_frame() -> Frame:
-        """
-
-        Returns:
-
-        """
-        return game_state_controller.get_current_frame()
-
-    @staticmethod
-    def submit(user_input: any) -> bool:
-        """
-
-        Args:
-            user_input:
-
-        Returns:
-
-        """
-        return game_state_controller.deliver_input(user_input)
 
     @staticmethod
     def get_default_conf() -> dict[str, any]:
@@ -80,4 +58,12 @@ class Engine:
             raise ValueError("Engine::conf must not be None!")
 
         else:
-            OmegaConf.save(self.conf, conf_path)
+            if not os.path.exists(conf_path):
+                try:
+                    os.mkdir(conf_path)
+                except:
+                    pass
+
+                f = open(conf_path + conf_file_path, "x")
+                f.close()
+            OmegaConf.save(self.conf, conf_path + conf_file_path)
