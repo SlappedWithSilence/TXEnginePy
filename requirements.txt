@@ -3,4 +3,5 @@ pytest
 fastapi
 pydantic
 mypy
+omegaconf
 uvicorn[standard]
