@@ -1,9 +1,11 @@
 import os.path
 
+from loguru import logger
 from omegaconf import OmegaConf, DictConfig
 
-conf_path: str = "./config/"
+conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
+conf_path: str = conf_dir_path + conf_file_path
 
 
 class Engine:
@@ -16,8 +18,8 @@ class Engine:
         """
 
         # Load config values
-        if os.path.exists(conf_path):
-            self.conf = OmegaConf.load(conf_path + conf_file_path)
+        if os.path.exists(conf_dir_path):
+            self.conf = OmegaConf.load(conf_path)
 
         else:
             self.conf = OmegaConf.create(self.get_default_conf())
@@ -38,7 +40,6 @@ class Engine:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._shutdown()
 
-
     @staticmethod
     def get_default_conf() -> dict[str, any]:
         """
@@ -58,12 +59,12 @@ class Engine:
             raise ValueError("Engine::conf must not be None!")
 
         else:
-            if not os.path.exists(conf_path):
+            if not os.path.exists(conf_dir_path):
                 try:
-                    os.mkdir(conf_path)
-                except:
-                    pass
+                    os.mkdir(conf_dir_path)
+                except FileExistsError:
+                    logger.info("Config folder exists, skipping....")
 
-                f = open(conf_path + conf_file_path, "x")
+                f = open(conf_path, "x")
                 f.close()
-            OmegaConf.save(self.conf, conf_path + conf_file_path)
+            OmegaConf.save(self.conf, conf_path)
