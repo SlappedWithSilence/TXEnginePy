@@ -47,7 +47,8 @@ class Engine:
         Returns:
 
         """
-        return {"io": {"save_data_path": "./saves", "asset_path": "./assets"}}
+        return {"io": {"save_data_path": "./saves", "asset_path": "./assets"},
+                "inventory": {"default_capacity": 10}}
 
     def write_conf(self) -> None:
         """
