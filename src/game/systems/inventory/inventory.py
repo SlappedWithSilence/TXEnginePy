@@ -5,7 +5,7 @@ from ... import engine
 
 @dataclasses.dataclass
 class Inventory:
-    capacity: int = engine.conf.inventory.default_capacity
+    capacity: int = engine.conf.inventory.default_capacity  # Read default value that was loaded from config
     items: list[tuple[int, int]] = dataclasses.field(default_factory=list)
 
     @property

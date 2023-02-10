@@ -1,6 +1,8 @@
+import dataclasses
 from typing import Union
 
 
+@dataclasses.dataclass
 class Currency:
     """Currency records information about money an entity owns.
 
@@ -8,12 +10,15 @@ class Currency:
     A stage describes a quantified grouping. For example, USD has a stage of "cents: 1" and "dollars: 100"
     A Currency must have a first stage with a value of 1.
     """
+    id: int
+    name: str
+    stages: dict[str, int]
+    quantity: int = 0
+    allow_negative: bool = False
 
-    def __init__(self, name: str, stages: dict[str, int], quantity: int = 0, allow_negative: bool = False):
-        self.name: str = name
-        self.stages: dict[str, int] = stages
-        self.quantity: int = quantity
-        self.allow_negative: bool = allow_negative
+    @property
+    def key(self) -> tuple[int, str]:
+        return self.id, self.name
 
     def __str__(self) -> str:
         sorted_stages = list(self.stages.items())
@@ -36,14 +41,14 @@ class Currency:
 
         # If (Currency + Currency)
         if isinstance(other, type(self)):
-            if self.name != other.name:
+            if self.id != other.id:
                 raise ValueError(f"Cannot add currencies of different names! {self.name}, {other.name}")
 
-            return Currency(self.name, self.stages, self.quantity + other.quantity)
+            return Currency(self.id, self.name, self.stages, self.quantity + other.quantity)
 
         # If (Currency + Int)
         elif isinstance(other, int):
-            return Currency(self.name, self.stages, self.quantity + other)
+            return Currency(self.id, self.name, self.stages, self.quantity + other)
 
         else:
             raise TypeError(f"Cannot add {type(self)} and {type(other)}!")
@@ -55,24 +60,24 @@ class Currency:
             if self.name != other.name:
                 raise ValueError(f"Cannot subtract currencies of different names! {self.name}, {other.name}")
 
-            return Currency(self.name, self.stages, self.quantity - other.quantity)
+            return Currency(self.id, self.name, self.stages, self.quantity - other.quantity)
 
         # If (Currency - Int)
         elif isinstance(other, int):
-            return Currency(self.name, self.stages, self.quantity - other)
+            return Currency(self.id, self.name, self.stages, self.quantity - other)
         else:
             raise TypeError(f"Cannot subtract  {type(self)} and {type(other)}!")
 
     def __mul__(self, other):
         if isinstance(other, int) or isinstance(other, float):
-            return Currency(self.name, self.stages, int(self.quantity * other))
+            return Currency(self.id, self.name, self.stages, int(self.quantity * other))
 
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
 
     def __divmod__(self, other):
         if isinstance(other, int) or isinstance(other, float):
-            return Currency(self.name, self.stages, int(self.quantity / other))
+            return Currency(self.id, self.name, self.stages, int(self.quantity / other))
 
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
@@ -98,10 +103,69 @@ class Currency:
             raise TypeError(f"Cannot set a Currency's quantity to type {type(quantity)}! Must be of type int.")
 
 
+@dataclasses.dataclass
+class CoinPurse:
+    currencies: dict[tuple[int, str], Currency] = dataclasses.field(default_factory=dict)
+
+    def balance(self, cur: Currency | int | str | tuple[int, str]) -> int:
+        # If the passed value is a Currency
+        if type(cur) == Currency:
+            if cur.key in self.currencies:
+                return self.currencies[cur.key].quantity
+
+        # If the passed type is a Currency.key
+        if type(cur) == tuple[int, str]:
+            if cur in self.currencies:
+                return self.currencies[cur].quantity
+
+        # TODO: Improve lookup syntax
+        # If the passed type is Currency.id or Currency.name
+        if type(cur) == int or type(cur) == str:
+            for key in self.currencies:
+                if key[0] == cur or key[1] == cur:
+                    return self.currencies[key].quantity
+
+        return 0
+
+    def spend(self, cur: Currency | int | str | tuple[int, str], quantity: int | None = None) -> bool:
+        if type(cur) == Currency:
+            if self.balance(cur) >= cur.quantity:
+                self.currencies[cur.key] = self.currencies[cur.key] - cur
+                return True
+
+        elif (type(cur) == int or type(cur) == str or type(cur) == tuple[int, str]) and type(quantity) == int:
+            if type(cur) == tuple and cur in self.currencies:
+                if self.currencies[cur].quantity >= quantity:
+
+                    # Currency exists and has sufficient quantity
+                    self.currencies[cur] = self.currencies[cur] - quantity
+                    return True
+
+                # The currency exists, but has insufficient quantity
+                return False
+
+            elif cur not in self.currencies:
+                # THe currency doesn't exist
+                return False
+
+            for key in self.currencies:
+
+                # Currency exists and is sufficient
+                if cur in key and self.balance(key) >= quantity:
+                    self.currencies[key] = self.currencies[key] - quantity
+                    return True
+
+                # Currency exists and is insufficient
+                elif cur in key and self.balance(key) < quantity:
+                    return False
+
+            return False
+
+
 if __name__ == "__main__":
     stages = {"cents": 1, "dollars": 100}
-    currency = Currency("USD", stages, quantity=533)
-    currency_2 = Currency("USD", stages, quantity=15)
+    currency = Currency(1, "USD", stages, quantity=533)
+    currency_2 = Currency(2, "USD", stages, quantity=15)
     print(currency)
     print(currency * 2)
     print(currency * 0)
@@ -109,5 +173,6 @@ if __name__ == "__main__":
     print(currency + 55)
 
     stages = {"bronze": 1, "silver": 100, "gold": 1000}
-    currency = Currency("Imperial", stages, 66021)
+    currency = Currency(3, "Imperial", stages, 66021)
     print(currency)
+
