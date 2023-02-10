@@ -1,7 +1,7 @@
 from ...structures.manager import Manager
 
 
-class CurrencyManager (Manager):
+class CurrencyManager(Manager):
     """
     An object that manages TXEngine's Currency system. This includes loading and saving currency asset definitions,
     validating various currency conversions, and more.
