@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from loguru import logger
 
-from game import engine, state_device_controller
+from game import state_device_controller
 
 tx_engine = FastAPI()  # FastAPI service object that hosts TXEngine
 

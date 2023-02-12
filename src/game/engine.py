@@ -34,8 +34,9 @@ class Engine:
         """
 
     def __init__(self):
-        self.conf: DictConfig = None
-        self._startup()
+        self.conf: DictConfig = None  # The global config. # TODO: Move to a package-level cache
+        self.player_location: int = 0  # The player's location, as it relates to room ids
+        self._startup()  # Call startup logic.
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._shutdown()
