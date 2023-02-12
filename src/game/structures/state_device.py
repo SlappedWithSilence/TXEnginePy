@@ -1,18 +1,21 @@
-import dataclasses
 import weakref
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from .enums import InputType, is_valid_range, to_range, affirmative_range
 from .messages import Frame
 
 from loguru import logger
 
 
-@dataclasses.dataclass
-class StateDevice:
-    input_type: InputType
-    input_range: dict[str, int] = dataclasses.field(default_factory=to_range)
-    name: str = "StateDevice"
-    _controller: any = None  # This value should only be set by the GameStateController
+class StateDevice(ABC):
+    """
+    An abstract class that defines an object that represents game logic
+    """
+
+    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = "StateDevice"):
+        self.input_type: InputType = input_type
+        self.input_range: dict[str, int] = input_range or to_range()
+        self.name: str = name
+        self._controller: any = None  # This value should only be set by the GameStateController
 
     @property
     def controller(self) -> any:
@@ -165,7 +168,7 @@ class StateDevice:
                      )
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.__class__.name})"
+        return f"{self.name} ({self.__class__.__name__})"
 
     def to_frame(self) -> Frame:
         """

@@ -1,6 +1,7 @@
 import dataclasses
 
 from ..currency.currency import Currency
+from ..requirement.requirements import RequirementsMixin
 
 
 @dataclasses.dataclass
@@ -16,10 +17,9 @@ class Item:
 
 
 @dataclasses.dataclass
-class Consumable(Item):
+class Consumable(Item, RequirementsMixin):
     """
     A consumable item. When consumed, this item's stack quantity decreases by 1 and the effects in 'effects' are
     triggered in sequence.
     """
     effects: list = dataclasses.field(default_factory=list)  # A list of effects that trigger when the item is consumed
-    requirements: list = dataclasses.field(default_factory=list)  # A list of requirements to use the item
