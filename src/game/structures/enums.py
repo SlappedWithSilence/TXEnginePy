@@ -25,6 +25,19 @@ class InputType(enum.Enum):
 affirmative_range = ['y', 'n', 'yes', 'no']
 
 
+def affirmative_to_bool(user_input: str) -> bool:
+    """
+    Transform user input into a bool.
+
+    """
+    if user_input in ['y', 'yes']:
+        return True
+    elif user_input in ['n', 'no']:
+        return False
+    else:
+        return None
+
+
 def to_range(min_value: int = None, max_value: int = None, length: int = None) -> dict[str, int | None]:
     """
     Transform values into a standardized dict structure.
