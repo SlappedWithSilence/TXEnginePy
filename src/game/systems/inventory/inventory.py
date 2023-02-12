@@ -1,4 +1,5 @@
 import dataclasses
+import weakref
 
 from ... import engine
 
@@ -7,6 +8,43 @@ from ... import engine
 class Inventory:
     capacity: int = engine.conf.inventory.default_capacity  # Read default value that was loaded from config
     items: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+
+    # Private Methods
+    def _all_stack_indexes(self, item_id: int) -> list[int]:
+        """
+        Returns a list of the indexes of all stacks with a matching item_id.
+
+        Args:
+            item_id: The ID to look up
+
+        Returns: A list of indexes to valid stacks in the inventory
+        """
+        if type(item_id) != int:
+            raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
+
+        return [idx for idx, stack in enumerate(self.items) if stack[0] == item_id]
+
+    def _all_stacks(self, item_id:int) -> list[tuple[int, int]]:
+        if type(item_id) != int:
+            raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
+
+        return [weakref.proxy(stack) for stack in self.items if stack[0] == item_id]
+
+    def _total_quantity(self, item_id: int) -> int:
+        """
+        Computes the sum of the quantities of a given item in all available stacks.
+
+        Args:
+            item_id: The ID of the item whose sum to compute
+
+        Returns: The total sum quantity of the item in the inventory
+        """
+        if type(item_id) != int:
+            raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
+
+        return sum(self._all_stacks(item_id))
+
+    # Public Methods
 
     @property
     def full(self) -> bool:
@@ -27,6 +65,36 @@ class Inventory:
         Returns: True if the quantity of item_id was consumed, False otherwise
 
         """
+        if type(item_id) != int or type(quantity) != int:
+            raise TypeError(
+                f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
+
+        if self._total_quantity(item_id) < quantity:
+            return False
+
+        already_consumed: int = 0
+        while already_consumed < quantity:
+
+            # If the loop is started over a list of zero stacks, raise an error to avoid an infinite loop
+            if len(self._all_stack_indexes(item_id)) < 1:
+                raise ValueError(f"Something went wrong while trying to consume item::{item_id}.")
+
+            for stack_index in self._all_stack_indexes(item_id):
+
+                # If the current stack is bigger than needed, adjust its size and return True
+                if self.items[stack_index][1] > quantity - already_consumed:
+                    self.items[stack_index] = item_id, self.items[stack_index][1] - (quantity - already_consumed)
+                    return True
+
+                # If the current stack is exactly the size needed, delete it and return True
+                elif self.items[stack_index][1] == quantity - already_consumed:
+                    del self.items[stack_index]
+                    return True
+
+                # If the stack is too small, record its size as consumed and delete it.
+                else:
+                    already_consumed = already_consumed + self.items[stack_index][1]
+                    del self.items[stack_index]
 
     def add_item(self, item_id: int, quantity: int) -> None:
         """
@@ -41,7 +109,10 @@ class Inventory:
         Returns: None
 
         """
-        pass
+        if type(item_id) != int or type(quantity) != int:
+            raise TypeError(
+                f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
+
         # Case 1: item already in inventory
         # Case 1a: non-full stack exists
         # Case 1a.a add items into non-full stack.
