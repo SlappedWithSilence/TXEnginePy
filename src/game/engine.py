@@ -1,10 +1,13 @@
 import os.path
 
+from .formatting import register_arguments, register_style
+
 from loguru import logger
 from omegaconf import OmegaConf, DictConfig
 
 conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
+style_file_path: str = "styles.yaml"
 conf_path: str = conf_dir_path + conf_file_path
 
 
@@ -32,9 +35,17 @@ class Engine:
         """
         self._debug_init_early()
 
-        # Load config values
+        # Load config values from disk
         if os.path.exists(conf_dir_path):
+
+            # Load config data
             self.conf = OmegaConf.load(conf_path)
+
+            # Load style data
+            raw_style = OmegaConf.load(conf_dir_path + style_file_path)
+            register_arguments(raw_style.arguments)
+            for style in raw_style.get("styles").items():
+                register_style(*style)
 
         else:
             self.conf = OmegaConf.create(self.get_default_conf())
