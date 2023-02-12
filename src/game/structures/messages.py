@@ -10,7 +10,7 @@ class StringContent(BaseModel):
     An object that stores a string alongside formatting data.
     """
     value: str
-    formatting: list[str]
+    formatting: list[str] | None = None
 
     def __str__(self) -> str:
         return self.value

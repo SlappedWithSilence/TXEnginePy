@@ -15,11 +15,11 @@ class EquipmentType(enum.Enum):
 
 
 class InputType(enum.Enum):
-    AFFIRMATIVE = 0,
-    INT = 1,
-    STR = 2,
-    SILENT = 3,
-    NONE = 4
+    AFFIRMATIVE = "affirmative",  # Get a yes or no
+    INT = "int",  # Get an int
+    STR = "str",  # Get a string
+    SILENT = "silent",  # Operate silently, don't attempt to prompt user
+    NONE = "null"  # Get any key value as a response. Useful to simply prompt the user to continue
 
 
 affirmative_range = ['y', 'n', 'yes', 'no']

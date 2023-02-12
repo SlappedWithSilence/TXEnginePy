@@ -17,7 +17,6 @@ class StackState:
     recoverable: bool | None = None
 
 
-@dataclasses.dataclass
 class GameStateController:
     """
     An object that manages game states.
@@ -25,8 +24,9 @@ class GameStateController:
     GameStateController is singleton class that transforms StateDevices into Frames and delivering user inputs to the
     correct StateDevices.
     """
-    state_device_stack: list[StateDevice] = dataclasses.field(default_factory=list)
-    state_stack_properties: StackState = StackState()
+    def __init__(self):
+        self.state_device_stack: list[StateDevice] = []
+        self.state_stack_properties: StackState = StackState()
 
     # Built-ins
 

@@ -32,4 +32,5 @@ class RequirementsMixin:
         Returns: True if all requirements are fulfilled, False otherwise
 
         """
+
         return all([req.fulfilled for req in self.requirements])
