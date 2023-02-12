@@ -1,4 +1,7 @@
+import copy
+
 from ...structures.manager import Manager
+from .currency import Currency
 
 
 class CurrencyManager(Manager):
@@ -15,5 +18,20 @@ class CurrencyManager(Manager):
 
     def __init__(self):
         super().__init__()
+        self.currencies: dict[int, Currency] = {}
+
+    def to_currency(self, currency_id: int, quantity: int) -> Currency:
+        """
+        Convert a currency id and quantity into a Currency object.
+
+        Args:
+            currency_id (int): The ID of the currency to instantiate
+            quantity (int):  The quantity to set the currency to
+        """
+
+        cur = copy.deepcopy(self.currencies[currency_id])
+        cur.quantity = quantity
+        return cur
 
 
+currency_manager = CurrencyManager()
