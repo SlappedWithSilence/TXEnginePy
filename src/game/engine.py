@@ -10,12 +10,27 @@ conf_path: str = conf_dir_path + conf_file_path
 
 class Engine:
 
+    def _debug_init_early(self) -> None:
+        """
+        A special function that runs before startup to supoprt debugging efforts.
+        Returns: None
+
+        """
+
+    def _debug_init_late(self) -> None:
+        """
+        A special function that runs post-startup to support debugging efforts.
+        Returns:
+
+        """
+
     def _startup(self):
         """
         Perform required startup logic
 
         Returns: None
         """
+        self._debug_init_early()
 
         # Load config values
         if os.path.exists(conf_dir_path):
@@ -24,6 +39,8 @@ class Engine:
         else:
             self.conf = OmegaConf.create(self.get_default_conf())
             self.write_conf()
+
+        self._debug_init_late()
 
     def _shutdown(self):
         """
