@@ -88,7 +88,7 @@ def is_valid_range(input_type: InputType, min_value: any = None, max_value: any 
 
         # If both upper and lower limit, upper limit must be higher than lower limit
         else:
-            return max_value > min_value
+            return (max_value or 0) >= min_value
 
     if input_type == InputType.STR:
         return not length or (type(length) == int and length > 0)
