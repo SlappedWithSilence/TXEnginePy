@@ -89,12 +89,13 @@ class StateDevice(ABC):
         pass
 
     def validate_input(self, input_value) -> bool:
+        logger.info(f"Validating value: {input_value} on input_type: {self.input_type}")
 
         if self.input_type == InputType.SILENT:
             return True
 
         # Input must be str matching the set of strings in the array
-        if self.input_type == InputType.AFFIRMATIVE:
+        elif self.input_type == InputType.AFFIRMATIVE:
             if type(input_value) == str and str.lower(input_value) in affirmative_range:
                 return True
             else:
@@ -103,7 +104,9 @@ class StateDevice(ABC):
 
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
+            logger.warning("Reached INT layer")
             if type(input_value) == int:
+                logger.warning("Passed type check")
                 if self.input_range["min"] and input_value < self.input_range["min"]:
                     logger.warning(f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
                     return False
@@ -113,6 +116,8 @@ class StateDevice(ABC):
                     return False
 
                 return True
+            else:
+                logger.warning(f"input_type.INT requires int, not type: {type(input_value)}!")
 
         # Input must be a str shorter than length
         elif self.input_type == InputType.STR:

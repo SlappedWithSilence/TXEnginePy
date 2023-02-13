@@ -1,10 +1,10 @@
 import copy
 
-from ...structures.manager import Manager
-from .currency import Currency
+import game.structures.manager as manager
+import game.systems.currency.currency as currency
 
 
-class CurrencyManager(Manager):
+class CurrencyManager(manager.Manager):
     """
     An object that manages TXEngine's Currency system. This includes loading and saving currency asset definitions,
     validating various currency conversions, and more.
@@ -18,9 +18,9 @@ class CurrencyManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self.currencies: dict[int, Currency] = {}
+        self.currencies: dict[int, currency.Currency] = {}
 
-    def to_currency(self, currency_id: int, quantity: int) -> Currency:
+    def to_currency(self, currency_id: int, quantity: int) -> currency.Currency:
         """
         Convert a currency id and quantity into a Currency object.
 

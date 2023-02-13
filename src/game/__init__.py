@@ -1,5 +1,6 @@
-from .game_state_controller import GameStateController
 from .engine import Engine
+from .game_state_controller import GameStateController
+
 
 managers: list = []
 engine: Engine = Engine()

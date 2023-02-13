@@ -1,23 +1,24 @@
 import weakref
 
-from .room import Room
-from ..action.actions import ExitAction
-from ...structures.manager import Manager
+import game.systems.room.room as room
+import game.systems.action.actions as actions
+import game.structures.manager as manager
 
 from loguru import logger
 
-class RoomManager(Manager):
+
+class RoomManager(manager.Manager):
 
     def __init__(self):
         super().__init__()
 
         logger.info("RoomManager::init")
-        self.rooms: dict[int, Room] = {}
+        self.rooms: dict[int, room.Room] = {}
         self.visited_rooms: set[int] = set()
         self.load()
         logger.info("RoomManager::init.done")
 
-    def register_room(self, room_object: Room, room_id_override: int = None) -> None:
+    def register_room(self, room_object: room.Room, room_id_override: int = None) -> None:
         """
         Register a Room object with the RoomManager
 
@@ -32,7 +33,7 @@ class RoomManager(Manager):
 
         self.rooms[room_id_override or room_object.id] = room_object
 
-    def get_room(self, room_id: int) -> Room:
+    def get_room(self, room_id: int) -> room.Room:
         """
         Return a weak reference to the desired room.
 
@@ -47,7 +48,7 @@ class RoomManager(Manager):
 
         return weakref.proxy(self.rooms[room_id])
 
-    def visit_room(self, r: int | Room) -> None:
+    def visit_room(self, r: int | room.Room) -> None:
         """
         Sets a room as 'visited' by the RoomManager
 
@@ -59,7 +60,7 @@ class RoomManager(Manager):
 
         if type(r) == int:
             self.visited_rooms.add(r)
-        elif type(r) == Room:
+        elif type(r) == room.Room:
             self.visited_rooms.add(r.id)
         else:
             raise TypeError(f"Expected type int or Room! Got {type(r)} instead.")
@@ -73,11 +74,11 @@ class RoomManager(Manager):
 
     def load(self) -> None:
 
-        exit_r_1 = ExitAction(1)
-        exit_r_0 = ExitAction(0)
+        exit_r_1 = actions.ExitAction(1)
+        exit_r_0 = actions.ExitAction(0)
 
-        r_0 = Room(action_list=[exit_r_1], enter_text="A debug room", id=0)
-        r_1 = Room(action_list=[exit_r_0], enter_text="Another debug room", id=1)
+        r_0 = room.Room(action_list=[exit_r_1], enter_text="A debug room", id=0)
+        r_1 = room.Room(action_list=[exit_r_0], enter_text="Another debug room", id=1)
         self.register_room(r_0)
         self.register_room(r_1)
 

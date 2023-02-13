@@ -1,5 +1,6 @@
 import enum
 
+from loguru import logger
 
 class EquipmentType(enum.Enum):
     WEAPON = 0,
@@ -69,7 +70,6 @@ def is_valid_range(input_type: InputType, min_value: any = None, max_value: any 
     Returns:
         True if the given parameters are valid for the given InputType, False otherwise
     """
-
     if type(input_type) != InputType:
         raise TypeError(f"Cannot evaluate type {type(input_type)}! Must be of type InputType")
 
