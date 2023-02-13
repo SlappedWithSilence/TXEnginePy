@@ -1,9 +1,9 @@
 from abc import ABC
 
-from src.game.structures.enums import InputType
-from src.game.structures.state_device import StateDevice
-from src.game.systems.event.events import Event
-from src.game.systems.requirement.requirements import RequirementsMixin, Requirement
+from ...structures.enums import InputType
+from ...structures.state_device import StateDevice
+from ..event.events import Event
+from ..requirement.requirements import RequirementsMixin, Requirement
 
 
 class Action(StateDevice, RequirementsMixin, ABC):
@@ -26,9 +26,10 @@ class Action(StateDevice, RequirementsMixin, ABC):
 
 class ExitAction(Action):
 
-    def __init__(self, menu_name: str, target_room: int, visible: bool, reveal_other_action_index: int, hide_after_use: bool,
-                 requirements: list, on_exit: list[Event] = None):
-        super().__init__(menu_name=menu_name, activation_text="", visible=visible,
+    def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
+                 reveal_other_action_index: int = -1, hide_after_use: bool = False, requirements: list = None,
+                 on_exit: list[Event] = None):
+        super().__init__(input_type=InputType.AFFIRMATIVE, menu_name=menu_name, activation_text="", visible=visible,
                          reveal_other_action_index=reveal_other_action_index, hide_after_use=hide_after_use,
                          requirements=requirements)
 
@@ -36,11 +37,15 @@ class ExitAction(Action):
         self.target_room = target_room
         self.input_type = InputType.AFFIRMATIVE
         self.__on_exit: list[Event] = on_exit or []
+        self.menu_name = self.menu_name or f"Go to LOOK UP ROOM NAME::{target_room}"
 
     # Override abstract methods
     def _logic(self, user_input: any) -> None:
-        room_manager.visit(self.owner.id)  # Inform the room manager that this room has now been effectively "visited".
-        self.owner.owner.set_dead()  # Set the action as dead
+        from game.systems.room import room_manager
+        from game import state_device_controller
+
+        room_manager.visit(self.room.id)  # Inform the room manager that this room has now been effectively "visited".
+        state_device_controller.set_dead()  # Set the action as dead
 
     @property
     def components(self) -> dict[str, any]:

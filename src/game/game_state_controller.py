@@ -2,6 +2,7 @@ import dataclasses
 
 from .structures.messages import Frame
 from .structures.state_device import StateDevice
+from .cfg import get_config
 
 from loguru import logger
 
@@ -27,6 +28,9 @@ class GameStateController:
     def __init__(self):
         self.state_device_stack: list[StateDevice] = []
         self.state_stack_properties: StackState = StackState()
+
+        from .systems.room import room_manager
+        self.add_state_device(room_manager.get_room(get_config()["room"]["default_id"]))
 
     # Built-ins
 
@@ -83,7 +87,7 @@ class GameStateController:
         Returns: None
 
         """
-        if type(device) != StateDevice:
+        if not isinstance(device, StateDevice):
             raise TypeError("device must be of type StateDevice!")
 
         logger.info(f"Adding state device: {str(device)}")

@@ -1,8 +1,8 @@
 import weakref
 
-from src.game.structures.enums import InputType
-from src.game.structures.state_device import StateDevice
-from src.game.systems.action.actions import Action
+from ...structures.enums import InputType
+from ...structures.state_device import StateDevice
+from ..action.actions import Action, ExitAction
 
 
 class Room(StateDevice):
@@ -27,7 +27,8 @@ class Room(StateDevice):
 
     @property
     def components(self) -> dict[str, any]:
-        return {"content": (self.first_enter_text + "\n" if room_manager.is_visited(self.id) else "") + self.text,
+        from . import room_manager
+        return {"content": (self.first_enter_text + "\n" if room_manager.is_visited(self.id) else "") + self.enter_text,
                 "options": self.options,
                 }
 
