@@ -1,8 +1,10 @@
 import dataclasses
 
-from .structures.messages import Frame
-from .structures.state_device import StateDevice
-from .cfg import get_config
+from .systems.room import room_manager
+
+import game.structures.messages as messages
+import game.structures.state_device as sd
+import game.cache as cache
 
 from loguru import logger
 
@@ -10,8 +12,8 @@ from loguru import logger
 @dataclasses.dataclass
 class StackState:
     """
-    A simple struct to store the properties of the top StateDevice. Only the state of the top device matters--
-    extracting these properties and storing them independently of the StateDevice class saves on time and memory.
+    A simple struct to store the properties of the top sd.StateDevice. Only the state of the top device matters--
+    extracting these properties and storing them independently of the sd.StateDevice class saves on time and memory.
     """
     dead: bool = False
     error: bool = False
@@ -22,48 +24,59 @@ class GameStateController:
     """
     An object that manages game states.
 
-    GameStateController is singleton class that transforms StateDevices into Frames and delivering user inputs to the
-    correct StateDevices.
+    GameStateController is singleton class that transforms sd.StateDevices into Frames and delivering user inputs to the
+    correct sd.StateDevices.
     """
     def __init__(self):
-        self.state_device_stack: list[StateDevice] = []
-        self.state_stack_properties: StackState = StackState()
-
-        from .systems.room import room_manager
-        self.add_state_device(room_manager.get_room(get_config()["room"]["default_id"]))
+        self.state_device_stack: list[tuple[sd.StateDevice, StackState]] = []
+        self.add_state_device(room_manager.get_room(cache.get_cache()["player_location"]))
 
     # Built-ins
 
     # Private functions
-    def _get_state_device(self, idx: int = -1) -> StateDevice:
+
+    def _burn_dead_devices(self) -> None:
+        """
+        Pops the state device stack until a live state device is on top
+        """
+        while len(self.state_device_stack) > 0 and self.state_device_stack[-1][1].dead:
+            self._pop_state_device()
+
+        if len(self.state_device_stack) < 1:
+            self.add_state_device(room_manager.get_room(cache.get_cache()["player_location"]))
+
+    def _get_state_device(self, idx: int = -1) -> sd.StateDevice:
         """
         Return the state device at the given index within the stack. By default, this returns the device on the top of
         the stack.
 
         Args:
-            idx: The index of the StateDevice to return. By default, this is '-1' (the top element)
+            idx: The index of the sd.StateDevice to return. By default, this is '-1' (the top element)
 
-        Returns: The requested StateDevice
+        Returns: The requested sd.StateDevice
 
         """
         if len(self.state_device_stack) < 1:
-            raise ValueError("No StateDevice loaded!")
-        return self.state_device_stack[idx]
+            raise ValueError("No sd.StateDevice loaded!")
 
-    def _pop_state_device(self) -> StateDevice:
+        self._burn_dead_devices()
+
+        return self.state_device_stack[idx][0]
+
+    def _pop_state_device(self) -> sd.StateDevice:
         """
-        Removes the top StateDevice from the state_device_stack and returns it
+        Removes the top sd.StateDevice from the state_device_stack and returns it
 
-        Returns: The top StateDevice on the state_device_stack
+        Returns: The top sd.StateDevice on the state_device_stack
 
         """
         logger.info(f"Popping state device: {str(self.state_device_stack[-1])}")
-        return self.state_device_stack.pop()
+        return self.state_device_stack.pop()[0]
 
     # Public functions
     def deliver_input(self, user_input: any) -> bool:
         """
-        Deliver the user's input to the top StateDevice. Returns True if the device accepts the input.
+        Deliver the user's input to the top sd.StateDevice. Returns True if the device accepts the input.
 
         Args:
             user_input: Input that the user delivers to the service via the API
@@ -77,9 +90,9 @@ class GameStateController:
 
         return False
 
-    def add_state_device(self, device: StateDevice) -> None:
+    def add_state_device(self, device: sd.StateDevice) -> None:
         """
-        Appends a StateDevice to the top of the state_device_stack
+        Appends a sd.StateDevice to the top of the state_device_stack
 
         Args:
             device: The device to append
@@ -87,29 +100,29 @@ class GameStateController:
         Returns: None
 
         """
-        if not isinstance(device, StateDevice):
-            raise TypeError("device must be of type StateDevice!")
+        if not isinstance(device, sd.StateDevice):
+            raise TypeError("device must be of type sd.StateDevice!")
 
         logger.info(f"Adding state device: {str(device)}")
-        self.state_device_stack.append(device)
+        self.state_device_stack.append((device, StackState()))
 
     def set_dead(self, val: bool = True) -> None:
         """
         A public function that allows state devices to mark themselves as terminated at a global scope. This is the
-        proper way for a StateDevice to inform the game engine that it should be removed from the stack
+        proper way for a sd.StateDevice to inform the game engine that it should be removed from the stack
         Args:
-            val: If the StateDevice is dead, True. Otherwise, False.
+            val: If the sd.StateDevice is dead, True. Otherwise, False.
 
         Returns: None
         """
         logger.info(f"Marking {self._get_state_device()} as dead...")
-        self.state_stack_properties.dead = val
+        self.state_device_stack[-1][1].dead = True
 
-    def get_current_frame(self) -> Frame:
+    def get_current_frame(self) -> messages.Frame:
         """
-        Convert the top StateDevice into a Frame and return it.
+        Convert the top sd.StateDevice into a Frame and return it.
 
-        Returns: The Frame generated by the top StateDevice in the state_device_stack
+        Returns: The Frame generated by the top sd.StateDevice in the state_device_stack
 
         """
         return self._get_state_device().to_frame()
