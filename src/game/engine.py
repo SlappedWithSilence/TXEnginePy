@@ -1,7 +1,7 @@
 import os.path
 
 from .formatting import register_arguments, register_style
-from .cfg import get_config, set_config
+from .cache import get_config, set_config, get_cache
 
 from loguru import logger
 from omegaconf import OmegaConf, DictConfig
@@ -58,6 +58,8 @@ class Engine:
         else:
             self.write_styles()
             raise IOError("No styles.yaml! Generating empty styles...")
+
+        get_cache()["player_location"] = get_config()["room"]["default_id"]
 
         logger.info("Engine::startup.done")
         self._debug_init_late()
