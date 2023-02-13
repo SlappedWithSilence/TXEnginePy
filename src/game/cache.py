@@ -1,5 +1,3 @@
-import weakref
-
 config: dict[str, any] = None
 cache: dict[str, any] = {}
 

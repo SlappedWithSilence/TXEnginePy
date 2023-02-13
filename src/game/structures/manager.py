@@ -1,4 +1,7 @@
+import game.cache as cache
+
 from abc import ABC
+import weakref
 
 from loguru import logger
 
@@ -12,7 +15,12 @@ class Manager(ABC):
 
     def __init__(self):
         self.name = self.__class__.__name__
-        logger.info("Registering with cache...")
+
+        if "managers" not in cache.get_cache():
+            cache.get_cache()["managers"] = []
+
+        logger.info("Registering manager with cache...")
+        cache.get_cache()["managers"].append(weakref.proxy(self))
 
     def load(self) -> None:
         raise NotImplementedError
