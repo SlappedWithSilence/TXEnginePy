@@ -41,6 +41,9 @@ class StateDevice(ABC):
 
     @property
     def domain_max(self) -> any:
+        """
+        An optional value that determines the maximum value a submitted int can have
+        """
         return self.input_range["max"]
 
     @domain_max.setter
@@ -55,6 +58,9 @@ class StateDevice(ABC):
 
     @property
     def domain_length(self) -> [int, None]:
+        """
+        An optional value that determines the maximum length of a submitted string
+        """
         if "length" not in self.input_range:
             return None
 
@@ -72,6 +78,9 @@ class StateDevice(ABC):
 
     @property
     def input_domain(self) -> dict[str, any]:
+        """
+        A map that stores the domain of the allowed values for the StateDevice
+        """
         return self.input_range
 
     @input_domain.setter
@@ -86,11 +95,20 @@ class StateDevice(ABC):
     @property
     @abstractmethod
     def components(self) -> dict[str, any]:
+        """
+        The basic display components of the device
+        """
         pass
 
     def validate_input(self, input_value) -> bool:
-        logger.info(f"Validating value: {input_value} on input_type: {self.input_type}")
+        """
+        Compare the user's input against the allowed values to determine if it is valid.
 
+        Args:
+            input_value: The user's input
+
+        Returns: True if the input value is valid, False otherwise
+        """
         if self.input_type == InputType.SILENT:
             return True
 
@@ -104,9 +122,7 @@ class StateDevice(ABC):
 
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
-            logger.warning("Reached INT layer")
             if type(input_value) == int:
-                logger.warning("Passed type check")
                 if self.input_range["min"] and input_value < self.input_range["min"]:
                     logger.warning(f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
                     return False
