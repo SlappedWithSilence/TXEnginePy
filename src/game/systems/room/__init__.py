@@ -76,8 +76,8 @@ class RoomManager(Manager):
         exit_r_1 = ExitAction(1)
         exit_r_0 = ExitAction(0)
 
-        r_0 = Room(actions=[exit_r_1], enter_text="A debug room", id=0)
-        r_1 = Room(actions=[exit_r_0], enter_text="Another debug room", id=1)
+        r_0 = Room(action_list=[exit_r_1], enter_text="A debug room", id=0)
+        r_1 = Room(action_list=[exit_r_0], enter_text="Another debug room", id=1)
         self.register_room(r_0)
         self.register_room(r_1)
 

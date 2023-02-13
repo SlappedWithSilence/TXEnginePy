@@ -49,12 +49,15 @@ class StateDevice(ABC):
                           min_value=self.domain_min,
                           max_value=val,
                           length=self.domain_length):
-            self.input_range["min"] = val
+            self.input_range["max"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
     @property
     def domain_length(self) -> [int, None]:
+        if "length" not in self.input_range:
+            return None
+
         return self.input_range["length"]
 
     @domain_length.setter
