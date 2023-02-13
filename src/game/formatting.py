@@ -69,4 +69,4 @@ def get_style(style_name: str) -> list[str]:
     if style_name not in formatting:
         raise ValueError(f"Cannot locate style {style_name}")
 
-    return formatting[style_name]
+    return list(formatting[style_name])
