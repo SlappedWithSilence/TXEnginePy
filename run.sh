@@ -1,0 +1,1 @@
+uvicorn --app-dir=src/ main:tx_engine --reload
