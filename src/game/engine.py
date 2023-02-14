@@ -14,6 +14,9 @@ style_path: str = conf_dir_path + style_file_path
 
 
 class Engine:
+    """
+    A high-level manager that coordinates disk-io, config manipulation, loading content, saving content, and more
+    """
 
     def _debug_init_early(self) -> None:
         """
