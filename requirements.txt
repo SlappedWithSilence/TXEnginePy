@@ -5,3 +5,4 @@ pydantic
 mypy
 omegaconf
 uvicorn[standard]
+requests
