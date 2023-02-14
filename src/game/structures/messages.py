@@ -3,6 +3,11 @@ from typing import Any
 from pydantic import BaseModel
 
 from .enums import InputType
+from game.formatting import get_style
+
+
+def _to_style_args(form: list[str] | str) -> list[str]:
+    return form if type(form) == list else get_style(form)
 
 
 class StringContent(BaseModel):
@@ -10,7 +15,11 @@ class StringContent(BaseModel):
     An object that stores a string alongside formatting data.
     """
     value: str
-    formatting: list[str] | None = None
+    formatting: list[str] | str
+
+    def __init__(self, **data):
+        data["formatting"] = _to_style_args(data["formatting"])  # Allow for style name references
+        super().__init__(**data)
 
     def __str__(self) -> str:
         return self.value
