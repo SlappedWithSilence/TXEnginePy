@@ -7,6 +7,7 @@ import game.structures.enums as enums
 import game.structures.state_device as state_device
 import game.systems.event.events as events
 import game.systems.requirement.requirements as requirements
+from game.structures.messages import StringContent
 
 
 class Action(state_device.StateDevice, requirements.RequirementsMixin, ABC):
@@ -28,7 +29,9 @@ class Action(state_device.StateDevice, requirements.RequirementsMixin, ABC):
 
 
 class ExitAction(Action):
-
+    """
+    An Action that signal to the state_device_controller that the containing Room StateDevice should be terminated
+    """
     def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False, requirement_list: list = None,
                  on_exit: list[events.Event] = None):
@@ -51,7 +54,9 @@ class ExitAction(Action):
 
     @property
     def components(self) -> dict[str, any]:
-        return {"content": f"Do you want to move to {self.target_room}"}
+        return {"content":
+                    [f"Do you want to move to", StringContent(value=room.room_manager.get_name(self.target_room), formatting="room_name")]
+                }
 
 
 class TestAction(Action):
