@@ -33,8 +33,6 @@ class FlagEvent(Event):
 class AbilityEvent(Event):
     """Causes the player to learn a given ability"""
 
-
-
     def __init__(self, ability: int):
         super().__init__(input_type=enums.InputType.NONE)
         self.target_ability: int = ability
@@ -83,9 +81,11 @@ class ItemEvent(Event):
     def components(self) -> dict[str, any]:
         # TODO: Implement translate item.id to item.name
         return {"content": [messages.StringContent(value="You've found"),
-                            messages.StringContent(value=str(self.quantity), formatting=formatting.get_style("item_quantity")),
+                            messages.StringContent(value=str(self.quantity),
+                                                   formatting=formatting.get_style("item_quantity")),
                             messages.StringContent(value=" of "),
-                            messages.StringContent(value=f"item::{self.item_id}", formatting=formatting.get_style("item_name")),
+                            messages.StringContent(value=f"item::{self.item_id}",
+                                                   formatting=formatting.get_style("item_name")),
                             messages.StringContent(value=". Do you want to add it to your inventory?")
                             ]
                 }
@@ -134,6 +134,10 @@ class RecipeEvent(Event):
     def _logic(self, _: any) -> None:
         pass
 
+    @property
+    def components(self) -> dict[str, any]:
+        return {}
+
 
 class ReputationEvent(Event):
 
@@ -142,7 +146,8 @@ class ReputationEvent(Event):
         self.faction_id = faction_id
         self.reputation_change = reputation_change
         self.message = [messages.StringContent(value="Your reputation with "),
-                        messages.StringContent(value=f"faction::{faction_id}", formatting=formatting.get_style("faction_name")),
+                        messages.StringContent(value=f"faction::{faction_id}",
+                                               formatting=formatting.get_style("faction_name")),
                         messages.StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
                         messages.StringContent(value=f" by {reputation_change}")
                         ]
@@ -161,7 +166,7 @@ class ReputationEvent(Event):
         return {"content": self.message}
 
 
-class StatEvent(Event):
+class ResourceEvent(Event):
 
     def __init__(self, stat_name: str, stat_change: int | float):
         super().__init__(input_type=enums.InputType.NONE)
@@ -173,4 +178,4 @@ class StatEvent(Event):
 
     @property
     def components(self) -> dict[str, any]:
-        pass
+        return {}
