@@ -1,3 +1,7 @@
+"""
+Contains the main Room object
+"""
+
 import weakref
 
 import game
@@ -8,7 +12,10 @@ import game.systems.room as room
 
 
 class Room(state_device.StateDevice):
-
+    """
+    A StateDevice that simulates a user being inside a "scene" or "room". Rooms act as a container for Actions, of which
+    a Room may have many.
+    """
     def __init__(self, id: int, action_list: list[actions.Action], enter_text: str, first_enter_text: str = "", name: str = "Room"):
         super().__init__(input_type=enums.InputType.INT, name=name)
 
@@ -34,6 +41,9 @@ class Room(state_device.StateDevice):
 
     @property
     def components(self) -> dict[str, any]:
+        """
+        Returns a JSON-formatted dict that contains all necessary text to render the room
+        """
         # Update domain maximum in case an action was hidden or made visible
         self.domain_max = len(self.options) - 1
 
@@ -47,8 +57,8 @@ class Room(state_device.StateDevice):
         if type(self.visible_actions[user_input] == actions.ExitAction):
             game.state_device_controller.set_dead()
 
-        # Execute selected option
-        game.state_device_controller.add_state_device(self.visible_actions[user_input])  # Launch the selected Action as a StateDevice
+        # Launch the selected Action as a StateDevice
+        game.state_device_controller.add_state_device(self.visible_actions[user_input])
 
 
 
