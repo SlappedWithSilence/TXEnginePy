@@ -39,7 +39,7 @@ class Engine:
         logger.info("Engine::startup")
         logger.info("Loading config...")
         # Load config values from disk
-        if os.path.exists(conf_dir_path):
+        if os.path.exists(conf_path):
 
             # Load config data
             set_config(OmegaConf.load(conf_path))
