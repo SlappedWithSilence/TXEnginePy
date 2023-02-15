@@ -100,8 +100,8 @@ class ShopAction(Action):
         self.wares: list[tuple[int, Currency]] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
         self.state = ShopState.DISPLAY
 
-    def _ware_to_option(self) -> list[StringContent | str]:
-        return None
+    def _ware_to_option(self) -> list[list[StringContent | str]]:
+        return [[] for item_id, currency in self.wares]
 
     @property
     def components(self) -> dict[str, any]:

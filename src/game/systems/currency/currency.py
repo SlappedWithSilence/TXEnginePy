@@ -105,61 +105,33 @@ class Currency:
 
 @dataclasses.dataclass
 class CoinPurse:
-    currencies: dict[tuple[int, str], Currency] = dataclasses.field(default_factory=dict)
+    currencies: dict[int, Currency] = dataclasses.field(default_factory=dict)
 
-    def balance(self, cur: Currency | int | str | tuple[int, str]) -> int:
+    def balance(self, cur: Currency | int) -> int:
         # If the passed value is a Currency
         if type(cur) == Currency:
-            if cur.key in self.currencies:
-                return self.currencies[cur.key].quantity
-
-        # If the passed type is a Currency.key
-        if type(cur) == tuple[int, str]:
-            if cur in self.currencies:
-                return self.currencies[cur].quantity
+            if cur.id in self.currencies:
+                return self.currencies[cur.id].quantity
 
         # TODO: Improve lookup syntax
         # If the passed type is Currency.id or Currency.name
-        if type(cur) == int or type(cur) == str:
-            for key in self.currencies:
-                if key[0] == cur or key[1] == cur:
-                    return self.currencies[key].quantity
+        if type(cur) == int:
+            return self.currencies[cur].quantity
 
         return 0
 
-    def spend(self, cur: Currency | int | str | tuple[int, str], quantity: int | None = None) -> bool:
+    def spend(self, cur: Currency | int, quantity: int | None = None) -> bool:
         if type(cur) == Currency:
             if self.balance(cur) >= cur.quantity:
-                self.currencies[cur.key] = self.currencies[cur.key] - cur
+                self.currencies[cur.id] = self.currencies[cur.id] - cur
                 return True
 
-        elif (type(cur) == int or type(cur) == str or type(cur) == tuple[int, str]) and type(quantity) == int:
-            if type(cur) == tuple and cur in self.currencies:
-                if self.currencies[cur].quantity >= quantity:
+        elif (type(cur) == int) and type(quantity) == int:
+            if self.balance(cur) >= quantity:
+                self.currencies[cur.id] = self.currencies[cur.id] - quantity
+                return True
 
-                    # Currency exists and has sufficient quantity
-                    self.currencies[cur] = self.currencies[cur] - quantity
-                    return True
-
-                # The currency exists, but has insufficient quantity
-                return False
-
-            elif cur not in self.currencies:
-                # THe currency doesn't exist
-                return False
-
-            for key in self.currencies:
-
-                # Currency exists and is sufficient
-                if cur in key and self.balance(key) >= quantity:
-                    self.currencies[key] = self.currencies[key] - quantity
-                    return True
-
-                # Currency exists and is insufficient
-                elif cur in key and self.balance(key) < quantity:
-                    return False
-
-            return False
+        return False
 
 
 if __name__ == "__main__":
