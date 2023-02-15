@@ -1,4 +1,5 @@
 from abc import ABC
+from enum import Enum
 
 import game
 import game.cache as cache
@@ -8,6 +9,7 @@ import game.structures.state_device as state_device
 import game.systems.event.events as events
 import game.systems.requirement.requirements as requirements
 from game.structures.messages import StringContent
+from game.systems.currency.currency import Currency
 
 
 class Action(state_device.StateDevice, requirements.RequirementsMixin, ABC):
@@ -16,7 +18,8 @@ class Action(state_device.StateDevice, requirements.RequirementsMixin, ABC):
     """
 
     def __init__(self, menu_name: str, activation_text: str, visible: bool = True, reveal_other_action_index: int = -1,
-                 hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None, *args, **kwargs):
+                 hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None, *args,
+                 **kwargs):
         super().__init__(*args, **kwargs)
 
         self._menu_name: str = menu_name  # Name of the Action when viewed from a room
@@ -26,7 +29,6 @@ class Action(state_device.StateDevice, requirements.RequirementsMixin, ABC):
         self.hide_after_use: bool = hide_after_use  # If True, the action will set itself to hidden after being used
         self.room: room.Room = None  # The Room that owns this action. Should ONLY be a weakref.proxy
         self.requirements = requirement_list or []
-
 
     @property
     def menu_name(self) -> str:
@@ -41,10 +43,12 @@ class ExitAction(Action):
     """
     An Action that signal to the state_device_controller that the containing Room StateDevice should be terminated
     """
+
     def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False, requirement_list: list = None,
                  on_exit: list[events.Event] = None):
-        super().__init__(input_type=enums.InputType.AFFIRMATIVE, menu_name=menu_name, activation_text="", visible=visible,
+        super().__init__(input_type=enums.InputType.AFFIRMATIVE, menu_name=menu_name, activation_text="",
+                         visible=visible,
                          reveal_other_action_index=reveal_other_action_index, hide_after_use=hide_after_use,
                          requirement_list=requirement_list)
 
@@ -55,7 +59,6 @@ class ExitAction(Action):
 
     # Override abstract methods
     def _logic(self, user_input: any) -> None:
-
         cache.get_cache()["player_location"] = self.target_room
         room.room_manager.visit_room(self.room.id)  # Inform the room manager that this room has been "visited"
         game.state_device_controller.set_dead()  # Set the action as dead
@@ -70,8 +73,44 @@ class ExitAction(Action):
     @property
     def components(self) -> dict[str, any]:
         return {"content":
-                    [f"Do you want to move to", StringContent(value=room.room_manager.get_name(self.target_room), formatting="room_name")]
+                    [f"Do you want to move to",
+                     StringContent(value=room.room_manager.get_name(self.target_room), formatting="room_name")]
                 }
+
+
+class ShopState(Enum):
+    DISPLAY = 0,
+    VERIFY = 1,
+    LEAVE = 2
+
+
+class ShopAction(Action):
+    """
+    An Action that simulates the user entering a shop.
+
+    A Shop's flow is as follows:
+    - 1. Display wares
+    - 2. Accept a purchase selection or exit  (input_type.int, min=-1, max=len(wares)
+    - 3. Check if purchase can be made and confirm, otherwise explain (input_type.affirmative or none)
+    - 4. Go to 2
+    """
+
+    def __init__(self, menu_name: str, activation_text: str, wares=list[tuple[int, Currency]], *args, **kwargs):
+        super().__init__(menu_name, activation_text, *args, **kwargs)
+        self.wares: list[tuple[int, Currency]] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
+        self.state = ShopState.DISPLAY
+
+    def _ware_to_option(self) -> list[StringContent | str]:
+        return None
+
+    @property
+    def components(self) -> dict[str, any]:
+        if self.state == ShopState.DISPLAY:
+            return {"content": [self.activation_text],
+                    "options": []}
+
+    def _logic(self, user_input: any) -> None:
+        pass
 
 
 class TestAction(Action):
