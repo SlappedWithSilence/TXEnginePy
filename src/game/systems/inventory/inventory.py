@@ -1,13 +1,16 @@
-import dataclasses
 import weakref
 
-from ... import engine
+import game.cache as cache
 
 
-@dataclasses.dataclass
 class Inventory:
-    capacity: int = engine.conf.inventory.default_capacity  # Read default value that was loaded from config
-    items: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+
+    def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
+        self.capacity: int = capacity
+        self.items: list[tuple[int, int]] = items or []
+
+        if not self.capacity:
+            self.capacity = cache.get_config()["inventory"]["default_capacity"]
 
     # Private Methods
     def _all_stack_indexes(self, item_id: int) -> list[int]:
@@ -24,7 +27,7 @@ class Inventory:
 
         return [idx for idx, stack in enumerate(self.items) if stack[0] == item_id]
 
-    def _all_stacks(self, item_id:int) -> list[tuple[int, int]]:
+    def _all_stacks(self, item_id: int) -> list[tuple[int, int]]:
         if type(item_id) != int:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
