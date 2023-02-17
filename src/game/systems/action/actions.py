@@ -175,8 +175,33 @@ class ShopAction(Action):
 
             return {
                 "content": [
-                    item.item_manager.get_name(self.ware_of_interest[0]) + ":\n",
+                    StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]) + ":\n",
+                                  formatting="item_name"),
                     item.item_manager.get_desc(self.ware_of_interest[0])
+                ]
+            }
+        elif self.state == ShopState.CONFIRM_WARE_PURCHASE:
+            self.input_type = enums.InputType.AFFIRMATIVE
+
+            return {
+                "content": [
+                    "Are you sure that you would like to purchase 1x ",
+                    StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]) + ":\n",
+                                  formatting="item_name"),
+                    " for ",
+                    StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost"),
+                    "?"
+                ]
+            }
+
+        elif self.state == ShopState.PURCHASE_FAILURE:
+            return {
+                "content": [
+                    "Cannot purchase ",
+                    StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_name"),
+                    ". Item costs ",
+                    StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost"),
+                    ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
                 ]
             }
 
