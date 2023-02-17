@@ -1,8 +1,8 @@
 import dataclasses
 from abc import ABC
 
-from ..currency.currency import CoinPurse
-from ..inventory.inventory import Inventory
+import game.systems.currency.currency as currency
+import game.systems.inventory.inventory as inv
 
 
 @dataclasses.dataclass
@@ -10,5 +10,5 @@ class Entity(ABC):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
     name: str
     id: int
-    inventory: Inventory = Inventory()
-    coin_purse: CoinPurse = CoinPurse()
+    inventory: inv.Inventory = dataclasses.field(default_factory=inv.Inventory)
+    coin_purse: currency.CoinPurse = dataclasses.field(default_factory=currency.CoinPurse)
