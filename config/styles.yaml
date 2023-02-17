@@ -1,0 +1,10 @@
+arguments: ["red", "blue", "green", "orange", "bold", "italic"]
+styles:
+  item_name : ["blue", "bold"]
+  item_desc : ["italic"]
+  item_cost : ["red"]
+  currency_gain : ["green", "bold"]
+  currency_loss : ["red", "bold"]
+  ability_name : ["orange", "bold"]
+  ability_desc : ["italic"]
+  room_name : ["bold"]

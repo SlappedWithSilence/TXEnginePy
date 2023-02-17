@@ -1,0 +1,7 @@
+io:
+  save_data_path: ./saves
+  asset_path: ./assets
+inventory:
+  default_capacity: 10
+room:
+  default_id: 0
