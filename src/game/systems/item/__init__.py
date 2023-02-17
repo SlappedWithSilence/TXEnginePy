@@ -19,13 +19,23 @@ class ItemManager(Manager):
     def get_desc(self, item_id: int) -> str:
         return self._master_item_manifest[item_id].description
 
-    def get_value(self, item_id: int, curreny: int | Currency) -> str:
+    def get_value(self, item_id: int, currency: int | Currency) -> Currency:
+        """
+        Get the value of an item within a specific currency.
+
+        Args:
+            item_id: The ID of the item whose value to retrieve
+            currency: The ID or an Instance of the currency in which to evaluate the Item's value
+
+        Returns: An instance of currency that contains the value of the item with
+        id=item_id in the currency whose id=currency
+        """
 
         currency_id: int = None
-        if type(curreny) == int:
-            currency_id = curreny
-        elif type(curreny) == Currency:
-            currency_id = curreny.id
+        if type(currency) == int:
+            currency_id = currency
+        elif type(currency) == Currency:
+            currency_id = currency.id
 
         return self._master_item_manifest[item_id].value[currency_id]
 
@@ -34,3 +44,6 @@ class ItemManager(Manager):
 
     def save(self) -> None:
         pass
+
+
+item_manager = ItemManager()
