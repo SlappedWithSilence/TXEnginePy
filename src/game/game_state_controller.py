@@ -1,6 +1,6 @@
 import dataclasses
 
-from .systems.room import room_manager
+import game.systems.room as room
 
 import game.structures.messages as messages
 import game.structures.state_device as sd
@@ -29,7 +29,7 @@ class GameStateController:
     """
     def __init__(self):
         self.state_device_stack: list[tuple[sd.StateDevice, StackState]] = []
-        self.add_state_device(room_manager.get_room(cache.get_cache()["player_location"]))
+        self.add_state_device(room.room_manager.get_room(cache.get_cache()["player_location"]))
 
     # Built-ins
 
@@ -43,7 +43,7 @@ class GameStateController:
             self._pop_state_device()
 
         if len(self.state_device_stack) < 1:
-            self.add_state_device(room_manager.get_room(cache.get_cache()["player_location"]))
+            self.add_state_device(room.room_manager.get_room(cache.get_cache()["player_location"]))
 
     def _get_state_device(self, idx: int = -1) -> sd.StateDevice:
         """
