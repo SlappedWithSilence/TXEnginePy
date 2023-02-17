@@ -1,6 +1,5 @@
 from game.structures.manager import Manager
 from game.systems.currency.currency import Currency
-from game.systems.currency import currency_manager
 from game.systems.item.item import Item
 
 
