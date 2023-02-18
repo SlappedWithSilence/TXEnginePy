@@ -1,4 +1,31 @@
 import requests
+from rich import print
+
+
+def formatting_to_tags(tags: list[str], opening_tag: bool = None, closing_tag: bool = None) -> str:
+    buf = ""
+    if opening_tag:
+        for tag in tags:
+            buf = buf + f"[{tag}]"
+
+    elif closing_tag:
+        for tag in tags:
+            buf = buf + f"[/{tag}]"
+
+    return buf
+
+
+def parse_content(content: list) -> str:
+    buf = ""
+    for element in content:
+        if type(element) == str:
+            buf = buf + element
+        elif type(element) == dict:
+            buf = buf + \
+                  formatting_to_tags(element['formatting'], opening_tag=True) + \
+                  element['value'] + \
+                  formatting_to_tags(element['formatting'], closing_tag=True)
+    return buf
 
 
 class Viewer:
@@ -15,13 +42,13 @@ class Viewer:
         """
 
         if value["frame_type"] == "Room":
-            print(value["components"]["content"])
+            print(parse_content(value["components"]["content"]))
 
             for idx, opt in enumerate(value["components"]["options"]):
-                print(f"[{idx}] {opt}")
+                print(f"[{idx}] {parse_content(opt)}")
 
         else:
-            print(value["components"]["content"])
+            print(parse_content(value["components"]["content"]))
 
         input_type = value["input_type"][0]
         input_range = value["input_range"]
