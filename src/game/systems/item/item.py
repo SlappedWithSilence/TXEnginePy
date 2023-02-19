@@ -13,9 +13,10 @@ class Item:
     """
     name: str  # Name of item
     id: int  # Unique id of item
-    value: dict[int, Currency]  # A map of currency values for the item. The primary key is Currency.key
-    max_quantity: int  # The maximum number of items allowed in an inventory stack
+    value: dict[int, int]  # Item's currency values. The primary key is Currency.id, the value is Currency.quantity
     description: str  # The user-facing description of the item
+    max_quantity: int = 10  # The maximum number of items allowed in an inventory stack
+
 
 
 @dataclasses.dataclass
