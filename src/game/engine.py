@@ -4,7 +4,11 @@ from .formatting import register_arguments, register_style
 from .cache import get_config, set_config, get_cache
 
 from loguru import logger
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import OmegaConf
+
+from .systems import currency, room, item
+from .systems.action import actions
+
 
 conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
@@ -31,6 +35,22 @@ class Engine:
         Returns:
 
         """
+        # TODO: Remove debugging code
+        currency.currency_manager.currencies[0] = currency.Currency(0, "USD", {"cents": 1, "dollars": 100})
+
+        i0 = item.Item("Generic Item", 0, {0: 10}, "A generic Item. It does nothing and is nothing.")
+        item.item_manager.register_item(i0)
+
+        exit_r_1 = actions.ExitAction(1)
+        exit_r_0 = actions.ExitAction(0)
+        shop_w = [(0, currency.currency_manager.to_currency(0, 100))]
+        shop = actions.ShopAction("Something Something Shop", "You enter the shop", wares=shop_w)
+
+        r_0 = room.Room(name="A Debug Room", action_list=[exit_r_1, shop], enter_text="You enter a debug room", id=0)
+        r_1 = room.Room(name="A Second Debug Room", action_list=[exit_r_0],
+                        enter_text="You enter yet another debug room", id=1)
+        room.room_manager.register_room(r_0)
+        room.room_manager.register_room(r_1)
 
     def _startup(self):
         """
