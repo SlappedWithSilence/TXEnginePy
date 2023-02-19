@@ -34,21 +34,19 @@ class Viewer:
     """
 
     def __init__(self):
-        self.ip = 'http://' + input("Enter the IP for the TXEngine server: ")
+        u = input("Enter the IP for the TXEngine server: ")
+        self.ip = 'http://' + (u if u != "" else "localhost:8000")
 
     def display(self, value: dict):
         """
         Primitively print GET results
         """
 
-        if value["frame_type"] == "Room":
-            print(parse_content(value["components"]["content"]))
+        print(parse_content(value["components"]["content"]))
 
+        if "options" in value["components"]:
             for idx, opt in enumerate(value["components"]["options"]):
                 print(f"[{idx}] {parse_content(opt)}")
-
-        else:
-            print(parse_content(value["components"]["content"]))
 
         input_type = value["input_type"][0]
         input_range = value["input_range"]
