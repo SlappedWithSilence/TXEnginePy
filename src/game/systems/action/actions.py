@@ -79,19 +79,6 @@ class ExitAction(Action):
                 }
 
 
-class ShopState(Enum):
-    """
-    Enum values to be used to represent state information within the ShopAction.
-
-    Each enum value is correlated to the states described within the ShopAction docstring.
-    """
-    DISPLAY_WARES = 2,
-    WARE_SELECTED = 3,
-    READ_WARE_DESC = 5,
-    CONFIRM_WARE_PURCHASE = 8,
-    PURCHASE_FAILURE = 10
-
-
 class ShopAction(Action):
     """
     An Action that simulates the user entering a shop.
@@ -99,6 +86,7 @@ class ShopAction(Action):
     A Shop's flow is as follows:
     - 1. Display wares
     - 2. Select a ware or exit (input_type.int[ -1 : len(wares)])
+        - Go to 12 if exit
     - 3. Prompt to purchase, get description, or cancel (input_type.int[-1 : 1])
     - 4. If cancel, go to 1. If get desc, go to 5. If purchase, go to 7
     - 5. Print selected item's description (input_type.NONE)
@@ -107,26 +95,40 @@ class ShopAction(Action):
     - 8. Confirm the purchase (input_type.affirmative)
     - 9. Go to 1
     - 10. Explain that the user has insufficient funds (input_type.none)
-    - 4. Go to 1
+    - 11. Go to 1
+    - 12. Terminate
     """
 
+    class ShopState(Enum):
+        """
+        Enum values to be used to represent state information within the ShopAction.
+
+        Each enum value is correlated to the states described within the ShopAction docstring.
+        """
+        DISPLAY_WARES = 2,
+        WARE_SELECTED = 3,
+        READ_WARE_DESC = 5,
+        CONFIRM_WARE_PURCHASE = 8,
+        PURCHASE_FAILURE = 10,
+        TERMINATE = 12
+
     def __init__(self, menu_name: str, activation_text: str, wares: list[tuple[int, Currency]], *args, **kwargs):
-        super().__init__(menu_name, activation_text, *args, **kwargs)
+        super().__init__(menu_name, activation_text, input_type=enums.InputType.INT, *args, **kwargs)
         self.wares: list[tuple[int, Currency]] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
-        self.state = ShopState.DISPLAY_WARES
+        self.state = self.ShopState.DISPLAY_WARES
         self.ware_of_interest: tuple[int, Currency] = None  # The tuple of the ware last selected by the user
 
     def _get_ware_options(self) -> list[list[StringContent | str]]:
         return [
             [
                 "Purchase ",
-                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0])),
+                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_name"),
                 " for ",
-                StringContent(value=str(self.ware_of_interest[1]))
+                StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost")
             ],
             [
                 "Read ",
-                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0])),
+                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_cost"),
                 "'s description"
             ]
         ]
@@ -140,12 +142,12 @@ class ShopAction(Action):
         """
         return [
             [StringContent(value=item.item_manager.get_name(item_id), formatting="item_name"),
-             StringContent(value=str(currency), format="item_cost")]
+             StringContent(value=str(currency), formatting="item_cost")]
             for item_id, currency in self.wares]
 
     @property
     def components(self) -> dict[str, any]:
-        if self.state == ShopState.DISPLAY_WARES:
+        if self.state == self.ShopState.DISPLAY_WARES:
 
             # Adjust input type and domain
             self.input_type = enums.InputType.INT
@@ -155,7 +157,7 @@ class ShopAction(Action):
             return {"content": [self.activation_text],
                     "options": self._ware_to_option()
                     }
-        elif self.state == ShopState.WARE_SELECTED:
+        elif self.state == self.ShopState.WARE_SELECTED:
 
             # Adjust input type and domain
             self.input_type = enums.InputType.INT
@@ -164,13 +166,13 @@ class ShopAction(Action):
 
             return {
                 "content": ["What would you like to do with ",
-                            StringContent(value=item.item_manager.get_name(self.ware_of_interest),
+                            StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]),
                                           formatting="item_name"),
                             "?"
                             ],
                 "options": self._get_ware_options()
             }
-        elif self.state == ShopState.READ_WARE_DESC:
+        elif self.state == self.ShopState.READ_WARE_DESC:
             self.input_type = enums.InputType.NONE
 
             return {
@@ -180,7 +182,7 @@ class ShopAction(Action):
                     item.item_manager.get_desc(self.ware_of_interest[0])
                 ]
             }
-        elif self.state == ShopState.CONFIRM_WARE_PURCHASE:
+        elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
             self.input_type = enums.InputType.AFFIRMATIVE
 
             return {
@@ -194,7 +196,7 @@ class ShopAction(Action):
                 ]
             }
 
-        elif self.state == ShopState.PURCHASE_FAILURE:
+        elif self.state == self.ShopState.PURCHASE_FAILURE:
             return {
                 "content": [
                     "Cannot purchase ",
@@ -206,7 +208,29 @@ class ShopAction(Action):
             }
 
     def _logic(self, user_input: any) -> None:
-        pass
+        if self.state == self.ShopState.DISPLAY_WARES:  # Select a ware
+            if user_input == -1:  # Chose to exit
+                pass  # Terminate
+            else:  # Chose an item
+                self.ware_of_interest = self.wares[user_input]
+                self.state = self.ShopState.WARE_SELECTED
+        # TODO: Handle input dispatching better. Remove hardcoded state transitions
+        elif self.state == self.ShopState.WARE_SELECTED:
+            if user_input == -1:
+                self.state = self.ShopState.DISPLAY_WARES
+            elif user_input == 0:
+                self.state = self.ShopState.CONFIRM_WARE_PURCHASE
+            elif user_input == 1:
+                self.state = self.ShopState.READ_WARE_DESC
+        elif self.state == self.ShopState.READ_WARE_DESC:
+            pass
+        elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
+            if user_input:
+                # Execute purchase logic
+                pass
+            self.state = self.ShopState.DISPLAY_WARES
+        elif self.state == self.ShopState.TERMINATE:
+            game.state_device_controller.set_dead()
 
 
 class TestAction(Action):
