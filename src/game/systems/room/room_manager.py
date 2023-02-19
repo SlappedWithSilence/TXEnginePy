@@ -5,6 +5,7 @@ from loguru import logger
 from game.structures import manager as manager
 from game.systems.action import actions as actions
 from game.systems.room import room as room
+import game.systems.currency as currency
 
 
 class RoomManager(manager.Manager):
@@ -79,15 +80,6 @@ class RoomManager(manager.Manager):
         Load rooms from disk
         """
         # TODO: Implement
-
-        # TODO: Remove debugging code
-        exit_r_1 = actions.ExitAction(1)
-        exit_r_0 = actions.ExitAction(0)
-
-        r_0 = room.Room(name="A Debug Room", action_list=[exit_r_1], enter_text="You enter a debug room", id=0)
-        r_1 = room.Room(name="A Second Debug Room", action_list=[exit_r_0], enter_text="You enter yet another debug room", id=1)
-        self.register_room(r_0)
-        self.register_room(r_1)
 
     def save(self) -> None:
         """
