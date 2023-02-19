@@ -109,7 +109,8 @@ class StateDevice(ABC):
 
         Returns: True if the input value is valid, False otherwise
         """
-        if self.input_type == InputType.SILENT:
+
+        if self.input_type == InputType.SILENT or self.input_type == InputType.NONE:
             return True
 
         # Input must be str matching the set of strings in the array
