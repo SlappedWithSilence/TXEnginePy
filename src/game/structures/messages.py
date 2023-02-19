@@ -15,10 +15,12 @@ class StringContent(BaseModel):
     An object that stores a string alongside formatting data.
     """
     value: str
-    formatting: list[str] | str
+    formatting: list[str] | str = []
 
     def __init__(self, **data):
-        data["formatting"] = _to_style_args(data["formatting"])  # Allow for style name references
+        if "formatting" in data:
+            data["formatting"] = _to_style_args(data["formatting"])  # Allow for style name references
+
         super().__init__(**data)
 
     def __str__(self) -> str:
