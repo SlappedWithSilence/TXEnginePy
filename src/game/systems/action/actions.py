@@ -197,6 +197,7 @@ class ShopAction(Action):
             }
 
         elif self.state == self.ShopState.PURCHASE_FAILURE:
+            self.input_type = enums.InputType.NONE
             return {
                 "content": [
                     "Cannot purchase ",
@@ -207,10 +208,16 @@ class ShopAction(Action):
                 ]
             }
 
+        elif self.state == self.ShopState.TERMINATE:
+            self.input_type = enums.InputType.NONE
+            return {
+                "content": ["You leave the shop."]
+            }
+
     def _logic(self, user_input: any) -> None:
         if self.state == self.ShopState.DISPLAY_WARES:  # Select a ware
             if user_input == -1:  # Chose to exit
-                pass  # Terminate
+                self.state = self.ShopState.TERMINATE
             else:  # Chose an item
                 self.ware_of_interest = self.wares[user_input]
                 self.state = self.ShopState.WARE_SELECTED
@@ -223,7 +230,7 @@ class ShopAction(Action):
             elif user_input == 1:
                 self.state = self.ShopState.READ_WARE_DESC
         elif self.state == self.ShopState.READ_WARE_DESC:
-            pass
+            self.state = self.ShopState.WARE_SELECTED
         elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
             if user_input:
                 # Execute purchase logic
