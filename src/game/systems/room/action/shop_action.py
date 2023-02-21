@@ -2,7 +2,7 @@ from enum import Enum
 
 import game
 from game.structures import enums
-from game.structures.messages import StringContent
+from game.structures.messages import StringContent, ComponentFactory
 from game.systems import item as item
 from game.systems.currency import Currency
 from game.systems.room.action.actions import Action
@@ -93,15 +93,12 @@ class ShopAction(Action):
             self.input_type = enums.InputType.INT
             self.domain_min = -1
             self.domain_max = len(self._get_ware_options()) - 1
-
-            return {
-                "content": ["What would you like to do with ",
-                            StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]),
-                                          formatting="item_name"),
-                            "?"
-                            ],
-                "options": self._get_ware_options()
-            }
+            content = ["What would you like to do with ",
+                       StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]),
+                                     formatting="item_name"),
+                       "?"
+                       ]
+            return ComponentFactory.get(content, self._get_ware_options())
         elif self.state == self.ShopState.READ_WARE_DESC:
             self.input_type = enums.InputType.NONE
 
