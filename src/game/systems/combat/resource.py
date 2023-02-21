@@ -1,6 +1,5 @@
 import copy
 
-import game.formatting as formatting
 import game.systems.combat as combat
 from game.structures.messages import StringContent
 
@@ -23,11 +22,11 @@ class Resource:
     def __repr__(self) -> list[StringContent]:
         return [
             StringContent(value="["),
-            StringContent(value=self.name, formatting=formatting.get_style("resource_name")),
+            StringContent(value=self.name, formatting="resource_name"),
             StringContent(value=": "),
-            StringContent(value=str(self.value), formatting=formatting.get_style("resource_value")),
+            StringContent(value=str(self.value), formatting="resource_value"),
             StringContent(value="/"),
-            StringContent(value=str(self.max), formatting=formatting.get_style("resource_max")),
+            StringContent(value=str(self.max), formatting="resource_max"),
             StringContent(value="]")
         ]
 

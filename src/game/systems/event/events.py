@@ -41,11 +41,11 @@ class AbilityEvent(Event):
     def components(self) -> dict[str, any]:
         learn_message = [messages.StringContent(value="You learned a new ability!"),
                          messages.StringContent(value="LOOK UP ABILITY NAME",
-                                                formatting=formatting.get_style("ability_name"))
+                                                formatting="ability_name")
                          ]
         already_learned_message = [messages.StringContent(value="You already learned "),
                                    messages.StringContent(value="LOOK UP ABILITY NAME",
-                                                          formatting=formatting.get_style("ability_name"))
+                                                          formatting="ability_name")
                                    ]
 
         return {"content": learn_message}  # TODO: Implement already-learned message
@@ -82,10 +82,10 @@ class ItemEvent(Event):
         # TODO: Implement translate item.id to item.name
         return {"content": [messages.StringContent(value="You've found"),
                             messages.StringContent(value=str(self.quantity),
-                                                   formatting=formatting.get_style("item_quantity")),
+                                                   formatting="item_quantity"),
                             messages.StringContent(value=" of "),
                             messages.StringContent(value=f"item::{self.item_id}",
-                                                   formatting=formatting.get_style("item_name")),
+                                                   formatting="item_name"),
                             messages.StringContent(value=". Do you want to add it to your inventory?")
                             ]
                 }
@@ -147,7 +147,7 @@ class ReputationEvent(Event):
         self.reputation_change = reputation_change
         self.message = [messages.StringContent(value="Your reputation with "),
                         messages.StringContent(value=f"faction::{faction_id}",
-                                               formatting=formatting.get_style("faction_name")),
+                                               formatting="faction_name"),
                         messages.StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
                         messages.StringContent(value=f" by {reputation_change}")
                         ]
