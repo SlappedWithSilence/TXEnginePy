@@ -71,6 +71,7 @@ class ShopAction(Action):
         """
         return [
             [StringContent(value=item.item_manager.get_name(item_id), formatting="item_name"),
+             " : ",
              StringContent(value=str(currency), formatting="item_cost")]
             for item_id, currency in self.wares]
 

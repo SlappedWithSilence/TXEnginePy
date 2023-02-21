@@ -5,8 +5,8 @@ import pytest
 from src.game.systems.currency.currency import Currency
 
 currencies = {
-    "USD": Currency("USD", {"cents": 1, "dollars": 100, "k": 100000, "m": 100000000}),
-    "Imperial": Currency("Imperial", {"copper": 1, "silver": 100, "gold": 10000})
+    "USD": Currency(-1, "USD", {"cents": 1, "dollars": 100, "k": 100000, "m": 100000000}),
+    "Imperial": Currency(-2, "Imperial", {"copper": 1, "silver": 100, "gold": 10000})
 }
 
 add_int_quantity_cases = [
