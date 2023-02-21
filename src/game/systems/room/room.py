@@ -7,7 +7,7 @@ import weakref
 import game
 import game.structures.enums as enums
 import game.structures.state_device as state_device
-import game.systems.action.actions as actions
+import game.systems.room.action.actions as actions
 import game.systems.room as room
 
 

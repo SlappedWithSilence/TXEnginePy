@@ -3,9 +3,7 @@ import weakref
 from loguru import logger
 
 from game.structures import manager as manager
-from game.systems.action import actions as actions
 from game.systems.room import room as room
-import game.systems.currency as currency
 
 
 class RoomManager(manager.Manager):
