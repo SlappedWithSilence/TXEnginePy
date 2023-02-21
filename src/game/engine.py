@@ -8,6 +8,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from .systems import currency, room, item
+from .systems.entity.entities import Player
 from .systems.room.action import actions
 
 conf_dir_path: str = "./config/"
@@ -44,13 +45,16 @@ class Engine:
         exit_r_1 = actions.ExitAction(1)
         exit_r_0 = actions.ExitAction(0)
         shop_w = [(0, currency.currency_manager.to_currency(0, 100))]
-        shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop", wares=shop_w)
+        shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
+                                                               wares=shop_w)
 
         r_0 = room.Room(name="A Debug Room", action_list=[exit_r_1, shop], enter_text="You enter a debug room", id=0)
         r_1 = room.Room(name="A Second Debug Room", action_list=[exit_r_0],
                         enter_text="You enter yet another debug room", id=1)
         room.room_manager.register_room(r_0)
         room.room_manager.register_room(r_1)
+
+        get_cache()["player"] = Player("Player", 0)
 
     def _startup(self):
         """
@@ -110,7 +114,7 @@ class Engine:
         """
         return {"io": {"save_data_path": "./saves", "asset_path": "./assets"},
                 "inventory": {"default_capacity": 10},
-                "room" : {"default_id" : 0}
+                "room": {"default_id": 0}
                 }
 
     def write_styles(self) -> None:
