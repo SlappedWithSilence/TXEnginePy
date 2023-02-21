@@ -1,5 +1,6 @@
 import os.path
 
+import game.systems.room.action.shop_action
 from .formatting import register_arguments, register_style
 from .cache import get_config, set_config, get_cache
 
@@ -7,8 +8,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from .systems import currency, room, item
-from .systems.action import actions
-
+from .systems.room.action import actions
 
 conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
@@ -44,7 +44,7 @@ class Engine:
         exit_r_1 = actions.ExitAction(1)
         exit_r_0 = actions.ExitAction(0)
         shop_w = [(0, currency.currency_manager.to_currency(0, 100))]
-        shop = actions.ShopAction("Something Something Shop", "You enter the shop", wares=shop_w)
+        shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop", wares=shop_w)
 
         r_0 = room.Room(name="A Debug Room", action_list=[exit_r_1, shop], enter_text="You enter a debug room", id=0)
         r_1 = room.Room(name="A Second Debug Room", action_list=[exit_r_0],
