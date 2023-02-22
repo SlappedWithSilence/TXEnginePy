@@ -1,9 +1,9 @@
-loguru~=0.6.0
-pytest~=7.2.1
-fastapi~=0.91.0
-pydantic~=1.10.4
+loguru
+pytest
+fastapi
+pydantic
 mypy
-omegaconf~=2.3.0
+omegaconf
 uvicorn[standard]
-requests~=2.28.2
-rich~=13.3.1
+requests
+rich

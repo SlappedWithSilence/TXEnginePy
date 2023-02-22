@@ -142,26 +142,38 @@ class ShopAction(Action):
             }
 
     def _logic(self, user_input: any) -> None:
+
+        # State 2
         if self.state == self.ShopState.DISPLAY_WARES:  # Select a ware
             if user_input == -1:  # Chose to exit
                 self.state = self.ShopState.TERMINATE
             else:  # Chose an item
                 self.ware_of_interest = self.wares[user_input]
                 self.state = self.ShopState.WARE_SELECTED
-        # TODO: Handle input dispatching better. Remove hardcoded state transitions
+
+
+        # State 3
         elif self.state == self.ShopState.WARE_SELECTED:
+
+            # TODO: Handle input dispatching better. Remove hardcoded state transitions
             if user_input == -1:
                 self.state = self.ShopState.DISPLAY_WARES
             elif user_input == 0:
                 self.state = self.ShopState.CONFIRM_WARE_PURCHASE
             elif user_input == 1:
                 self.state = self.ShopState.READ_WARE_DESC
+
+        # State 5
         elif self.state == self.ShopState.READ_WARE_DESC:
             self.state = self.ShopState.WARE_SELECTED
+
+        # State 8
         elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
             if user_input:
                 # Execute purchase logic
                 pass
             self.state = self.ShopState.DISPLAY_WARES
+
+        # State 12
         elif self.state == self.ShopState.TERMINATE:
             game.state_device_controller.set_dead()
