@@ -1,7 +1,6 @@
 import dataclasses
 from typing import Union
 
-
 @dataclasses.dataclass
 class Currency:
     """Currency records information about money an entity owns.
@@ -101,37 +100,6 @@ class Currency:
             self.quantity = quantity
         else:
             raise TypeError(f"Cannot set a Currency's quantity to type {type(quantity)}! Must be of type int.")
-
-
-@dataclasses.dataclass
-class CoinPurse:
-    currencies: dict[int, Currency] = dataclasses.field(default_factory=dict)
-
-    def balance(self, cur: Currency | int) -> int:
-        # If the passed value is a Currency
-        if type(cur) == Currency:
-            if cur.id in self.currencies:
-                return self.currencies[cur.id].quantity
-
-        # TODO: Improve lookup syntax
-        # If the passed type is Currency.id or Currency.name
-        if type(cur) == int:
-            return self.currencies[cur].quantity
-
-        return 0
-
-    def spend(self, cur: Currency | int, quantity: int | None = None) -> bool:
-        if type(cur) == Currency:
-            if self.balance(cur) >= cur.quantity:
-                self.currencies[cur.id] = self.currencies[cur.id] - cur
-                return True
-
-        elif (type(cur) == int) and type(quantity) == int:
-            if self.balance(cur) >= quantity:
-                self.currencies[cur.id] = self.currencies[cur.id] - quantity
-                return True
-
-        return False
 
 
 if __name__ == "__main__":
