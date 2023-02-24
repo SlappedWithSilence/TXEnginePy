@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from abc import ABC
 
+import game.systems.currency.coin_purse
 import game.systems.currency.currency as currency
 import game.systems.inventory.inventory as inv
 import game.systems.entity.resource as resource
@@ -12,7 +13,7 @@ class Entity(ABC):
     name: str
     id: int
     inventory: inv.Inventory = field(default_factory=inv.Inventory)
-    coin_purse: currency.CoinPurse = field(default_factory=currency.CoinPurse)
+    coin_purse: game.systems.currency.coin_purse.CoinPurse = field(default_factory=game.systems.currency.coin_purse.CoinPurse)
     resources: resource.ResourceController = field(default_factory=resource.ResourceController)
 
 
