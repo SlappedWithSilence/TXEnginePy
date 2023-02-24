@@ -18,24 +18,28 @@ class ItemManager(Manager):
     def get_desc(self, item_id: int) -> str:
         return self._master_item_manifest[item_id].description
 
-    def get_value(self, item_id: int, currency: int | Currency) -> Currency:
+    def get_costs(self, item_id: int) -> dict[int, int]:
         """
-        Get the value of an item within a specific currency.
+        Get the value of an item in all currencies
 
         Args:
             item_id: The ID of the item whose value to retrieve
-            currency: The ID or an Instance of the currency in which to evaluate the Item's value
 
-        Returns: An instance of currency that contains the value of the item with
-        id=item_id in the currency whose id=currency
+        Returns: A dict that maps an items value in a specific currency to that currency's id
         """
 
-        currency_id: int = None
-        if type(currency) == int:
-            currency_id = currency
-        elif type(currency) == Currency:
-            currency_id = currency.id
+        return self._master_item_manifest[item_id].value
 
+    def get_cost(self, item_id: int, currency_id: int) -> int:
+        """
+        Get the value of an item in a specific currency
+
+        Args:
+            item_id: The ID of the item to look up
+            currency_id: The ID of the currency to look up
+
+        Returns: An int value representing the item's cost in currency 'currency_id'
+        """
         return self._master_item_manifest[item_id].value[currency_id]
 
     def load(self) -> None:
