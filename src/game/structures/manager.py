@@ -17,10 +17,10 @@ class Manager(ABC):
         self.name = self.__class__.__name__
 
         if "managers" not in cache.get_cache():
-            cache.get_cache()["managers"] = []
+            cache.get_cache()["managers"] = {}
 
         logger.info("Registering manager with cache...")
-        cache.get_cache()["managers"].append(weakref.proxy(self))
+        cache.get_cache()["managers"][self.name] = weakref.proxy(self)
 
     def load(self) -> None:
         raise NotImplementedError

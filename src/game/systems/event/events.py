@@ -1,10 +1,9 @@
+from abc import ABC
+
 import game.structures.enums as enums
 import game.structures.messages as messages
 import game.structures.state_device as state_device
-import game.formatting as formatting
 import game.systems.currency as currency
-
-from abc import ABC
 
 
 class Event(state_device.StateDevice, ABC):
