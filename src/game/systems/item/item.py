@@ -1,5 +1,6 @@
 import dataclasses
 
+import game.systems.currency as currency
 from ..combat.effect import Effect
 from ..entity.entities import Entity
 from ..requirement.requirements import RequirementsMixin
@@ -15,6 +16,9 @@ class Item:
     value: dict[int, int]  # Item's currency values. The primary key is Currency.id, the value is Currency.quantity
     description: str  # The user-facing description of the item
     max_quantity: int = 10  # The maximum number of items allowed in an inventory stack
+
+    def get_currency_value(self, currency_id: int) -> currency.Currency:
+        return currency.currency_manager.to_currency(currency_id, self.value[currency_id])
 
 
 @dataclasses.dataclass
