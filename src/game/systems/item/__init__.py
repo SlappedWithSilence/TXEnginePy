@@ -1,5 +1,6 @@
 import copy
 
+import game.systems.currency as currency
 from game.structures.manager import Manager
 from game.systems.item.item import Item
 
@@ -31,17 +32,21 @@ class ItemManager(Manager):
 
         return self._master_item_manifest[item_id].value
 
-    def get_cost(self, item_id: int, currency_id: int) -> int:
+    def get_cost(self, item_id: int, currency_id: int, as_currency: bool = False) -> int | currency.Currency:
         """
         Get the value of an item in a specific currency
 
         Args:
             item_id: The ID of the item to look up
             currency_id: The ID of the currency to look up
+            as_currency: If True, return an instance of a currency instead of an int
 
         Returns: An int value representing the item's cost in currency 'currency_id'
         """
-        return self._master_item_manifest[item_id].value[currency_id]
+        if not as_currency:
+            return self._master_item_manifest[item_id].value[currency_id]
+        else:
+            return self._master_item_manifest[item_id].get_currency_value(currency_id)
 
     def get_instance(self, item_id: int) -> Item:
         """
