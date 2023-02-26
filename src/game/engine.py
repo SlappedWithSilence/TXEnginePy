@@ -44,7 +44,7 @@ class Engine:
 
         exit_r_1 = actions.ExitAction(1)
         exit_r_0 = actions.ExitAction(0)
-        shop_w = [(0, currency.currency_manager.to_currency(0, 100))]
+        shop_w = [0]
         shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
                                                                wares=shop_w)
 
