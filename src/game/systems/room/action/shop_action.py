@@ -1,10 +1,13 @@
 from enum import Enum
 
 import game
+import game.systems.item as item
+import game.systems.entity.entities as entities
+from game.cache import get_cache
 from game.structures import enums
 from game.structures.messages import StringContent, ComponentFactory
 from game.systems.room.action.actions import Action
-import game.systems.item as item
+
 
 
 class ShopAction(Action):
@@ -182,8 +185,16 @@ class ShopAction(Action):
         # State 8
         elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
             if user_input:
-                # Execute purchase logic
-                pass
+
+                player: entities.Player = get_cache()['player']
+                if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
+                    player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
+                    player.inventory.add_item(self.ware_of_interest.id, 1)
+                    self.state = self.ShopState.DISPLAY_WARES
+
+                else:
+                    self.state = self.ShopState.PURCHASE_FAILURE
+
             self.state = self.ShopState.DISPLAY_WARES
 
         # State 12
