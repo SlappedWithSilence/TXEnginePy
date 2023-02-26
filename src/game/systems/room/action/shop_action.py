@@ -4,8 +4,8 @@ import game
 from game.structures import enums
 from game.structures.messages import StringContent, ComponentFactory
 from game.systems import item as item
-from game.systems.currency import Currency
 from game.systems.room.action.actions import Action
+import game.systems.item.item as items
 
 
 class ShopAction(Action):
@@ -41,23 +41,39 @@ class ShopAction(Action):
         PURCHASE_FAILURE = 10,
         TERMINATE = 12
 
-    def __init__(self, menu_name: str, activation_text: str, wares: list[int], *args, **kwargs):
+    def __init__(self, menu_name: str, activation_text: str, wares: list[int],
+                 default_currency: int = 0, *args, **kwargs):
         super().__init__(menu_name, activation_text, input_type=enums.InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
         self.state = self.ShopState.DISPLAY_WARES
-        self.ware_of_interest: int = None  # The tuple of the ware last selected by the user
+        self._ware_of_interest: items.Item = None  # The tuple of the ware last selected by the user
+        self.default_currency: int = default_currency
+
+    @property
+    def ware_of_interest(self) -> items.Item:
+        return self._ware_of_interest
+
+    @ware_of_interest.setter
+    def ware_of_interest(self, i: items.Item | int) -> None:
+
+        if type(i) == int:
+            self._ware_of_interest = item.item_manager.get_instance(i)
+        elif isinstance(i, items.Item):
+            self._ware_of_interest = i
+        else:
+            raise TypeError(f"Ware of interest cannot be set to {type(i)}. Acceptable types are int, Item.")
 
     def _get_ware_options(self) -> list[list[StringContent | str]]:
         return [
             [
                 "Purchase ",
-                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_name"),
+                StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                 " for ",
-                StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost")
+                StringContent(value=self.ware_of_interest.value[self.default_currency], formatting="item_cost")
             ],
             [
                 "Read ",
-                StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_cost"),
+                StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                 "'s description"
             ]
         ]
@@ -72,8 +88,9 @@ class ShopAction(Action):
         return [
             [StringContent(value=item.item_manager.get_name(item_id), formatting="item_name"),
              " : ",
-             StringContent(value=str(currency), formatting="item_cost")]
-            for item_id, currency in self.wares]
+             StringContent(value=str(item.item_manager.get_cost(item_id, self.default_currency, True)),
+                           formatting="item_cost")]
+            for item_id in self.wares]
 
     @property
     def components(self) -> dict[str, any]:
@@ -94,8 +111,7 @@ class ShopAction(Action):
             self.domain_min = -1
             self.domain_max = len(self._get_ware_options()) - 1
             content = ["What would you like to do with ",
-                       StringContent(value=item.item_manager.get_name(self.ware_of_interest),
-                                     formatting="item_name"),
+                       StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                        "?"
                        ]
             return ComponentFactory.get(content, self._get_ware_options())
@@ -104,9 +120,8 @@ class ShopAction(Action):
 
             return {
                 "content": [
-                    StringContent(value=item.item_manager.get_name(self.ware_of_interest) + ":\n",
-                                  formatting="item_name"),
-                    item.item_manager.get_desc(self.ware_of_interest)
+                    StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
+                    self.ware_of_interest.description
                 ]
             }
         elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
@@ -115,10 +130,9 @@ class ShopAction(Action):
             return {
                 "content": [
                     "Are you sure that you would like to purchase 1x ",
-                    StringContent(value=item.item_manager.get_name(self.ware_of_interest) + ":\n",
-                                  formatting="item_name"),
+                    StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
                     " for ",
-                    StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost"),
+                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency), formatting="item_cost"),
                     "?"
                 ]
             }
@@ -128,9 +142,9 @@ class ShopAction(Action):
             return {
                 "content": [
                     "Cannot purchase ",
-                    StringContent(value=item.item_manager.get_name(self.ware_of_interest[0]), formatting="item_name"),
+                    StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                     ". Item costs ",
-                    StringContent(value=str(self.ware_of_interest[1]), formatting="item_cost"),
+                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency), formatting="item_cost"),
                     ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
                 ]
             }
