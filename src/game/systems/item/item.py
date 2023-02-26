@@ -1,7 +1,6 @@
 import dataclasses
 
 from ..combat.effect import Effect
-from ..currency.currency import Currency
 from ..entity.entities import Entity
 from ..requirement.requirements import RequirementsMixin
 
@@ -9,7 +8,7 @@ from ..requirement.requirements import RequirementsMixin
 @dataclasses.dataclass
 class Item:
     """
-    A basic item. Objects of this type are intert.
+    A basic item. Objects of this type are inert.
     """
     name: str  # Name of item
     id: int  # Unique id of item
@@ -18,15 +17,16 @@ class Item:
     max_quantity: int = 10  # The maximum number of items allowed in an inventory stack
 
 
-
 @dataclasses.dataclass
-class Consumable(Item, RequirementsMixin):
+class Usable(Item, RequirementsMixin):
     """
     A consumable item. When consumed, this item's stack quantity decreases by 1 and the effects in 'effects' are
     triggered in sequence.
     """
-    effects: list[Effect] = dataclasses.field(default_factory=list)  # List of effects that trigger when the item is consumed
+    effects: list[Effect] = dataclasses.field(default_factory=list)  # List of effects that trigger when item is used
+    consumable: bool = False  # A flag that determines if the item should decrement quantity after each use.
 
     def use(self, target: Entity) -> None:
         for effect in self.effects:
             effect.perform(target)
+
