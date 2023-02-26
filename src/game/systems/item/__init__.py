@@ -1,5 +1,6 @@
+import copy
+
 from game.structures.manager import Manager
-from game.systems.currency.currency import Currency
 from game.systems.item.item import Item
 
 
@@ -41,6 +42,23 @@ class ItemManager(Manager):
         Returns: An int value representing the item's cost in currency 'currency_id'
         """
         return self._master_item_manifest[item_id].value[currency_id]
+
+    def get_instance(self, item_id: int) -> Item:
+        """
+        Create and return a deep-copied instance of the item with item.id == 'item_id'
+
+        Args:
+            item_id: The ID of the item whose instance to create
+
+        Returns: A deep copy of the requested item
+        """
+        if type(item_id) != int:
+            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
+
+        if item_id not in self._master_item_manifest:
+            raise ValueError(f"No such item with ID {item_id}!")
+
+        return copy.deepcopy(self._master_item_manifest[item_id])
 
     def load(self) -> None:
         pass
