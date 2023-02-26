@@ -1,6 +1,7 @@
 import dataclasses
 from typing import Union
 
+
 @dataclasses.dataclass
 class Currency:
     """Currency records information about money an entity owns.
@@ -35,6 +36,9 @@ class Currency:
             base = base + stage_str
 
         return base
+
+    def __repr__(self):
+        return self.__str__()
 
     def __add__(self, other):
 
@@ -115,4 +119,3 @@ if __name__ == "__main__":
     stages = {"bronze": 1, "silver": 100, "gold": 1000}
     currency = Currency(3, "Imperial", stages, 66021)
     print(currency)
-
