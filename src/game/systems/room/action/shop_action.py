@@ -3,9 +3,8 @@ from enum import Enum
 import game
 from game.structures import enums
 from game.structures.messages import StringContent, ComponentFactory
-from game.systems import item as item
 from game.systems.room.action.actions import Action
-import game.systems.item.item as items
+import game.systems.item as item
 
 
 class ShopAction(Action):
@@ -46,19 +45,19 @@ class ShopAction(Action):
         super().__init__(menu_name, activation_text, input_type=enums.InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
         self.state = self.ShopState.DISPLAY_WARES
-        self._ware_of_interest: items.Item = None  # The tuple of the ware last selected by the user
+        self._ware_of_interest: item.Item = None  # The tuple of the ware last selected by the user
         self.default_currency: int = default_currency
 
     @property
-    def ware_of_interest(self) -> items.Item:
+    def ware_of_interest(self) -> item.Item:
         return self._ware_of_interest
 
     @ware_of_interest.setter
-    def ware_of_interest(self, i: items.Item | int) -> None:
+    def ware_of_interest(self, i: item.Item | int) -> None:
 
         if type(i) == int:
             self._ware_of_interest = item.item_manager.get_instance(i)
-        elif isinstance(i, items.Item):
+        elif isinstance(i, item.Item):
             self._ware_of_interest = i
         else:
             raise TypeError(f"Ware of interest cannot be set to {type(i)}. Acceptable types are int, Item.")
@@ -82,7 +81,7 @@ class ShopAction(Action):
         """
         Convert a list of ware tuples into formatted lists of StringContent
 
-        Returns: A list of list[StringContent | str]. This list contains lists that contain the items available for
+        Returns: A list of list[StringContent | str]. This list contains lists that contain the item available for
         purchase at the shop as well as their costs.
         """
         return [
