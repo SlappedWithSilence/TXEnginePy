@@ -3,6 +3,7 @@ import weakref
 import game.cache as cache
 import game
 import game.systems.event.events as events
+from game.structures.messages import StringContent
 
 
 class Inventory:
@@ -110,6 +111,36 @@ class Inventory:
                 return True
 
         return False
+
+    def to_options(self) -> list[list[str | StringContent]]:
+        from game.systems.item import item_manager
+        results = []
+
+        for stack in self.items:
+            results.append(
+                [
+                    StringContent(value=item_manager.get_name(stack[0]), formatting="item_name"),
+                    "\t",
+                    StringContent(value=f"{stack[1]}x", formatting="item_quantity")
+                ]
+            )
+
+        return results
+
+    def drop_stack(self, stack_index: int) -> None:
+        """
+        Remove a stack from the inventory.
+
+        Args:
+            stack_index: The index of the stack within the player's inventory. Zero-indexed.
+
+        Returns: None
+        """
+
+        if stack_index >= len(self.items):
+            raise ValueError(f"Can't drop stack! {stack_index} is out of range, inventory is of size {len(self.items)}")
+
+        del self.items[stack_index]
 
     def is_collidable(self, item_id: int, quantity: int) -> bool:
         from game.systems.item import item_manager
