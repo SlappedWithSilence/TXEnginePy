@@ -1,5 +1,9 @@
+import copy
+import enum
 import weakref
 from abc import abstractmethod, ABC
+
+from . import enums
 from .enums import InputType, is_valid_range, to_range, affirmative_range
 from .messages import Frame
 
@@ -203,3 +207,82 @@ class StateDevice(ABC):
 
         """
         return self.__frame__()
+
+class FiniteStateDevice(StateDevice, ABC):
+    """
+    A subclass of StateDevice that adds support for explicit state ordering and transitions
+    """
+    def __init__(self, default_input_type: InputType, states: enum, default_state = None):
+        super().__init__(default_input_type)
+
+        self.states = states
+        self.current_state = default_state
+
+        state_data_dict = {
+            "input_type" : enums.InputType.NONE,
+            "min" : None,
+            "max" : None,
+            "len" : None,
+            "logic" : None,
+            "content" : None
+        }
+
+        self.state_data = {k : copy.deepcopy(state_data_dict) for k in self.states}
+
+    def set_state(self, next_state) -> None:
+        if next_state not in self.state_data:
+            raise ValueError(f"Unknown state {next_state}!")
+
+        self.current_state = next_state
+        self.input_type = self.state_data[next_state]['input_type']
+        self.domain_min = self.state_data[next_state]['min']
+        self.domain_max = self.state_data[next_state]['max']
+        self.domain_length = self.state_data[next_state]['len']
+
+    # Custom Decorators
+    def state_logic(self, func, state, input_type: enums.InputType, input_min: int = None, input_max: int = None, input_len: int = None):
+        """
+        Wraps a function and stores it as a callable in the state data dict. Also stores the state's input type and range
+
+        Args:
+            func: The function to call when _logic is called at 'state'
+            state: The state to map 'func' to
+            input_type: The input type for this state
+            input_min: The input range's min for this state
+            input_max: The input range's max for this state
+            input_len: The input range's length for this state
+
+        Returns: None
+        """
+
+        if not callable(func):
+            raise TypeError("func must be callable!")
+
+        if state not in self.state_data:
+            raise ValueError(f"Unknown state {state}!")
+
+        self.state_data[state]['input_type'] = input_type
+        self.state_data[state]['min'] = input_min
+        self.state_data[state]['max'] = input_max
+        self.state_data[state]['len'] = input_len
+        self.state_data[state]['logic'] = func
+
+        return func
+
+    def state_content(self, func, state):
+        if not callable(func):
+            raise TypeError("func must be callable!")
+
+        if state not in self.state_data:
+            raise ValueError(f"Unknown state {state}!")
+
+        self.state_data[state]['content'] = func
+
+        return func
+
+    def _logic(self, user_input: any) -> None:
+        self.state_data[self.current_state]['logic'](user_input)
+
+    @property
+    def components(self) -> dict[str, any]:
+        return self.state_data[self.current_state]['content']()
