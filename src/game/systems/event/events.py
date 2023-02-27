@@ -1,9 +1,14 @@
+import weakref
 from abc import ABC
+from enum import Enum
 
 import game.structures.enums as enums
-import game.structures.messages as messages
 import game.structures.state_device as state_device
 import game.systems.currency as currency
+from game import cache
+from game.structures.messages import StringContent, ComponentFactory
+import game.systems.entity.entities as entities
+import game.systems.item as item
 
 
 class Event(state_device.StateDevice, ABC):
@@ -38,12 +43,12 @@ class AbilityEvent(Event):
 
     @property
     def components(self) -> dict[str, any]:
-        learn_message = [messages.StringContent(value="You learned a new ability!"),
-                         messages.StringContent(value="LOOK UP ABILITY NAME",
+        learn_message = [StringContent(value="You learned a new ability!"),
+                         StringContent(value="LOOK UP ABILITY NAME",
                                                 formatting="ability_name")
                          ]
-        already_learned_message = [messages.StringContent(value="You already learned "),
-                                   messages.StringContent(value="LOOK UP ABILITY NAME",
+        already_learned_message = [StringContent(value="You already learned "),
+                                   StringContent(value="LOOK UP ABILITY NAME",
                                                           formatting="ability_name")
                                    ]
 
@@ -58,6 +63,106 @@ class AbilityEvent(Event):
         # if so, set text to reflect redundant learning
         # if not, learn the ability
         # TODO: Implement
+
+
+class AddItemEvent(Event):
+    """
+    An Event that flows the user through the process of adding an item to their inventory.
+
+    This is usually an automatic process, but occasionally requires user intervention, particularly when there isn't
+    enough inventory space.
+    """
+
+    class EventState(Enum):
+        """
+        Case 1: item already in inventory
+        Case 1a: non-full stack exists
+        Case 1a.a add items into non-full stack.
+        Case 1a.a.a: Overflow--call add_item on overflowing quantity recursively
+        Case 1a.a.b: No overflow--terminate
+        Case 1b: only full stacks exists
+        Case 1b.a: Inventory not full: Create a stack. If overflow, call add_item on overflowing quantity recursively
+        Case 1b.b: Inventory full--Prompt user to make space, call add_item again
+        Case 2: item not in inventory
+        Case 2.a: inventory not full--create new stack
+        Case 2.a.a: overflow-- call add_item recursively on overflowing quantity
+        Case 2.a.b: no overflow--terminate
+        Case  2.b: inventory full--prompt user to make space, call add_item again
+        """
+
+        DEFAULT = 0
+        PROMPT_REMOVE_STACK = 1,
+        CONFIRM_REMOVE_STACK = 2,
+        REFUSE_REMOVE_STACK = 3,
+        CONFIRM_REFUSE_REMOVE_STACK = 4,
+        ITEM_ADDED = 5,
+        SELECT_STACK = 6,
+        ITEM_NOT_ADDED = 7
+
+    def __init__(self, item_id: int, item_quantity: int = 1):
+        super().__init__(input_type=enums.InputType.SILENT)
+        self.item_id = item_id
+        self.item_quantity = item_quantity
+        self.state = self.EventState.ITEM_ADDED
+        self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])
+
+    def _requires_user_intervention(self) -> bool:
+        """
+        A function that computes whether the user is needed to resolve a collision or overflow within the inventory as
+        a result of the Event.
+
+        Args:
+
+        Returns: True if the user is required to resolve a collision, False otherwise
+        """
+
+    @property
+    def components(self) -> dict[str, any]:
+
+        if self.state == self.EventState.DEFAULT:
+
+            return ComponentFactory.get([""])
+
+        elif self.state == self.EventState.PROMPT_REMOVE_STACK:
+            c = ["Your inventory has insufficient free space to add ",
+                 StringContent(value=f"{self.item_quantity}x", format="item_quantity"),
+                 " ",
+                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", format="item_name"),
+                 ". Do you wish to drop a stack of items to make room in your inventory?"]
+            return ComponentFactory.get(c)
+
+        elif self.state == self.EventState.SELECT_STACK:
+            pass
+
+        elif self.state == self.EventState.CONFIRM_REMOVE_STACK:
+            pass
+
+        elif self.state == self.EventState.ITEM_ADDED:
+            pass
+
+        elif self.state == self.EventState.REFUSE_REMOVE_STACK:
+            pass
+
+        elif self.state == self.EventState.CONFIRM_REFUSE_REMOVE_STACK:
+            pass
+
+        elif self.state == self.EventState.ITEM_NOT_ADDED:
+            pass
+
+    def _logic(self, user_input: any) -> None:
+
+        # Default State
+        if self.state == self.EventState.DEFAULT:
+
+            # If the player needs to intervene, silently set state to PROMPT REMOVE STACK
+            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
+                self.state = self.EventState.PROMPT_REMOVE_STACK
+                self.input_type = enums.InputType.AFFIRMATIVE
+
+            # If the player doesn't need to intervene, simply execute the item add
+            else:
+                self.state = self.EventState.ITEM_ADDED
+                self.input_type = enums.InputType.NONE
 
 
 class ItemEvent(Event):
@@ -79,13 +184,13 @@ class ItemEvent(Event):
     @property
     def components(self) -> dict[str, any]:
         # TODO: Implement translate item.id to item.name
-        return {"content": [messages.StringContent(value="You've found"),
-                            messages.StringContent(value=str(self.quantity),
+        return {"content": [StringContent(value="You've found"),
+                            StringContent(value=str(self.quantity),
                                                    formatting="item_quantity"),
-                            messages.StringContent(value=" of "),
-                            messages.StringContent(value=f"item::{self.item_id}",
+                            StringContent(value=" of "),
+                            StringContent(value=f"item::{self.item_id}",
                                                    formatting="item_name"),
-                            messages.StringContent(value=". Do you want to add it to your inventory?")
+                            StringContent(value=". Do you want to add it to your inventory?")
                             ]
                 }
 
@@ -97,13 +202,13 @@ class CurrencyEvent(Event):
         self.currency_id = currency_id
         self.quantity = quantity
         self.cur = currency.currency_manager.to_currency(currency_id, abs(quantity))
-        self.gain_message: list[messages.StringContent] = [
-            messages.StringContent(value="You gained "),
-            messages.StringContent(value=str(self.cur))
+        self.gain_message: list[StringContent] = [
+            StringContent(value="You gained "),
+            StringContent(value=str(self.cur))
         ]
-        self.loss_message: list[messages.StringContent] = [
-            messages.StringContent(value="You lost "),
-            messages.StringContent(value=str(self.cur))
+        self.loss_message: list[StringContent] = [
+            StringContent(value="You lost "),
+            StringContent(value=str(self.cur))
         ]
 
     # TODO: Implement MoneyEvent logic
@@ -144,11 +249,11 @@ class ReputationEvent(Event):
         super().__init__(input_type=enums.InputType.SILENT if silent else enums.InputType.NONE)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
-        self.message = [messages.StringContent(value="Your reputation with "),
-                        messages.StringContent(value=f"faction::{faction_id}",
+        self.message = [StringContent(value="Your reputation with "),
+                        StringContent(value=f"faction::{faction_id}",
                                                formatting="faction_name"),
-                        messages.StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
-                        messages.StringContent(value=f" by {reputation_change}")
+                        StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
+                        StringContent(value=f" by {reputation_change}")
                         ]
 
     # TODO: Implement ReputationEvent logic

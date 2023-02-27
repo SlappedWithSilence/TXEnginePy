@@ -1,6 +1,8 @@
 import weakref
 
 import game.cache as cache
+import game
+import game.systems.event.events as events
 
 
 class Inventory:
@@ -99,6 +101,35 @@ class Inventory:
                     already_consumed = already_consumed + self.items[stack_index][1]
                     del self.items[stack_index]
 
+    def __contains__(self, item: int):
+        if type(item) != int:
+            raise TypeError("Cannot search for non-int in Inventory!")
+
+        for i in self.items:
+            if i[0] == item:
+                return True
+
+        return False
+
+    def is_collidable(self, item_id: int, quantity: int) -> bool:
+        from game.systems.item import item_manager
+        """
+        Args:
+            item_id:
+            quantity:
+
+        Returns: True if the user needs to resolve a collision, False otherwise
+        """
+
+        remaining_cap: int = self.capacity - len(self.items)
+        for stack in self._all_stacks(item_id):
+            remaining_cap = remaining_cap + (item_manager.get_instance(item_id).max_quantity - stack[1])
+
+        if quantity > remaining_cap:
+            return True
+
+        return False
+
     def add_item(self, item_id: int, quantity: int) -> None:
         """
         Adds a given quantity of the given item to the inventory. This may add the quantity to an existing stack or
@@ -116,6 +147,7 @@ class Inventory:
             raise TypeError(
                 f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
 
+        game.state_device_controller.add_state_device(events.AddItemEvent(item_id, quantity))
         # Case 1: item already in inventory
         # Case 1a: non-full stack exists
         # Case 1a.a add items into non-full stack.
