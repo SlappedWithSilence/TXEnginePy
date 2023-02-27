@@ -97,7 +97,7 @@ class AddItemEvent(Event):
         CONFIRM_REFUSE_REMOVE_STACK = 4,
         ITEM_ADDED = 5,
         SELECT_STACK = 6,
-        ITEM_NOT_ADDED = 7
+        TERMINATE = 8
 
     def __init__(self, item_id: int, item_quantity: int = 1):
         super().__init__(input_type=enums.InputType.SILENT)
@@ -132,22 +132,34 @@ class AddItemEvent(Event):
             return ComponentFactory.get(c)
 
         elif self.state == self.EventState.SELECT_STACK:
-            pass
+            c = ["Which stack would you like to drop to make room?"]
+            return ComponentFactory.get(c, self.player_ref.inventory.to_options())
 
         elif self.state == self.EventState.CONFIRM_REMOVE_STACK:
-            pass
+            c = ["Are you sure you want to drop this stack?"]
+            return ComponentFactory.get(c)
 
         elif self.state == self.EventState.ITEM_ADDED:
-            pass
+            c = ["You added ",
+                 StringContent(value=item.item_manager.get_name(self.item_id), formatting="item_name"),
+                 StringContent(value=f" {self.item_quantity}x ", formatting="item_quantity"),
+                 "to your inventory."]
+            return ComponentFactory.get(c)
 
         elif self.state == self.EventState.REFUSE_REMOVE_STACK:
-            pass
+            c = ["You dropped the items on the floor."]
+            return ComponentFactory.get(c)
 
         elif self.state == self.EventState.CONFIRM_REFUSE_REMOVE_STACK:
-            pass
+            c = ["Are you sure you want to drop ",
+                 StringContent(value=item.item_manager.get_name(self.item_id), formatting="item_name"),
+                 StringContent(value=f" {self.item_quantity}x", formatting="item_quantity"),
+                 "?"
+                 ]
+            return ComponentFactory.get(c)
 
-        elif self.state == self.EventState.ITEM_NOT_ADDED:
-            pass
+        elif self.state == self.EventState.TERMINATE:
+            return ComponentFactory.get([])
 
     def _logic(self, user_input: any) -> None:
 
@@ -163,6 +175,34 @@ class AddItemEvent(Event):
             else:
                 self.state = self.EventState.ITEM_ADDED
                 self.input_type = enums.InputType.NONE
+
+        elif self.state == self.EventState.PROMPT_REMOVE_STACK:
+            if user_input:
+                self.state = self.EventState.SELECT_STACK
+                self.input_type = enums.InputType.INT
+                self.domain_min = 0
+                self.domain_max = len(self.player_ref.inventory.items)
+            else:
+                self.state = self.EventState.CONFIRM_REFUSE_REMOVE_STACK
+                self.input_type = enums.InputType.AFFIRMATIVE
+
+        elif self.state == self.EventState.REFUSE_REMOVE_STACK:
+            self.state = self.EventState.TERMINATE
+            self.input_type = enums.InputType.SILENT
+
+        elif self.state == self.EventState.TERMINATE:
+            import game
+            game.state_device_controller.set_dead()
+
+        elif self.state == self.EventState.SELECT_STACK:
+            self.player_ref.inventory.drop_stack(user_input)
+
+            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
+                self.state = self.EventState.SELECT_STACK
+                self.input_type = enums.InputType.INT
+                self.domain_min = 0
+                self.domain_max = len(self.player_ref.inventory.items)
+
 
 
 class ItemEvent(Event):
