@@ -9,7 +9,6 @@ from game.structures.messages import StringContent, ComponentFactory
 from game.systems.room.action.actions import Action
 
 
-
 class ShopAction(Action):
     """
     An Action that simulates the user entering a shop.
@@ -134,7 +133,8 @@ class ShopAction(Action):
                     "Are you sure that you would like to purchase 1x ",
                     StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
                     " for ",
-                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency), formatting="item_cost"),
+                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency),
+                                  formatting="item_cost"),
                     "?"
                 ]
             }
@@ -146,7 +146,8 @@ class ShopAction(Action):
                     "Cannot purchase ",
                     StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                     ". Item costs ",
-                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency), formatting="item_cost"),
+                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency),
+                                  formatting="item_cost"),
                     ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
                 ]
             }
@@ -195,7 +196,8 @@ class ShopAction(Action):
                 else:
                     self.state = self.ShopState.PURCHASE_FAILURE
 
-            self.state = self.ShopState.DISPLAY_WARES
+            else:
+                self.state = self.ShopState.WARE_SELECTED
 
         # State 12
         elif self.state == self.ShopState.TERMINATE:

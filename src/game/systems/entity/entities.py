@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
 from abc import ABC
+from dataclasses import dataclass, field
 
 import game.systems.currency.coin_purse
-import game.systems.currency.currency as currency
-import game.systems.inventory.inventory as inv
 import game.systems.entity.resource as resource
+import game.systems.inventory.inventory as inv
 
 
 @dataclass

@@ -48,7 +48,7 @@ class ItemManager(Manager):
         else:
             return self._master_item_manifest[item_id].get_currency_value(currency_id)
 
-    def get_instance(self, item_id: int) -> Item:
+    def get_instance(self, item_id: int) -> item.Item:
         """
         Create and return a deep-copied instance of the item with item.id == 'item_id'
 

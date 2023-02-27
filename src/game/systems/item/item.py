@@ -1,9 +1,9 @@
 import dataclasses
 
 import game.systems.currency as currency
-from ..combat.effect import Effect
-from ..entity.entities import Entity
-from ..requirement.requirements import RequirementsMixin
+import game.systems.combat.effect as effect
+import game.systems.entity.entities as entities
+import game.systems.requirement.requirements as req
 
 
 @dataclasses.dataclass
@@ -22,15 +22,15 @@ class Item:
 
 
 @dataclasses.dataclass
-class Usable(Item, RequirementsMixin):
+class Usable(Item, req.RequirementsMixin):
     """
     A consumable item. When consumed, this item's stack quantity decreases by 1 and the effects in 'effects' are
     triggered in sequence.
     """
-    effects: list[Effect] = dataclasses.field(default_factory=list)  # List of effects that trigger when item is used
+    effects: list[effect.Effect] = dataclasses.field(default_factory=list)  # List of effects that trigger when item is used
     consumable: bool = False  # A flag that determines if the item should decrement quantity after each use.
 
-    def use(self, target: Entity) -> None:
+    def use(self, target: entities.Entity) -> None:
         for effect in self.effects:
             effect.perform(target)
 
