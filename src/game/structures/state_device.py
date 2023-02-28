@@ -2,10 +2,11 @@ import copy
 import enum
 import weakref
 from abc import abstractmethod, ABC
+from functools import wraps
 
-from . import enums
-from .enums import InputType, is_valid_range, to_range, affirmative_range
-from .messages import Frame
+from game.structures import enums
+from game.structures.enums import InputType, is_valid_range, to_range, affirmative_range
+from game.structures.messages import Frame, ComponentFactory
 
 from loguru import logger
 
@@ -129,11 +130,13 @@ class StateDevice(ABC):
         elif self.input_type == InputType.INT:
             if type(input_value) == int:
                 if self.input_range["min"] and input_value < self.input_range["min"]:
-                    logger.warning(f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
+                    logger.warning(
+                        f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
                     return False
 
                 if self.input_range["max"] and input_value > self.input_range["max"]:
-                    logger.warning(f"[{self}]: Failed to validate input! {input_value} must be <= {self.input_range['max']}")
+                    logger.warning(
+                        f"[{self}]: Failed to validate input! {input_value} must be <= {self.input_range['max']}")
                     return False
 
                 return True
@@ -208,26 +211,28 @@ class StateDevice(ABC):
         """
         return self.__frame__()
 
+
 class FiniteStateDevice(StateDevice, ABC):
     """
     A subclass of StateDevice that adds support for explicit state ordering and transitions
     """
-    def __init__(self, default_input_type: InputType, states: enum, default_state = None):
+
+    def __init__(self, default_input_type: InputType, states: enum, default_state=None):
         super().__init__(default_input_type)
 
         self.states = states
         self.current_state = default_state
 
         state_data_dict = {
-            "input_type" : enums.InputType.NONE,
-            "min" : None,
-            "max" : None,
-            "len" : None,
-            "logic" : None,
-            "content" : None
+            "input_type": enums.InputType.NONE,
+            "min": None,
+            "max": None,
+            "len": None,
+            "logic": None,
+            "content": None
         }
 
-        self.state_data = {k : copy.deepcopy(state_data_dict) for k in self.states}
+        self.state_data = {k: copy.deepcopy(state_data_dict) for k in self.states}
 
     def set_state(self, next_state) -> None:
         if next_state not in self.state_data:
@@ -240,12 +245,14 @@ class FiniteStateDevice(StateDevice, ABC):
         self.domain_length = self.state_data[next_state]['len']
 
     # Custom Decorators
-    def state_logic(self, func, state, input_type: enums.InputType, input_min: int = None, input_max: int = None, input_len: int = None):
+    @staticmethod
+    def state_logic(instance, state, input_type: enums.InputType, input_min: int = None, input_max: int = None,
+                    input_len: int = None):
         """
         Wraps a function and stores it as a callable in the state data dict. Also stores the state's input type and range
 
         Args:
-            func: The function to call when _logic is called at 'state'
+            instance: an instance of a FiniteStateDevice to operate on
             state: The state to map 'func' to
             input_type: The input type for this state
             input_min: The input range's min for this state
@@ -255,30 +262,47 @@ class FiniteStateDevice(StateDevice, ABC):
         Returns: None
         """
 
-        if not callable(func):
-            raise TypeError("func must be callable!")
+        # Type checker
+        if not isinstance(instance, FiniteStateDevice):
+            raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
 
-        if state not in self.state_data:
+        if state not in instance.state_data:
             raise ValueError(f"Unknown state {state}!")
 
-        self.state_data[state]['input_type'] = input_type
-        self.state_data[state]['min'] = input_min
-        self.state_data[state]['max'] = input_max
-        self.state_data[state]['len'] = input_len
-        self.state_data[state]['logic'] = func
+        def decorate(fn):
 
-        return func
+            instance.state_data[state]['input_type'] = input_type
+            instance.state_data[state]['min'] = input_min
+            instance.state_data[state]['max'] = input_max
+            instance.state_data[state]['len'] = input_len
+            instance.state_data[state]['logic'] = fn
 
-    def state_content(self, func, state):
-        if not callable(func):
-            raise TypeError("func must be callable!")
+            return fn
 
-        if state not in self.state_data:
+        return decorate
+
+    @staticmethod
+    def state_content(instance, state):  # Outer decorator
+
+        # Type checker
+        if not isinstance(instance, FiniteStateDevice):
+            raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
+
+        if state not in instance.state_data:
             raise ValueError(f"Unknown state {state}!")
 
-        self.state_data[state]['content'] = func
+        # Inner decorator that receives the function
+        def decorate(fn):
 
-        return func
+            instance.state_data[state]['content'] = fn
+
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return decorate
 
     def _logic(self, user_input: any) -> None:
         self.state_data[self.current_state]['logic'](user_input)
@@ -286,3 +310,32 @@ class FiniteStateDevice(StateDevice, ABC):
     @property
     def components(self) -> dict[str, any]:
         return self.state_data[self.current_state]['content']()
+
+
+if __name__ == "__main__":
+    class TestStates(enum.Enum):
+        a = "a",
+        b = "b",
+        c = "c",
+        terminate = "terminate"
+
+
+    class TestDevice(FiniteStateDevice):
+
+        def __init__(self):
+            super().__init__(enums.InputType.NONE, TestStates)
+            self.current_state = self.states.a
+
+            @FiniteStateDevice.state_logic(instance=self, state=self.states.a, input_type=enums.InputType.NONE)
+            def logic(user_input: any):
+                print(f"got user input: {user_input}!")
+                print("This is state A")
+
+            @FiniteStateDevice.state_content(instance=self, state=self.states.a)
+            def content() -> dict:
+                return ComponentFactory.get(["This is A"])
+
+
+    td = TestDevice()
+    print(td.components)
+    td.input("Doesn't matter.")
