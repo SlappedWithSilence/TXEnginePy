@@ -249,7 +249,8 @@ class FiniteStateDevice(StateDevice, ABC):
     def state_logic(instance, state, input_type: enums.InputType, input_min: int = None, input_max: int = None,
                     input_len: int = None):
         """
-        Wraps a function and stores it as a callable in the state data dict. Also stores the state's input type and range
+        A decorator factory that registers a function as a logic provider within an instance of FiniteStateDevice and
+        stores auxiliary state information such as input type and input range.
 
         Args:
             instance: an instance of a FiniteStateDevice to operate on
@@ -259,18 +260,21 @@ class FiniteStateDevice(StateDevice, ABC):
             input_max: The input range's max for this state
             input_len: The input range's length for this state
 
-        Returns: None
+        Returns: A decorator that registers the wrapped function and passed input information to 'instance'
         """
 
-        # Type checker
+        # Type and value checking
         if not isinstance(instance, FiniteStateDevice):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
-
         if state not in instance.state_data:
             raise ValueError(f"Unknown state {state}!")
+        if instance.state_data[state]['logic']:
+            raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
 
         def decorate(fn):
-
+            """
+            Register to instance and then return the function untouched.
+            """
             instance.state_data[state]['input_type'] = input_type
             instance.state_data[state]['min'] = input_min
             instance.state_data[state]['max'] = input_max
@@ -283,25 +287,32 @@ class FiniteStateDevice(StateDevice, ABC):
 
     @staticmethod
     def state_content(instance, state):  # Outer decorator
+        """
+        A decorator factory that returns a factory that registers the wrapped function as the content provider for
+        state 'state'.
 
-        # Type checker
+        Args:
+            instance: An instance of the FiniteStateDevice to modify
+            state: The state to register the content function to
+
+        Returns: A decorator function that registers the wrapped function as a content provider for a given state
+        """
+
+        # Check argument types and values
         if not isinstance(instance, FiniteStateDevice):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
-
         if state not in instance.state_data:
             raise ValueError(f"Unknown state {state}!")
+        if instance.state_data[state]['content']:
+            raise ValueError(f"State.content collision! {state} already has a content function registered.")
 
         # Inner decorator that receives the function
         def decorate(fn):
-
+            """
+            A simple decorator that registers the wrapped function to the passed instance
+            """
             instance.state_data[state]['content'] = fn
-
-            @wraps(fn)
-            def wrapper(*args, **kwargs):
-                return fn(*args, **kwargs)
-
-            return wrapper
-
+            return fn
         return decorate
 
     def _logic(self, user_input: any) -> None:
@@ -310,32 +321,3 @@ class FiniteStateDevice(StateDevice, ABC):
     @property
     def components(self) -> dict[str, any]:
         return self.state_data[self.current_state]['content']()
-
-
-if __name__ == "__main__":
-    class TestStates(enum.Enum):
-        a = "a",
-        b = "b",
-        c = "c",
-        terminate = "terminate"
-
-
-    class TestDevice(FiniteStateDevice):
-
-        def __init__(self):
-            super().__init__(enums.InputType.NONE, TestStates)
-            self.current_state = self.states.a
-
-            @FiniteStateDevice.state_logic(instance=self, state=self.states.a, input_type=enums.InputType.NONE)
-            def logic(user_input: any):
-                print(f"got user input: {user_input}!")
-                print("This is state A")
-
-            @FiniteStateDevice.state_content(instance=self, state=self.states.a)
-            def content() -> dict:
-                return ComponentFactory.get(["This is A"])
-
-
-    td = TestDevice()
-    print(td.components)
-    td.input("Doesn't matter.")
