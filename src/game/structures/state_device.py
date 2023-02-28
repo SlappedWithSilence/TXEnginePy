@@ -7,7 +7,7 @@ from loguru import logger
 
 from game.structures import enums
 from game.structures.enums import InputType
-from game.util.input_utils import is_valid_range, to_range, affirmative_range
+from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
 from game.structures.messages import Frame
 
 
@@ -181,7 +181,11 @@ class StateDevice(ABC):
 
         """
         if self.validate_input(user_input):
-            self._logic(user_input)
+
+            if self.input_type == enums.InputType.AFFIRMATIVE:  # Intercept affirmative input values and transform them
+                self._logic(affirmative_to_bool(user_input))
+            else:  # Handle all other input values normally
+                self._logic(user_input)
             return True
 
         return False
