@@ -2,13 +2,13 @@ import copy
 import enum
 import weakref
 from abc import abstractmethod, ABC
-from functools import wraps
-
-from game.structures import enums
-from game.structures.enums import InputType, is_valid_range, to_range, affirmative_range
-from game.structures.messages import Frame, ComponentFactory
 
 from loguru import logger
+
+from game.structures import enums
+from game.structures.enums import InputType
+from game.util.input_utils import is_valid_range, to_range, affirmative_range
+from game.structures.messages import Frame
 
 
 class StateDevice(ABC):

@@ -5,6 +5,7 @@ from enum import Enum
 import game.structures.enums as enums
 import game.structures.state_device as state_device
 import game.systems.currency as currency
+import game.util.input_utils
 from game import cache
 from game.structures.messages import StringContent, ComponentFactory
 import game.systems.entity.entities as entities
@@ -217,7 +218,7 @@ class ItemEvent(Event):
 
     def _logic(self, user_input: str) -> None:
         # TODO: Implement
-        if enums.affirmative_to_bool(user_input):
+        if game.util.input_utils.affirmative_to_bool(user_input):
             # Spawn item-acquisition StateDevice
             pass
 
