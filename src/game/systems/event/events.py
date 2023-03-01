@@ -109,7 +109,7 @@ class AddItemEvent(Event):
     enough inventory space.
     """
 
-    class EventState(Enum):
+    class States(Enum):
         """
         Case 1: item already in inventory
         Case 1a: non-full stack exists
@@ -127,117 +127,18 @@ class AddItemEvent(Event):
         """
 
         DEFAULT = 0
-        PROMPT_REMOVE_STACK = 1,
-        CONFIRM_REMOVE_STACK = 2,
-        REFUSE_REMOVE_STACK = 3,
-        CONFIRM_REFUSE_REMOVE_STACK = 4,
-        ITEM_ADDED = 5,
-        SELECT_STACK = 6,
-        TERMINATE = 8
+        INSERT_ITEM = 1
+        PROMPT_KEEP_NEW_ITEM = 2
 
     def __init__(self, item_id: int, item_quantity: int = 1):
-        super().__init__(input_type=InputType.SILENT)
+        super().__init__(InputType.SILENT, AddItemEvent.States)
         self.item_id = item_id
         self.item_quantity = item_quantity
-        self.state = self.EventState.ITEM_ADDED
+        self.state = self.State.ITEM_ADDED
         self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])
 
-    def _requires_user_intervention(self) -> bool:
-        """
-        A function that computes whether the user is needed to resolve a collision or overflow within the inventory as
-        a result of the Event.
 
-        Args:
 
-        Returns: True if the user is required to resolve a collision, False otherwise
-        """
-
-    @property
-    def components(self) -> dict[str, any]:
-
-        if self.state == self.EventState.DEFAULT:
-
-            return ComponentFactory.get([""])
-
-        elif self.state == self.EventState.PROMPT_REMOVE_STACK:
-            c = ["Your inventory has insufficient free space to add ",
-                 StringContent(value=f"{self.item_quantity}x", format="item_quantity"),
-                 " ",
-                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", format="item_name"),
-                 ". Do you wish to drop a stack of items to make room in your inventory?"]
-            return ComponentFactory.get(c)
-
-        elif self.state == self.EventState.SELECT_STACK:
-            c = ["Which stack would you like to drop to make room?"]
-            return ComponentFactory.get(c, self.player_ref.inventory.to_options())
-
-        elif self.state == self.EventState.CONFIRM_REMOVE_STACK:
-            c = ["Are you sure you want to drop this stack?"]
-            return ComponentFactory.get(c)
-
-        elif self.state == self.EventState.ITEM_ADDED:
-            c = ["You added ",
-                 StringContent(value=item.item_manager.get_name(self.item_id), formatting="item_name"),
-                 StringContent(value=f" {self.item_quantity}x ", formatting="item_quantity"),
-                 "to your inventory."]
-            return ComponentFactory.get(c)
-
-        elif self.state == self.EventState.REFUSE_REMOVE_STACK:
-            c = ["You dropped the items on the floor."]
-            return ComponentFactory.get(c)
-
-        elif self.state == self.EventState.CONFIRM_REFUSE_REMOVE_STACK:
-            c = ["Are you sure you want to drop ",
-                 StringContent(value=item.item_manager.get_name(self.item_id), formatting="item_name"),
-                 StringContent(value=f" {self.item_quantity}x", formatting="item_quantity"),
-                 "?"
-                 ]
-            return ComponentFactory.get(c)
-
-        elif self.state == self.EventState.TERMINATE:
-            return ComponentFactory.get([])
-
-    def _logic(self, user_input: any) -> None:
-
-        # Default State
-        if self.state == self.EventState.DEFAULT:
-
-            # If the player needs to intervene, silently set state to PROMPT REMOVE STACK
-            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
-                self.state = self.EventState.PROMPT_REMOVE_STACK
-                self.input_type = InputType.AFFIRMATIVE
-
-            # If the player doesn't need to intervene, simply execute the item add
-            else:
-                self.state = self.EventState.ITEM_ADDED
-                self.input_type = InputType.NONE
-
-        elif self.state == self.EventState.PROMPT_REMOVE_STACK:
-            if user_input:
-                self.state = self.EventState.SELECT_STACK
-                self.input_type = InputType.INT
-                self.domain_min = 0
-                self.domain_max = len(self.player_ref.inventory.items)
-            else:
-                self.state = self.EventState.CONFIRM_REFUSE_REMOVE_STACK
-                self.input_type = InputType.AFFIRMATIVE
-
-        elif self.state == self.EventState.REFUSE_REMOVE_STACK:
-            self.state = self.EventState.TERMINATE
-            self.input_type = InputType.SILENT
-
-        elif self.state == self.EventState.TERMINATE:
-            import game
-            game.state_device_controller.set_dead()
-
-        elif self.state == self.EventState.SELECT_STACK:
-            self.player_ref.inventory.drop_stack(user_input)
-
-            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
-                self.state = self.EventState.SELECT_STACK
-                self.input_type = InputType.INT
-                self.domain_min = 0
-                self.domain_max = len(self.player_ref.inventory.items)
 
 
 class ItemEvent(Event):
