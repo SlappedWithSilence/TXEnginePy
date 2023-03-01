@@ -320,8 +320,23 @@ class FiniteStateDevice(StateDevice, ABC):
         return decorate
 
     def _logic(self, user_input: any) -> None:
+
+        # Check for bad state data
+        if self.current_state not in self.state_data:
+            raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
+
+        if 'logic' not in self.state_data[self.current_state]:
+            raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
+
         self.state_data[self.current_state]['logic'](user_input)
 
     @property
     def components(self) -> dict[str, any]:
+        # Check for bad state data
+        if self.current_state not in self.state_data:
+            raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
+
+        if 'content' not in self.state_data[self.current_state]:
+            raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
+
         return self.state_data[self.current_state]['content']()
