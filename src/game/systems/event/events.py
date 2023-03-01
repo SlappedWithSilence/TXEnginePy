@@ -2,8 +2,8 @@ import weakref
 from abc import ABC
 from enum import Enum
 
-import game.structures.enums as enums
-import game.structures.state_device as state_device
+from game.structures.enums import InputType
+from game.structures.state_device import FiniteStateDevice
 import game.systems.currency as currency
 import game.util.input_utils
 from game import cache
@@ -12,58 +12,93 @@ import game.systems.entity.entities as entities
 import game.systems.item as item
 
 
-class Event(state_device.StateDevice, ABC):
+class Event(FiniteStateDevice, ABC):
 
-    def __init__(self, input_type: enums.InputType):
-        super().__init__(input_type)
+    def __init__(self, default_input_type: InputType, states: Enum):
+        super().__init__(default_input_type, states)
 
 
 class FlagEvent(Event):
     """An event that sets a specific flag to a given value"""
 
+    class States(Enum):
+        DEFAULT = 0
+
     def __init__(self, flags: [tuple[str, bool]]):
-        super().__init__(input_type=enums.InputType.NONE)
+        super().__init__(default_input_type=InputType.SILENT, states=FlagEvent.States)
         self.flags = flags  # The flags to set and their corresponding values
+        self.current_state = self.States.DEFAULT
 
-    @property
-    def components(self) -> dict[str, any]:
-        return {}
-
-    def _logic(self, _: any) -> None:
-        for flag in self.flags:
-            # TODO: Implement flag setter
+        @FiniteStateDevice.state_logic(input_type=InputType.SILENT, instance=self, state=self.States.DEFAULT)
+        def logic(user_input: any) -> None:
+            """
+            Perform some logic for setting flags
+            """
             pass
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get([""])
 
 
 class AbilityEvent(Event):
     """Causes the player to learn a given ability"""
 
+    class States(Enum):
+        DEFAULT = 0
+        ALREADY_LEARNED = 1
+        NOT_ALREADY_LEARNED = 2
+        TERMINATE = 3
+
     def __init__(self, ability: int):
-        super().__init__(input_type=enums.InputType.NONE)
+        super().__init__(default_input_type=InputType.SILENT, states=AbilityEvent.States)
         self.target_ability: int = ability
 
-    @property
-    def components(self) -> dict[str, any]:
-        learn_message = [StringContent(value="You learned a new ability!"),
-                         StringContent(value="LOOK UP ABILITY NAME",
-                                                formatting="ability_name")
-                         ]
-        already_learned_message = [StringContent(value="You already learned "),
-                                   StringContent(value="LOOK UP ABILITY NAME",
-                                                          formatting="ability_name")
-                                   ]
+        @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get([""])
 
-        return {"content": learn_message}  # TODO: Implement already-learned message
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            check_for_learned = False  # TODO: Implement
+            if check_for_learned:
+                self.set_state(self.States.ALREADY_LEARNED)
+            else:
+                self.set_state(self.States.NOT_ALREADY_LEARNED)
 
-    # TODO: Implement AbilityEvent logic
-    def _logic(self, _) -> None:
-        """
-        Check if the ability has been learned. If it hasn't been learned, learn it
-        """
-        # Check if player has ability
-        # if so, set text to reflect redundant learning
-        # if not, learn the ability
-        # TODO: Implement
+        @FiniteStateDevice.state_content(self, self.States.NOT_ALREADY_LEARNED)
+        def content() -> dict:
+            learn_message = [StringContent(value="You learned a new ability!"),
+                             StringContent(value="LOOK UP ABILITY NAME",
+                                           formatting="ability_name")]
+            return ComponentFactory.get(learn_message)
+
+        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.NONE)
+        def logic(_: any) -> None:
+            # TODO: Implement ability learning method
+            print("LEARN AN ABILITY")
+
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.ALREADY_LEARNED)
+        def content() -> dict:
+            already_learned_message = [StringContent(value="You already learned "),
+                                       StringContent(value="LOOK UP ABILITY NAME",
+                                                     formatting="ability_name")
+                                       ]
+            return ComponentFactory.get(already_learned_message)
+
+        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.NONE)
+        def logic(_: any):
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content() -> dict:
+            return ComponentFactory.get([""])
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
 
 
 class AddItemEvent(Event):
@@ -101,7 +136,7 @@ class AddItemEvent(Event):
         TERMINATE = 8
 
     def __init__(self, item_id: int, item_quantity: int = 1):
-        super().__init__(input_type=enums.InputType.SILENT)
+        super().__init__(input_type=InputType.SILENT)
         self.item_id = item_id
         self.item_quantity = item_quantity
         self.state = self.EventState.ITEM_ADDED
@@ -170,26 +205,26 @@ class AddItemEvent(Event):
             # If the player needs to intervene, silently set state to PROMPT REMOVE STACK
             if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
                 self.state = self.EventState.PROMPT_REMOVE_STACK
-                self.input_type = enums.InputType.AFFIRMATIVE
+                self.input_type = InputType.AFFIRMATIVE
 
             # If the player doesn't need to intervene, simply execute the item add
             else:
                 self.state = self.EventState.ITEM_ADDED
-                self.input_type = enums.InputType.NONE
+                self.input_type = InputType.NONE
 
         elif self.state == self.EventState.PROMPT_REMOVE_STACK:
             if user_input:
                 self.state = self.EventState.SELECT_STACK
-                self.input_type = enums.InputType.INT
+                self.input_type = InputType.INT
                 self.domain_min = 0
                 self.domain_max = len(self.player_ref.inventory.items)
             else:
                 self.state = self.EventState.CONFIRM_REFUSE_REMOVE_STACK
-                self.input_type = enums.InputType.AFFIRMATIVE
+                self.input_type = InputType.AFFIRMATIVE
 
         elif self.state == self.EventState.REFUSE_REMOVE_STACK:
             self.state = self.EventState.TERMINATE
-            self.input_type = enums.InputType.SILENT
+            self.input_type = InputType.SILENT
 
         elif self.state == self.EventState.TERMINATE:
             import game
@@ -200,10 +235,9 @@ class AddItemEvent(Event):
 
             if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
                 self.state = self.EventState.SELECT_STACK
-                self.input_type = enums.InputType.INT
+                self.input_type = InputType.INT
                 self.domain_min = 0
                 self.domain_max = len(self.player_ref.inventory.items)
-
 
 
 class ItemEvent(Event):
@@ -212,7 +246,7 @@ class ItemEvent(Event):
     """
 
     def __init__(self, item_id: int, quantity: int):
-        super().__init__(input_type=enums.InputType.AFFIRMATIVE)
+        super().__init__(input_type=InputType.AFFIRMATIVE)
         self.item_id = item_id
         self.quantity = quantity
 
@@ -227,10 +261,10 @@ class ItemEvent(Event):
         # TODO: Implement translate item.id to item.name
         return {"content": [StringContent(value="You've found"),
                             StringContent(value=str(self.quantity),
-                                                   formatting="item_quantity"),
+                                          formatting="item_quantity"),
                             StringContent(value=" of "),
                             StringContent(value=f"item::{self.item_id}",
-                                                   formatting="item_name"),
+                                          formatting="item_name"),
                             StringContent(value=". Do you want to add it to your inventory?")
                             ]
                 }
@@ -239,7 +273,7 @@ class ItemEvent(Event):
 class CurrencyEvent(Event):
 
     def __init__(self, currency_id: int | str, quantity: int):
-        super().__init__(input_type=enums.InputType.NONE)
+        super().__init__(input_type=InputType.NONE)
         self.currency_id = currency_id
         self.quantity = quantity
         self.cur = currency.currency_manager.to_currency(currency_id, abs(quantity))
@@ -272,7 +306,7 @@ class CurrencyEvent(Event):
 class RecipeEvent(Event):
 
     def __init__(self, recipe_id: int):
-        super().__init__(input_type=enums.InputType.NONE)
+        super().__init__(input_type=InputType.NONE)
         self.recipe_id = recipe_id
 
     # TODO: Implement RecipeEvent logic
@@ -287,12 +321,12 @@ class RecipeEvent(Event):
 class ReputationEvent(Event):
 
     def __init__(self, faction_id: int, reputation_change: int, silent: bool = False):
-        super().__init__(input_type=enums.InputType.SILENT if silent else enums.InputType.NONE)
+        super().__init__(input_type=InputType.SILENT if silent else InputType.NONE)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
         self.message = [StringContent(value="Your reputation with "),
                         StringContent(value=f"faction::{faction_id}",
-                                               formatting="faction_name"),
+                                      formatting="faction_name"),
                         StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
                         StringContent(value=f" by {reputation_change}")
                         ]
@@ -314,7 +348,7 @@ class ReputationEvent(Event):
 class ResourceEvent(Event):
 
     def __init__(self, stat_name: str, stat_change: int | float):
-        super().__init__(input_type=enums.InputType.NONE)
+        super().__init__(input_type=InputType.NONE)
         self.stat_name = stat_name
         self.stat_name: int | float = stat_change
 

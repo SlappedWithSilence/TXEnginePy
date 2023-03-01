@@ -221,7 +221,7 @@ class FiniteStateDevice(StateDevice, ABC):
     A subclass of StateDevice that adds support for explicit state ordering and transitions
     """
 
-    def __init__(self, default_input_type: InputType, states: enum, default_state=None):
+    def __init__(self, default_input_type: InputType, states: enum.Enum, default_state=None):
         super().__init__(default_input_type)
 
         self.states = states
@@ -236,7 +236,7 @@ class FiniteStateDevice(StateDevice, ABC):
             "content": None
         }
 
-        self.state_data = {k: copy.deepcopy(state_data_dict) for k in self.states}
+        self.state_data = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
 
     def set_state(self, next_state) -> None:
         if next_state not in self.state_data:
