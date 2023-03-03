@@ -90,6 +90,6 @@ class TestAction(Action):
 
 
 if __name__ == "__main__":
-    a = TestAction("Test", "Test", input_type=enums.InputType.NONE, name="TestAction", requirements=[])
+    a = TestAction("Test", "Test", input_type=enums.InputType.ANY, name="TestAction", requirements=[])
     print(a.__dict__)
     print(a.is_requirements_fulfilled())
