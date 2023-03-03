@@ -115,7 +115,7 @@ class StateDevice(ABC):
         Returns: True if the input value is valid, False otherwise
         """
 
-        if self.input_type == InputType.SILENT or self.input_type == InputType.NONE:
+        if self.input_type == InputType.SILENT or self.input_type == InputType.ANY:
             return True
 
         # Input must be str matching the set of strings in the array
@@ -228,7 +228,7 @@ class FiniteStateDevice(StateDevice, ABC):
         self.current_state = default_state
 
         state_data_dict = {
-            "input_type": enums.InputType.NONE,
+            "input_type": enums.InputType.ANY,
             "min": None,
             "max": None,
             "len": None,

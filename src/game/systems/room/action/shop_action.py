@@ -117,7 +117,7 @@ class ShopAction(Action):
                        ]
             return ComponentFactory.get(content, self._get_ware_options())
         elif self.state == self.ShopState.READ_WARE_DESC:
-            self.input_type = enums.InputType.NONE
+            self.input_type = enums.InputType.ANY
 
             return {
                 "content": [
@@ -140,7 +140,7 @@ class ShopAction(Action):
             }
 
         elif self.state == self.ShopState.PURCHASE_FAILURE:
-            self.input_type = enums.InputType.NONE
+            self.input_type = enums.InputType.ANY
             return {
                 "content": [
                     "Cannot purchase ",
@@ -153,7 +153,7 @@ class ShopAction(Action):
             }
 
         elif self.state == self.ShopState.TERMINATE:
-            self.input_type = enums.InputType.NONE
+            self.input_type = enums.InputType.ANY
             return {
                 "content": ["You leave the shop."]
             }

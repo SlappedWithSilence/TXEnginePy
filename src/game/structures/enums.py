@@ -19,6 +19,6 @@ class InputType(enum.Enum):
     INT = "int",  # Get an int
     STR = "str",  # Get a string
     SILENT = "silent",  # Operate silently, don't attempt to prompt user
-    NONE = "null"  # Get any key value as a response. Useful to simply prompt the user to continue
+    ANY = "any"  # Get any key value as a response. Useful to simply prompt the user to continue
 
 
