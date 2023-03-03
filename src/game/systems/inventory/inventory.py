@@ -1,4 +1,5 @@
 import weakref
+from collections import namedtuple
 
 import game.cache as cache
 import game
@@ -8,12 +9,20 @@ from game.structures.messages import StringContent
 
 class Inventory:
 
+    Stack = namedtuple('Stack', ['id', 'quantity', 'ref'])
+
     def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
         self.capacity: int = capacity
-        self.items: list[tuple[int, int]] = items or []
+        self.items: list[Inventory.Stack] = items or []
 
         if not self.capacity:
             self.capacity = cache.get_config()["inventory"]["default_capacity"]
+
+    @classmethod
+    def get_stack(cls, item_id: int, quantity: int) -> Stack:
+        from game.systems.item import item_manager
+
+        return Inventory.Stack(item_id, quantity, item_manager.get_ref(item_id))
 
     # Private Methods
     def _all_stack_indexes(self, item_id: int) -> list[int]:
@@ -28,13 +37,13 @@ class Inventory:
         if type(item_id) != int:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
-        return [idx for idx, stack in enumerate(self.items) if stack[0] == item_id]
+        return [idx for idx, stack in enumerate(self.items) if stack.id == item_id]
 
-    def _all_stacks(self, item_id: int) -> list[tuple[int, int]]:
+    def _all_stacks(self, item_id: int) -> list[Stack]:
         if type(item_id) != int:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
-        return [weakref.proxy(stack) for stack in self.items if stack[0] == item_id]
+        return [weakref.proxy(stack) for stack in self.items if stack.id == item_id]
 
     def _total_quantity(self, item_id: int) -> int:
         """
@@ -48,7 +57,7 @@ class Inventory:
         if type(item_id) != int:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
-        return sum(self._all_stacks(item_id))
+        return sum([s.quantity for s in self._all_stacks(item_id)])
 
     # Public Methods
 
@@ -160,6 +169,31 @@ class Inventory:
             return True
 
         return False
+
+    def new_stack(self, item_id: int, quantity: int) -> int:
+        """
+        Creates a new stack in the inventory with the given item_id and item_quantity. If quantity > item.max_stack,
+        return the difference.
+
+        Args:
+            item_id: The ID of the item to make the stack for
+            quantity: the size of the stack
+
+        Returns: the amount of leftover items that didn't make it into the stack
+        """
+
+        if self.full:
+            return quantity
+
+        from game.systems.item import item_manager
+
+        leftover = quantity - item_manager.get_instance(item_id).max_quantity
+
+        if leftover >= 0:
+            self.items.append(item_manager.get_instance(item_id).max_quantity)
+            return leftover
+
+        self.items.append(item_id, quantity)
 
     def add_item(self, item_id: int, quantity: int) -> None:
         """
