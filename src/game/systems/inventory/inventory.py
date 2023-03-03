@@ -97,8 +97,8 @@ class Inventory:
             for stack_index in self._all_stack_indexes(item_id):
 
                 # If the current stack is bigger than needed, adjust its size and return True
-                if self.items[stack_index][1] > quantity - already_consumed:
-                    self.items[stack_index] = item_id, self.items[stack_index][1] - (quantity - already_consumed)
+                if self.items[stack_index].quantity > quantity - already_consumed:
+                    self.items[stack_index] = Inventory.get_stack(item_id, self.items[stack_index][1] - (quantity - already_consumed))
                     return True
 
                 # If the current stack is exactly the size needed, delete it and return True
@@ -116,21 +116,20 @@ class Inventory:
             raise TypeError("Cannot search for non-int in Inventory!")
 
         for i in self.items:
-            if i[0] == item:
+            if i.id == item:
                 return True
 
         return False
 
     def to_options(self) -> list[list[str | StringContent]]:
-        from game.systems.item import item_manager
         results = []
 
         for stack in self.items:
             results.append(
                 [
-                    StringContent(value=item_manager.get_name(stack[0]), formatting="item_name"),
+                    StringContent(value=stack.ref.name, formatting="item_name"),
                     "\t",
-                    StringContent(value=f"{stack[1]}x", formatting="item_quantity")
+                    StringContent(value=f"{stack.quantity}x", formatting="item_quantity")
                 ]
             )
 
@@ -152,7 +151,6 @@ class Inventory:
         del self.items[stack_index]
 
     def is_collidable(self, item_id: int, quantity: int) -> bool:
-        from game.systems.item import item_manager
         """
         Args:
             item_id:
@@ -163,7 +161,7 @@ class Inventory:
 
         remaining_cap: int = self.capacity - len(self.items)
         for stack in self._all_stacks(item_id):
-            remaining_cap = remaining_cap + (item_manager.get_instance(item_id).max_quantity - stack[1])
+            remaining_cap = remaining_cap + (stack.ref.max_quantity - stack.quantity)
 
         if quantity > remaining_cap:
             return True
@@ -190,10 +188,12 @@ class Inventory:
         leftover = quantity - item_manager.get_instance(item_id).max_quantity
 
         if leftover >= 0:
-            self.items.append(item_manager.get_instance(item_id).max_quantity)
+            self.items.append(Inventory.get_stack(item_id, item_manager.get_instance(item_id).max_quantity))
             return leftover
 
-        self.items.append(item_id, quantity)
+        self.items.append(Inventory.get_stack(item_id, quantity))
+        return 0
+
 
     def add_item(self, item_id: int, quantity: int) -> None:
         """
