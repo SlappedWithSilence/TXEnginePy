@@ -1,4 +1,5 @@
 import copy
+import weakref
 
 import game.systems.currency as currency
 from game.structures.manager import Manager
@@ -64,6 +65,15 @@ class ItemManager(Manager):
             raise ValueError(f"No such item with ID {item_id}!")
 
         return copy.deepcopy(self._master_item_manifest[item_id])
+
+    def get_ref(self, item_id: int) -> item.Item:
+        if type(item_id) != int:
+            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
+
+        if item_id not in self._master_item_manifest:
+            raise ValueError(f"No such item with ID {item_id}!")
+
+        return weakref.proxy(self._master_item_manifest[item_id])
 
     def load(self) -> None:
         pass
