@@ -73,7 +73,7 @@ class AbilityEvent(Event):
                                            formatting="ability_name")]
             return ComponentFactory.get(learn_message)
 
-        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.NONE)
+        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.ANY)
         def logic(_: any) -> None:
             # TODO: Implement ability learning method
             print("LEARN AN ABILITY")
@@ -88,7 +88,7 @@ class AbilityEvent(Event):
                                        ]
             return ComponentFactory.get(already_learned_message)
 
-        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.NONE)
+        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.ANY)
         def logic(_: any):
             self.set_state(self.States.TERMINATE)
 
@@ -127,54 +127,59 @@ class AddItemEvent(Event):
         """
 
         DEFAULT = 0
-        INSERT_ITEM = 1
-        PROMPT_KEEP_NEW_ITEM = 2
+        PROMPT_KEEP_NEW_ITEM = 1
+        INSERT_ITEM = 2
 
     def __init__(self, item_id: int, item_quantity: int = 1):
+        """
+        Args:
+            item_id: The ID of the Item to attempt to add to the player's inventory.
+            item_quantity: The quantity of the Item to attemtp to add to the player's inventory.
+
+        Returns: An instance of an AddItemEvent
+        """
         super().__init__(InputType.SILENT, AddItemEvent.States)
         self.item_id = item_id
         self.item_quantity = item_quantity
-        self.state = self.State.ITEM_ADDED
-        self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])
+        self.remaining_quantity = item_quantity
+        self.state = self.States.DEFAULT  # Set the starting state to DEFAULT
+        self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])  # Grab a weak reference to Player
+        self._build_states()
 
+    def _build_states(self) -> None:
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            # Detect collision
+            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
+                self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)  # Make player choose to keep or drop new item
+            else:
+                self.set_state(self.States.INSERT_ITEM)  # Insert items
 
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get([""])
 
+        @FiniteStateDevice.state_logic(self, self.States.INSERT_ITEM, InputType.ANY)
+        def logic(_: any) -> None:
+            self.player_ref.inventory.add_item(self.item_id, self.item_quantity)
 
-
-class ItemEvent(Event):
-    """
-    Asks the player if they want to accept 'n' of an item. If they do, spawn an item-handling StateDevice
-    """
-
-    def __init__(self, item_id: int, quantity: int):
-        super().__init__(input_type=InputType.AFFIRMATIVE)
-        self.item_id = item_id
-        self.quantity = quantity
-
-    def _logic(self, user_input: str) -> None:
-        # TODO: Implement
-        if game.util.input_utils.affirmative_to_bool(user_input):
-            # Spawn item-acquisition StateDevice
-            pass
-
-    @property
-    def components(self) -> dict[str, any]:
-        # TODO: Implement translate item.id to item.name
-        return {"content": [StringContent(value="You've found"),
-                            StringContent(value=str(self.quantity),
-                                          formatting="item_quantity"),
-                            StringContent(value=" of "),
-                            StringContent(value=f"item::{self.item_id}",
-                                          formatting="item_name"),
-                            StringContent(value=". Do you want to add it to your inventory?")
-                            ]
-                }
+        @FiniteStateDevice.state_content(self, self.States.INSERT_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [
+                    f"You added ",
+                    StringContent(value=str(self.item_quantity), formatting="item_quantity"),
+                    "x ",
+                    StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
+                    " to your inventory."
+                ]
+            )
 
 
 class CurrencyEvent(Event):
 
     def __init__(self, currency_id: int | str, quantity: int):
-        super().__init__(input_type=InputType.NONE)
+        super().__init__(input_type=InputType.ANY)
         self.currency_id = currency_id
         self.quantity = quantity
         self.cur = currency.currency_manager.to_currency(currency_id, abs(quantity))
@@ -207,7 +212,7 @@ class CurrencyEvent(Event):
 class RecipeEvent(Event):
 
     def __init__(self, recipe_id: int):
-        super().__init__(input_type=InputType.NONE)
+        super().__init__(input_type=InputType.ANY)
         self.recipe_id = recipe_id
 
     # TODO: Implement RecipeEvent logic
@@ -222,7 +227,7 @@ class RecipeEvent(Event):
 class ReputationEvent(Event):
 
     def __init__(self, faction_id: int, reputation_change: int, silent: bool = False):
-        super().__init__(input_type=InputType.SILENT if silent else InputType.NONE)
+        super().__init__(input_type=InputType.SILENT if silent else InputType.ANY)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
         self.message = [StringContent(value="Your reputation with "),
@@ -249,7 +254,7 @@ class ReputationEvent(Event):
 class ResourceEvent(Event):
 
     def __init__(self, stat_name: str, stat_change: int | float):
-        super().__init__(input_type=InputType.NONE)
+        super().__init__(input_type=InputType.ANY)
         self.stat_name = stat_name
         self.stat_name: int | float = stat_change
 
