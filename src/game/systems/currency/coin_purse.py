@@ -43,6 +43,9 @@ class CoinPurse:
 
         return False
 
+    def gain(self, currency_id: int, quantity: int) -> None:
+        self.currencies[currency_id] = self.currencies[currency_id] + quantity
+
     def test_currency(self, currency_id: int, quantity: int) -> bool:
         """
         Test if there is enough of currency 'currency_id' such that currency.quantity >= quantity

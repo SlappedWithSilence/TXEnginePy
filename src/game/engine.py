@@ -55,6 +55,8 @@ class Engine:
         room.room_manager.register_room(r_1)
 
         get_cache()["player"] = Player("Player", 0)
+        p: Player = get_cache()["player"]
+        p.coin_purse.gain(0, 100)
 
     def _startup(self):
         """
