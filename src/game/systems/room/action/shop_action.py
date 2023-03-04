@@ -133,7 +133,7 @@ class ShopAction(Action):
                     "Are you sure that you would like to purchase 1x ",
                     StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
                     " for ",
-                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency),
+                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
                                   formatting="item_cost"),
                     "?"
                 ]
@@ -146,7 +146,7 @@ class ShopAction(Action):
                     "Cannot purchase ",
                     StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                     ". Item costs ",
-                    StringContent(value=self.ware_of_interest.get_currency_value(self.default_currency),
+                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
                                   formatting="item_cost"),
                     ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
                 ]
@@ -159,6 +159,7 @@ class ShopAction(Action):
             }
 
     def _logic(self, user_input: any) -> None:
+
 
         # State 2
         if self.state == self.ShopState.DISPLAY_WARES:  # Select a ware
@@ -198,6 +199,12 @@ class ShopAction(Action):
 
             else:
                 self.state = self.ShopState.WARE_SELECTED
+
+        elif self.state == self.ShopState.PURCHASE_FAILURE:
+            self.state = self.ShopState.DISPLAY_WARES
+            self.input_type = enums.InputType.INT
+            self.domain_min = -1
+            self.domain_max = len(self.wares)
 
         # State 12
         elif self.state == self.ShopState.TERMINATE:
