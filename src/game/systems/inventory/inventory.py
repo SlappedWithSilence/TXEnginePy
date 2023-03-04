@@ -6,23 +6,25 @@ import game
 import game.systems.event.events as events
 from game.structures.messages import StringContent
 
+Stack = namedtuple('Stack', ['id', 'quantity', 'ref'])
+
+
+class StackFactory:
+    @staticmethod
+    def get(item_id: int, item_quantity: int) -> Stack:
+        from game.systems.item import item_manager
+
+        return Stack(item_id, item_quantity, item_manager.get_ref(item_id))
+
 
 class Inventory:
 
-    Stack = namedtuple('Stack', ['id', 'quantity', 'ref'])
-
     def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
         self.capacity: int = capacity
-        self.items: list[Inventory.Stack] = items or []
+        self.items: list[Stack] = items or []
 
         if not self.capacity:
             self.capacity = cache.get_config()["inventory"]["default_capacity"]
-
-    @classmethod
-    def get_stack(cls, item_id: int, quantity: int) -> Stack:
-        from game.systems.item import item_manager
-
-        return Inventory.Stack(item_id, quantity, item_manager.get_ref(item_id))
 
     # Private Methods
     def _all_stack_indexes(self, item_id: int) -> list[int]:
@@ -98,17 +100,18 @@ class Inventory:
 
                 # If the current stack is bigger than needed, adjust its size and return True
                 if self.items[stack_index].quantity > quantity - already_consumed:
-                    self.items[stack_index] = Inventory.get_stack(item_id, self.items[stack_index][1] - (quantity - already_consumed))
+                    self.items[stack_index] = StackFactory.get(item_id, self.items[stack_index].quantity - (
+                            quantity - already_consumed))
                     return True
 
                 # If the current stack is exactly the size needed, delete it and return True
-                elif self.items[stack_index][1] == quantity - already_consumed:
+                elif self.items[stack_index].quantity == quantity - already_consumed:
                     del self.items[stack_index]
                     return True
 
                 # If the stack is too small, record its size as consumed and delete it.
                 else:
-                    already_consumed = already_consumed + self.items[stack_index][1]
+                    already_consumed = already_consumed + self.items[stack_index].quantity
                     del self.items[stack_index]
 
     def __contains__(self, item: int):
@@ -188,14 +191,13 @@ class Inventory:
         leftover = quantity - item_manager.get_instance(item_id).max_quantity
 
         if leftover >= 0:
-            self.items.append(Inventory.get_stack(item_id, item_manager.get_instance(item_id).max_quantity))
+            self.items.append(StackFactory.get(item_id, item_manager.get_instance(item_id).max_quantity))
             return leftover
 
-        self.items.append(Inventory.get_stack(item_id, quantity))
+        self.items.append(StackFactory.get(item_id, quantity))
         return 0
 
-
-    def add_item(self, item_id: int, quantity: int) -> None:
+    def add_item(self, item_id: int, quantity: int, force: bool = False) -> None:
         """
         Adds a given quantity of the given item to the inventory. This may add the quantity to an existing stack or
         create a new one. Occasionally, the user may need to choose a stack to drop in order to add the item to the
@@ -204,6 +206,7 @@ class Inventory:
         Args:
             item_id: The id of the item to add
             quantity: The quantity of the item to add
+            force: If True, silently add the items and ignore any capacity issues
 
         Returns: None
 
@@ -212,7 +215,11 @@ class Inventory:
             raise TypeError(
                 f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
 
-        game.state_device_controller.add_state_device(events.AddItemEvent(item_id, quantity))
+        if force:
+            # TODO: Make AddItemEvent entity agnostic
+            self.items.append(StackFactory.get(item_id, quantity))
+        else:
+            game.state_device_controller.add_state_device(events.AddItemEvent(item_id, quantity))
         # Case 1: item already in inventory
         # Case 1a: non-full stack exists
         # Case 1a.a add items into non-full stack.
