@@ -31,6 +31,6 @@ class Usable(Item, req.RequirementsMixin):
     consumable: bool = False  # A flag that determines if the item should decrement quantity after each use.
 
     def use(self, target: entities.Entity) -> None:
-        for effect in self.effects:
-            effect.perform(target)
+        for e in self.effects:
+            e.perform(target)
 
