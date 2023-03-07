@@ -1,6 +1,7 @@
 import copy
 import enum
 import weakref
+import inspect
 from abc import abstractmethod, ABC
 
 from loguru import logger
@@ -224,7 +225,7 @@ class FiniteStateDevice(StateDevice, ABC):
     def __init__(self, default_input_type: InputType, states: enum.Enum, default_state=None):
         super().__init__(default_input_type)
 
-        self.states = states
+        self.states: enum.Enum = states
         self.current_state = default_state
 
         state_data_dict = {
@@ -236,17 +237,30 @@ class FiniteStateDevice(StateDevice, ABC):
             "content": None
         }
 
-        self.state_data = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
+        self.state_data: dict[states, dict] = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
+        self.state_history: list[states] = [self.current_state]
+
+    def dump(self) -> None:
+        """A debug method. Prints a large volume of useful information about the FiniteStateDevice."""
+        logger.error(f"Something went wrong with FiniteStateDevice::{self.__class__}::{self.name}!")
+        logger.error(f"State history::{self.state_history}")
+        logger.error(f"State data")
+        for state in self.state_data:
+            logger.error(f"state::{state}")
+            logger.error(self.state_data[state])
 
     def set_state(self, next_state) -> None:
-        if next_state not in self.state_data:
+        if next_state.value not in self.state_data:
             raise ValueError(f"Unknown state {next_state}!")
 
         self.current_state = next_state
-        self.input_type = self.state_data[next_state]['input_type']
-        self.domain_min = self.state_data[next_state]['min']
-        self.domain_max = self.state_data[next_state]['max']
-        self.domain_length = self.state_data[next_state]['len']
+        self.input_type = self.state_data[next_state.value]['input_type']
+        self.domain_min = self.state_data[next_state.value]['min']
+        self.domain_max = self.state_data[next_state.value]['max']
+        self.domain_length = self.state_data[next_state.value]['len']
+
+        # Append history for debugging purposes
+        self.state_history.append(next_state)
 
     # Custom Decorators
     @staticmethod
@@ -270,20 +284,30 @@ class FiniteStateDevice(StateDevice, ABC):
         # Type and value checking
         if not isinstance(instance, FiniteStateDevice):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
-        if state not in instance.state_data:
-            raise ValueError(f"Unknown state {state}!")
-        if instance.state_data[state]['logic']:
+        if state not in instance.state_data and state.value not in instance.state_data:
+            instance.dump()
+            raise ValueError(f"Unknown state {state}:{state.value}!")
+        if instance.state_data[state.value]['logic']:
+            instance.dump()
             raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
 
         def decorate(fn):
             """
             Register to instance and then return the function untouched.
             """
-            instance.state_data[state]['input_type'] = input_type
-            instance.state_data[state]['min'] = input_min
-            instance.state_data[state]['max'] = input_max
-            instance.state_data[state]['len'] = input_len
-            instance.state_data[state]['logic'] = fn
+
+            spec = inspect.getfullargspec(fn)
+            if len(spec.args) != 1:
+                instance.dump()
+                raise ValueError(
+                    f"""Error registering logic provider for state {state}.
+                    State logic functions must accept only a single positional argument, not {len(spec.args)}!""")
+
+            instance.state_data[state.value]['input_type'] = input_type
+            instance.state_data[state.value]['min'] = input_min
+            instance.state_data[state.value]['max'] = input_max
+            instance.state_data[state.value]['len'] = input_len
+            instance.state_data[state.value]['logic'] = fn
 
             return fn
 
@@ -305,9 +329,11 @@ class FiniteStateDevice(StateDevice, ABC):
         # Check argument types and values
         if not isinstance(instance, FiniteStateDevice):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
-        if state not in instance.state_data:
+        if state.value not in instance.state_data:
+            instance.dump()
             raise ValueError(f"Unknown state {state}!")
-        if instance.state_data[state]['content']:
+        if instance.state_data[state.value]['content']:
+            instance.dump()
             raise ValueError(f"State.content collision! {state} already has a content function registered.")
 
         # Inner decorator that receives the function
@@ -315,28 +341,30 @@ class FiniteStateDevice(StateDevice, ABC):
             """
             A simple decorator that registers the wrapped function to the passed instance
             """
-            instance.state_data[state]['content'] = fn
+            instance.state_data[state.value]['content'] = fn
             return fn
         return decorate
 
     def _logic(self, user_input: any) -> None:
 
         # Check for bad state data
-        if self.current_state not in self.state_data:
+        if self.current_state.value not in self.state_data:
+            self.dump()
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
-        if 'logic' not in self.state_data[self.current_state]:
+        if 'logic' not in self.state_data[self.current_state.value]:
+            self.dump()
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
-        self.state_data[self.current_state]['logic'](user_input)
+        self.state_data[self.current_state.value]['logic'](user_input)
 
     @property
     def components(self) -> dict[str, any]:
         # Check for bad state data
-        if self.current_state not in self.state_data:
+        if self.current_state.value not in self.state_data:
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
-        if 'content' not in self.state_data[self.current_state]:
+        if 'content' not in self.state_data[self.current_state.value]:
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
-        return self.state_data[self.current_state]['content']()
+        return self.state_data[self.current_state.value]['content']()
