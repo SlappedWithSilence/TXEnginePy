@@ -1,8 +1,9 @@
-arguments: ["red", "blue", "green", "orange", "bold", "italic"]
+arguments: ["white", "gray", "red", "blue", "green", "orange", "bold", "italic"]
 styles:
   item_name : ["blue", "bold"]
   item_desc : ["italic"]
   item_cost : ["red"]
+  item_quantity : ["white"]
   currency_gain : ["green", "bold"]
   currency_loss : ["red", "bold"]
   ability_name : ["orange", "bold"]
