@@ -2,11 +2,18 @@ import dataclasses
 
 from game.cache import get_cache
 from game.systems.currency import Currency
+from game.systems.currency import currency_manager
 
 
 @dataclasses.dataclass
 class CoinPurse:
     currencies: dict[int, Currency] = dataclasses.field(default_factory=dict)
+
+    def __post_init__(self):
+
+        # Initialize the currencies map.
+        for currency in currency_manager.currencies:
+            self.currencies[currency] = currency_manager.to_currency(currency, 0)
 
     def balance(self, cur: Currency | int) -> int:
         # If the passed value is a Currency
