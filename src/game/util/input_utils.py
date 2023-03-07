@@ -17,7 +17,7 @@ def is_valid_range(input_type: InputType, min_value: any = None, max_value: any 
     if type(input_type) != InputType:
         raise TypeError(f"Cannot evaluate type {type(input_type)}! Must be of type InputType")
 
-    if input_type == InputType.AFFIRMATIVE:
+    if input_type == InputType.AFFIRMATIVE or input_type == InputType.ANY or input_type == InputType.SILENT:
         return not min_value and not max_value and not length
 
     if input_type == InputType.INT:
