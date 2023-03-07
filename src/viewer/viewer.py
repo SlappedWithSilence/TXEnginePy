@@ -44,7 +44,7 @@ class Viewer:
 
         print(parse_content(value["components"]["content"]))
 
-        if "options" in value["components"]:
+        if "options" in value["components"] and type(value["components"]["options"]) == list:
             for idx, opt in enumerate(value["components"]["options"]):
                 print(f"[{idx}] {parse_content(opt)}")
 
