@@ -171,7 +171,7 @@ class Inventory:
 
         return False
 
-    def new_stack(self, item_id: int, quantity: int) -> int:
+    def new_stack(self, item_id: int, quantity: int, force: bool = False) -> int:
         """
         Creates a new stack in the inventory with the given item_id and item_quantity. If quantity > item.max_stack,
         return the difference.
@@ -179,11 +179,12 @@ class Inventory:
         Args:
             item_id: The ID of the item to make the stack for
             quantity: the size of the stack
+            force: If True, ignore capacity and make new stacks anyways
 
         Returns: the amount of leftover items that didn't make it into the stack
         """
 
-        if self.full:
+        if not force and self.full:
             return quantity
 
         from game.systems.item import item_manager
@@ -197,39 +198,13 @@ class Inventory:
         self.items.append(StackFactory.get(item_id, quantity))
         return 0
 
-    def add_item(self, item_id: int, quantity: int, force: bool = False) -> None:
-        """
-        Adds a given quantity of the given item to the inventory. This may add the quantity to an existing stack or
-        create a new one. Occasionally, the user may need to choose a stack to drop in order to add the item to the
-        inventory.
+    def insert_item(self, item_id: int, quantity: int):
+        remaining_quantity = quantity
 
-        Args:
-            item_id: The id of the item to add
-            quantity: The quantity of the item to add
-            force: If True, silently add the items and ignore any capacity issues
+        for stack in self._all_stacks(item_id):
+            if stack.quantity < stack.ref.max_quantity:
+                remaining_quantity = remaining_quantity - (stack.ref.max_quantity - stack.quantity)
+                stack.quantity = stack.ref.max_quantity
 
-        Returns: None
-
-        """
-        if type(item_id) != int or type(quantity) != int:
-            raise TypeError(
-                f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
-
-        if force:
-            # TODO: Make AddItemEvent entity agnostic
-            self.items.append(StackFactory.get(item_id, quantity))
-        else:
-            game.state_device_controller.add_state_device(events.AddItemEvent(item_id, quantity))
-        # Case 1: item already in inventory
-        # Case 1a: non-full stack exists
-        # Case 1a.a add items into non-full stack.
-        # Case 1a.a.a: Overflow--call add_item on overflowing quantity recursively
-        # Case 1a.a.b: No overflow--terminate
-        # Case 1b: only full stacks exists
-        # Case 1b.a: Inventory not full: Create a stack. If overflow, call add_item on overflowing quantity recursively
-        # Case 1b.b: Inventory full--Prompt user to make space, call add_item again
-        # Case 2: item not in inventory
-        # Case 2.a: inventory not full--create new stack
-        # Case 2.a.a: overflow-- call add_item recursively on overflowing quantity
-        # Case 2.a.b: no overflow--terminate
-        # Case  2.b: inventory full--prompt user to make space, call add_item again
+        while remaining_quantity > 0:
+            remaining_quantity = self.new_stack(item_id, remaining_quantity, True)

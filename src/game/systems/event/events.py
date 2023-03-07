@@ -110,25 +110,10 @@ class AddItemEvent(Event):
     """
 
     class States(Enum):
-        """
-        Case 1: item already in inventory
-        Case 1a: non-full stack exists
-        Case 1a.a add items into non-full stack.
-        Case 1a.a.a: Overflow--call add_item on overflowing quantity recursively
-        Case 1a.a.b: No overflow--terminate
-        Case 1b: only full stacks exists
-        Case 1b.a: Inventory not full: Create a stack. If overflow, call add_item on overflowing quantity recursively
-        Case 1b.b: Inventory full--Prompt user to make space, call add_item again
-        Case 2: item not in inventory
-        Case 2.a: inventory not full--create new stack
-        Case 2.a.a: overflow-- call add_item recursively on overflowing quantity
-        Case 2.a.b: no overflow--terminate
-        Case  2.b: inventory full--prompt user to make space, call add_item again
-        """
-
         DEFAULT = 0
         PROMPT_KEEP_NEW_ITEM = 1
         INSERT_ITEM = 2
+        TERMINATE = -1
 
     def __init__(self, item_id: int, item_quantity: int = 1):
         """
@@ -142,7 +127,7 @@ class AddItemEvent(Event):
         self.item_id = item_id
         self.item_quantity = item_quantity
         self.remaining_quantity = item_quantity
-        self.state = self.States.DEFAULT  # Set the starting state to DEFAULT
+        self.current_state = self.States.DEFAULT  # Set the starting state to DEFAULT
         self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])  # Grab a weak reference to Player
         self._build_states()
 
@@ -161,7 +146,8 @@ class AddItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.INSERT_ITEM, InputType.ANY)
         def logic(_: any) -> None:
-            self.player_ref.inventory.add_item(self.item_id, self.item_quantity)
+            self.player_ref.inventory.insert_item(self.item_id, self.item_quantity)
+            self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.INSERT_ITEM)
         def content() -> dict:
@@ -174,6 +160,14 @@ class AddItemEvent(Event):
                     " to your inventory."
                 ]
             )
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content() -> dict:
+            return ComponentFactory.get([])
 
 
 class CurrencyEvent(Event):

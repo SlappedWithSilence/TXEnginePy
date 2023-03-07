@@ -6,6 +6,7 @@ import game.systems.entity.entities as entities
 from game.cache import get_cache
 from game.structures import enums
 from game.structures.messages import StringContent, ComponentFactory
+from game.systems.event.events import AddItemEvent
 from game.systems.room.action.actions import Action
 
 
@@ -191,7 +192,7 @@ class ShopAction(Action):
                 player: entities.Player = get_cache()['player']
                 if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
                     player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
-                    player.inventory.add_item(self.ware_of_interest.id, 1)
+                    game.state_device_controller.add_state_device(AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
                     self.state = self.ShopState.DISPLAY_WARES
 
                 else:
