@@ -1,3 +1,4 @@
+import weakref
 from abc import ABC
 from enum import Enum
 
@@ -9,6 +10,7 @@ from game.structures.state_device import FiniteStateDevice
 import game.systems.event.events as events
 import game.systems.requirement.requirements as requirements
 from game.structures.messages import StringContent, ComponentFactory
+from game.systems import entity
 
 
 class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
@@ -77,13 +79,70 @@ class ExitAction(Action):
 
 
 class ViewInventoryAction(Action):
+    class States(Enum):
+        DEFAULT = 0
+        DISPLAY_INVENTORY = 1
+        INSPECT_STACK = 2
+        DROP_STACK = 3
+        CONFIRM_DROP_STACK = 4
+        USE_ITEM = 5
+        DESC_ITEM = 6
+        EQUIP_ITEM = 7
+        TERMINATE = -1
+
+    stack_inspect_options = {"Inspect": States.DESC_ITEM,
+                             "Use": States.USE_ITEM,
+                             "Equip": States.EQUIP_ITEM,
+                             "Drop": States.CONFIRM_DROP_STACK}
+
+    @classmethod
+    def get_stack_inspection_options(cls) -> list[list[str]]:
+        return [[opt] for opt in cls.stack_inspect_options.keys()]
 
     def __init__(self, menu_name: str, activation_text: str, *args, **kwargs):
         super().__init__(menu_name, activation_text, *args, **kwargs)
+        self.player_ref: entity.entities.Player = weakref.proxy(cache.get_cache()["player"])
+        self.selected_stack: int = None
 
-    @property
-    def components(self) -> dict[str, any]:
-        pass
+        # DEFAULT
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.set_state(self.States.DISPLAY_INVENTORY)
 
-    def _logic(self, user_input: any) -> None:
-        pass
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get([""])
+
+        # DISPLAY_INVENTORY
+        @FiniteStateDevice.state_logic(self, self.States.DISPLAY_INVENTORY, InputType.INT, -1,
+                                       lambda: self.player_ref.inventory.size)
+        def logic(user_input: int) -> None:
+            if user_input == -1:
+                self.set_state(self.States.TERMINATE)
+            else:
+                self.select_stack = user_input
+                self.set_state(self.States.INSPECT_STACK)
+
+        @FiniteStateDevice.state_content(self, self.States.DISPLAY_INVENTORY)
+        def content() -> dict:
+            return ComponentFactory.get(["What stack would you like to inspect?"],
+                                        self.player_ref.inventory.to_options())
+
+        # INSPECT STACK
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_STACK, InputType.INT, -1,
+                                       len(self.stack_inspect_options))
+        def logic(user_input: int) -> None:
+            if user_input == -1:
+                self.set_state(self.States.DISPLAY_INVENTORY)
+            else:
+                selected_option = list(self.stack_inspect_options.keys())[user_input]
+                self.set_state(self.stack_inspect_options[selected_option])
+
+        @FiniteStateDevice.state_content(self, self.States.INSPECT_STACK)
+        def content() -> dict:
+            c = ["What would you like to do with ",
+                 StringContent(value=f"{self.player_ref.inventory.items[self.selected_stack].ref.name}",
+                               formatting="item_name"),
+                 "?"
+                 ]
+            return ComponentFactory.get(c, self.get_stack_inspection_options())
