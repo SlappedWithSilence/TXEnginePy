@@ -135,7 +135,7 @@ class AddItemEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             # Detect collision
-            if self.player_ref.inventory.is_collidable(self.item_id, self.item_quantity):
+            if self.player_ref.inventory.is_collidable(self.item_id, self.remaining_quantity):
                 self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)  # Make player choose to keep or drop new item
             else:
                 self.set_state(self.States.INSERT_ITEM)  # Insert items
@@ -144,10 +144,30 @@ class AddItemEvent(Event):
         def content() -> dict:
             return ComponentFactory.get([""])
 
+        @FiniteStateDevice.state_logic(self, self.States.PROMPT_KEEP_NEW_ITEM, InputType.AFFIRMATIVE)
+        def logic(user_input: bool) -> None:
+            if user_input:
+                self.set_state(self.States.INSERT_ITEM)
+            else:
+                self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.PROMPT_KEEP_NEW_ITEM)
+        def content() -> dict:
+            c = ["Would you like to make room in your inventory for ",
+                 StringContent(value=f"{self.remaining_quantity}x ", formatting="item_quantity"),
+                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
+                 "?"
+                 ]
+            return ComponentFactory.get(c)
+
         @FiniteStateDevice.state_logic(self, self.States.INSERT_ITEM, InputType.ANY)
         def logic(_: any) -> None:
-            self.player_ref.inventory.insert_item(self.item_id, self.item_quantity)
-            self.set_state(self.States.TERMINATE)
+            self.remaining_quantity = self.player_ref.inventory.insert_item(self.item_id, self.item_quantity)
+
+            if self.remaining_quantity > 0:
+                self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)
+            else:
+                self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.INSERT_ITEM)
         def content() -> dict:
