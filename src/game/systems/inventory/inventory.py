@@ -198,13 +198,38 @@ class Inventory:
         self.items.append(StackFactory.get(item_id, quantity))
         return 0
 
-    def insert_item(self, item_id: int, quantity: int):
-        remaining_quantity = quantity
+    def insert_item(self, item_id: int, quantity: int) -> int:
+        remaining_quantity: int = quantity  # Set initial quantity
+        max_stack_size: int = None
 
+        # Insert items into existing stacks if possible
         for stack in self._all_stacks(item_id):
-            if stack.quantity < stack.ref.max_quantity:
-                remaining_quantity = remaining_quantity - (stack.ref.max_quantity - stack.quantity)
-                stack.quantity = stack.ref.max_quantity
+            max_stack_size = stack.ref.max_quantity
 
-        while remaining_quantity > 0:
-            remaining_quantity = self.new_stack(item_id, remaining_quantity, True)
+            if stack.quantity < max_stack_size:  # If stack is not full
+                if remaining_quantity > (max_stack_size - stack.quantity):  # If the remaining # of items is greater than the capacity of the stack
+                    remaining_quantity = remaining_quantity - (max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
+                    stack.quantity = max_stack_size  # Fill the stack
+                else:  # If the entire remaining quantity can fit into the current stack
+                    stack.quantity = stack.quantity + remaining_quantity  # Add rq to the stack
+                    remaining_quantity = 0  # Set rq to zero
+                    break  # Exit the loop
+
+        # Look up max stack size if it wasn't already done
+        if not max_stack_size:
+            from game.systems.item import item_manager  # Any global-scoped import of item_manager circular imports
+            max_stack_size = item_manager.get_ref(item_id).max_quantity
+
+        # Attempt to make new stacks
+        while not self.full and remaining_quantity > 0:
+
+            # If there are too many items for a single stack
+            if remaining_quantity >= max_stack_size:
+                self.new_stack(item_id, max_stack_size)  # Make a maxed-out stack
+                remaining_quantity = remaining_quantity - max_stack_size
+            else:  # If All items can fit into a single stack
+                self.new_stack(item_id, remaining_quantity)  # Make a stack of size 'remaining_quantity'
+                remaining_quantity = 0
+
+        return remaining_quantity  # Return the leftover quantity
+
