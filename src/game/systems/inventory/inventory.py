@@ -72,6 +72,14 @@ class Inventory:
         """
         return len(self.items) >= self.capacity
 
+    @property
+    def size(self) -> int:
+        """
+        A property that returns the size of the inventory (total number of stacks)
+        Returns: An int that represents the number of stacks currently in the inventory
+        """
+        return len(self.items)
+
     def consume_item(self, item_id: int, quantity: int) -> bool:
         """
         Removes a specific quantity of item from the inventory. If there are not enough of the given item, return False
@@ -156,8 +164,8 @@ class Inventory:
     def is_collidable(self, item_id: int, quantity: int) -> bool:
         """
         Args:
-            item_id:
-            quantity:
+            item_id: The id of the item to check against
+            quantity: The quantity of the item to check against
 
         Returns: True if the user needs to resolve a collision, False otherwise
         """
@@ -179,7 +187,7 @@ class Inventory:
         Args:
             item_id: The ID of the item to make the stack for
             quantity: the size of the stack
-            force: If True, ignore capacity and make new stacks anyways
+            force: If True, ignore capacity and make new stacks
 
         Returns: the amount of leftover items that didn't make it into the stack
         """
@@ -199,6 +207,19 @@ class Inventory:
         return 0
 
     def insert_item(self, item_id: int, quantity: int) -> int:
+        """
+        Inserts 'quantity' of the item with id 'item_id' into the inventory.
+
+        This process starts with filling up existing stacks of 'item_id' and then creating new stacks. The process
+        terminates when the inventory becomes full or all items have been inserted, whichever comes first.
+
+        Args:
+            item_id: An int that represents the id of the item to insert
+            quantity: The quantity of the item to insert
+
+        Returns:
+            An int that represents how many items were not inserted
+        """
         remaining_quantity: int = quantity  # Set initial quantity
         max_stack_size: int = None
 
