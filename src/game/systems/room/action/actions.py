@@ -75,21 +75,3 @@ class ExitAction(Action):
                      StringContent(value=room.room_manager.get_name(self.target_room), formatting="room_name")]
                 }
 
-
-class TestAction(Action):
-
-    def __init__(self, menu_name: str, activation_text, *args, **kwargs):
-        super().__init__(menu_name, activation_text, *args, **kwargs)
-
-    @property
-    def components(self) -> dict[str, any]:
-        return {"content": "Test"}
-
-    def _logic(self, user_input: any) -> None:
-        pass
-
-
-if __name__ == "__main__":
-    a = TestAction("Test", "Test", input_type=enums.InputType.ANY, name="TestAction", requirements=[])
-    print(a.__dict__)
-    print(a.is_requirements_fulfilled())
