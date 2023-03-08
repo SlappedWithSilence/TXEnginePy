@@ -3,6 +3,7 @@ import enum
 import weakref
 import inspect
 from abc import abstractmethod, ABC
+from typing import Callable
 
 from loguru import logger
 
@@ -255,8 +256,11 @@ class FiniteStateDevice(StateDevice, ABC):
 
         self.current_state = next_state
         self.input_type = self.state_data[next_state.value]['input_type']
-        self.domain_min = self.state_data[next_state.value]['min']
-        self.domain_max = self.state_data[next_state.value]['max']
+        self.domain_min = self.state_data[next_state.value]['min'] \
+            if not callable(self.state_data[next_state.value]['min']) else self.state_data[next_state.value]['min']()
+        self.domain_max = self.state_data[next_state.value]['max'] \
+            if not callable(self.state_data[next_state.value]['max']) else self.state_data[next_state.value]['max']()
+
         self.domain_length = self.state_data[next_state.value]['len']
 
         # Append history for debugging purposes
@@ -264,7 +268,8 @@ class FiniteStateDevice(StateDevice, ABC):
 
     # Custom Decorators
     @staticmethod
-    def state_logic(instance, state, input_type: enums.InputType, input_min: int = None, input_max: int = None,
+    def state_logic(instance, state, input_type: enums.InputType,
+                    input_min: int | Callable = None, input_max: int | Callable = None,
                     input_len: int = None):
         """
         A decorator factory that registers a function as a logic provider within an instance of FiniteStateDevice and
@@ -274,9 +279,9 @@ class FiniteStateDevice(StateDevice, ABC):
             instance: an instance of a FiniteStateDevice to operate on
             state: The state to map 'func' to
             input_type: The input type for this state
-            input_min: The input range's min for this state
-            input_max: The input range's max for this state
-            input_len: The input range's length for this state
+            input_min: The input range's min for this state. This may be an int or a callable that returns an int.
+            input_max: The input range's max for this state. This may be an int or a callable that returns an int.
+            input_len: The input range's length for this state. This must be an int.
 
         Returns: A decorator that registers the wrapped function and passed input information to 'instance'
         """
@@ -290,6 +295,14 @@ class FiniteStateDevice(StateDevice, ABC):
         if instance.state_data[state.value]['logic']:
             instance.dump()
             raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
+
+        if input_min and (not callable(input_min) or type(input_min) == int):
+            instance.dump()
+            raise TypeError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
+
+        if input_max and (not callable(input_max) or type(input_max) == int):
+            instance.dump()
+            raise TypeError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
 
         def decorate(fn):
             """
