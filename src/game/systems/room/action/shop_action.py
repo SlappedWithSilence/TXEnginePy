@@ -5,6 +5,7 @@ import game.systems.item as item
 import game.systems.entity.entities as entities
 from game.cache import get_cache
 from game.structures import enums
+from game.structures.enums import InputType
 from game.structures.messages import StringContent, ComponentFactory
 from game.systems.event.events import AddItemEvent
 from game.systems.room.action.actions import Action
@@ -45,7 +46,8 @@ class ShopAction(Action):
 
     def __init__(self, menu_name: str, activation_text: str, wares: list[int],
                  default_currency: int = 0, *args, **kwargs):
-        super().__init__(menu_name, activation_text, input_type=enums.InputType.INT, *args, **kwargs)
+        super().__init__(menu_name, activation_text, ShopAction.ShopState, ShopAction.ShopState.DISPLAY_WARES,
+                         InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
         self.state = self.ShopState.DISPLAY_WARES
         self._ware_of_interest: item.Item = None  # The tuple of the ware last selected by the user

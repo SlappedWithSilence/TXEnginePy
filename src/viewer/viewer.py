@@ -62,6 +62,8 @@ class Viewer:
 
         elif input_type == "affirmative":
             print("Enter y, n, yes, or no:")
+        elif input_type == "any":
+            print("Press any key...")
 
 
 if __name__ == "__main__":
