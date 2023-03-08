@@ -75,3 +75,15 @@ class ExitAction(Action):
                      StringContent(value=room.room_manager.get_name(self.target_room), formatting="room_name")]
                 }
 
+
+class ViewInventoryAction(Action):
+
+    def __init__(self, menu_name: str, activation_text: str, *args, **kwargs):
+        super().__init__(menu_name, activation_text, *args, **kwargs)
+
+    @property
+    def components(self) -> dict[str, any]:
+        pass
+
+    def _logic(self, user_input: any) -> None:
+        pass
