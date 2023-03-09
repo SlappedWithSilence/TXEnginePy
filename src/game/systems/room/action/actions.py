@@ -102,7 +102,7 @@ class ViewInventoryAction(Action):
     def __init__(self, menu_name: str, activation_text: str, *args, **kwargs):
         super().__init__(menu_name, activation_text, *args, **kwargs)
         self.player_ref: entity.entities.Player = weakref.proxy(cache.get_cache()["player"])
-        self.selected_stack: int = None
+        self.stack_index: int = None
 
         # DEFAULT
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
@@ -141,8 +141,66 @@ class ViewInventoryAction(Action):
         @FiniteStateDevice.state_content(self, self.States.INSPECT_STACK)
         def content() -> dict:
             c = ["What would you like to do with ",
-                 StringContent(value=f"{self.player_ref.inventory.items[self.selected_stack].ref.name}",
+                 StringContent(value=f"{self.player_ref.inventory.items[self.stack_index].ref.name}",
                                formatting="item_name"),
                  "?"
                  ]
             return ComponentFactory.get(c, self.get_stack_inspection_options())
+
+        # CONFIRM_DROP_STACK
+
+        @FiniteStateDevice.state_logic(self, self.States.CONFIRM_DROP_STACK, InputType.AFFIRMATIVE)
+        def logic(user_input: bool) -> None:
+            if user_input:
+                self.set_state(self.States.DROP_STACK)
+            else:
+                self.set_state(self.States.INSPECT_STACK)
+
+        @FiniteStateDevice.state_content(self, self.States.CONFIRM_DROP_STACK)
+        def content() -> dict:
+            stack = self.player_ref.inventory.items[self.stack_index]
+            return ComponentFactory.get(
+                [
+                    "Are you sure you want to drop ",
+                    StringContent(value=stack.ref.name, formatting="item_name"),
+                    " ",
+                    StringContent(value=f"{stack.quantity}x", formatting="item_quantity"),
+                    "?"
+                ]
+            )
+
+        # DROP_STACK
+
+        @FiniteStateDevice.state_logic(self, self.States.DROP_STACK, InputType.ANY)
+        def logic(_: any) -> None:
+            self.player_ref.inventory.drop_stack(self.stack_index)
+            self.set_state(self.States.DISPLAY_INVENTORY)
+
+        @FiniteStateDevice.state_content(self, self.States.DROP_STACK)
+        def content() -> dict:
+            stack = self.player_ref.inventory.items[self.stack_index]
+            return ComponentFactory.get(
+                [
+                    "You dropped ",
+                    StringContent(value=f"{stack.quantity}x", formatting="item_quantity"),
+                    " ",
+                    StringContent(value=stack.ref.name, formatting="item_name"),
+                    "."
+                ]
+            )
+
+        # DESC_ITEM
+
+        @FiniteStateDevice.state_logic(self, self.States.DESC_ITEM, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.INSPECT_STACK)
+
+        @FiniteStateDevice.state_content(self, self.States.DESC_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get([self.player_ref.inventory.items[self.stack_index].ref.description])
+
+        # USE_ITEM
+
+        @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
+        def logic(_:any) -> None:
+            game.state_device_controller.add_state_device(UseItemEvent(self.stack_index))
