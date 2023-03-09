@@ -1,20 +1,20 @@
+import dataclasses
 import weakref
 from collections import namedtuple
 
 import game.cache as cache
-import game
-import game.systems.event.events as events
 from game.structures.messages import StringContent
 
-Stack = namedtuple('Stack', ['id', 'quantity', 'ref'])
 
+@dataclasses.dataclass
+class Stack:
+    id: int
+    quantity: int
 
-class StackFactory:
-    @staticmethod
-    def get(item_id: int, item_quantity: int) -> Stack:
-        from game.systems.item import item_manager
+    def __post_init__(self):
+        from game.systems.item import Item, item_manager
 
-        return Stack(item_id, item_quantity, item_manager.get_ref(item_id))
+        self.ref: Item = item_manager.get_ref(self.id)
 
 
 class Inventory:
@@ -108,7 +108,7 @@ class Inventory:
 
                 # If the current stack is bigger than needed, adjust its size and return True
                 if self.items[stack_index].quantity > quantity - already_consumed:
-                    self.items[stack_index] = StackFactory.get(item_id, self.items[stack_index].quantity - (
+                    self.items[stack_index] = Stack(item_id, self.items[stack_index].quantity - (
                             quantity - already_consumed))
                     return True
 
@@ -200,10 +200,10 @@ class Inventory:
         leftover = quantity - item_manager.get_instance(item_id).max_quantity
 
         if leftover >= 0:
-            self.items.append(StackFactory.get(item_id, item_manager.get_instance(item_id).max_quantity))
+            self.items.append(Stack(item_id, item_manager.get_instance(item_id).max_quantity))
             return leftover
 
-        self.items.append(StackFactory.get(item_id, quantity))
+        self.items.append(Stack(item_id, quantity))
         return 0
 
     def insert_item(self, item_id: int, quantity: int) -> int:
@@ -228,8 +228,10 @@ class Inventory:
             max_stack_size = stack.ref.max_quantity
 
             if stack.quantity < max_stack_size:  # If stack is not full
-                if remaining_quantity > (max_stack_size - stack.quantity):  # If the remaining # of items is greater than the capacity of the stack
-                    remaining_quantity = remaining_quantity - (max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
+                if remaining_quantity > (
+                        max_stack_size - stack.quantity):  # If the remaining # of items is greater than the capacity of the stack
+                    remaining_quantity = remaining_quantity - (
+                                max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
                     stack.quantity = max_stack_size  # Fill the stack
                 else:  # If the entire remaining quantity can fit into the current stack
                     stack.quantity = stack.quantity + remaining_quantity  # Add rq to the stack
@@ -253,4 +255,3 @@ class Inventory:
                 remaining_quantity = 0
 
         return remaining_quantity  # Return the leftover quantity
-
