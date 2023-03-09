@@ -10,6 +10,7 @@ from game import cache
 from game.structures.messages import StringContent, ComponentFactory
 import game.systems.entity.entities as entities
 import game.systems.item as item
+from game.systems.item.item import Usable
 
 
 class Event(FiniteStateDevice, ABC):
@@ -278,3 +279,29 @@ class ResourceEvent(Event):
     @property
     def components(self) -> dict[str, any]:
         return {}
+
+
+class UseItemEvent(Event):
+    class States(Enum):
+        DEFAULT = 0
+        USE_ITEM = 1
+        NOT_USABLE = 2
+        NOT_REQUIREMENTS = 3
+        TERMINATE = -1
+
+    def __init__(self, stack_index: int):
+        super().__init__(InputType.SILENT, UseItemEvent.States)
+        self.stack_index = stack_index
+        self.player_ref: entities.Player = cache.get_cache()['player']
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            if isinstance(self.player_ref.inventory.items[self.stack_index].ref, Usable):
+
+                if self.player_ref.inventory.items[self.stack_index].ref.is_requirements_fulfilled():
+                    self.set_state(self.States.USE_ITEM)
+                else:
+                    self.set_state(self.States.NOT_REQUIREMENTS)
+
+            else:
+                self.set_state(self.States.NOT_USABLE)
