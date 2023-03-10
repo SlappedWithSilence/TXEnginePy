@@ -305,3 +305,64 @@ class UseItemEvent(Event):
 
             else:
                 self.set_state(self.States.NOT_USABLE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get([""])
+
+        @FiniteStateDevice.state_logic(self, self.States.NOT_REQUIREMENTS, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
+        def content(_: any) -> dict:
+            c = [
+                "Failed to use ",
+                StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, formatting="item_name"),
+                ". Requirements are not met."
+            ]
+            return ComponentFactory.get(c)
+
+        @FiniteStateDevice.state_logic(self, self.States.NOT_USABLE, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.NOT_USABLE)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [
+                    StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name,
+                                  formatting="item_name"),
+                    " cannot be used."
+                ]
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
+        def logic(_: any) -> None:
+            stack = self.player_ref.inventory.items[self.stack_index]
+            stack.ref.use()
+
+            if stack.ref.consumable:
+                stack.quantity = stack.quantity - 1
+
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
+        def content() -> dict:
+            stack = self.player_ref.inventory.items[self.stack_index]
+
+            return ComponentFactory.get(
+                [
+                    "You used ",
+                    stack.ref.name,
+                    "."
+                ]
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content() -> dict:
+            return ComponentFactory.get([""])
