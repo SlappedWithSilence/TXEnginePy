@@ -296,11 +296,11 @@ class FiniteStateDevice(StateDevice, ABC):
             instance.dump()
             raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
 
-        if input_min and (not callable(input_min) or type(input_min) == int):
+        if input_min and (not callable(input_min) and not type(input_min) == int):
             instance.dump()
             raise TypeError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
 
-        if input_max and (not callable(input_max) or type(input_max) == int):
+        if input_max and (not callable(input_max) and not type(input_max) == int):
             instance.dump()
             raise TypeError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
 
