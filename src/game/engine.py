@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 from .systems import currency, room, item
 from .systems.entity.entities import Player
 from .systems.room.action import actions
+from .systems.room.action.actions import ViewInventoryAction
 
 conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
@@ -44,19 +45,22 @@ class Engine:
 
         exit_r_1 = actions.ExitAction(1)
         exit_r_0 = actions.ExitAction(0)
+
         shop_w = [0]
         shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
                                                                wares=shop_w)
 
-        r_0 = room.Room(name="A Debug Room", action_list=[exit_r_1, shop], enter_text="You enter a debug room", id=0)
-        r_1 = room.Room(name="A Second Debug Room", action_list=[exit_r_0],
-                        enter_text="You enter yet another debug room", id=1)
-        room.room_manager.register_room(r_0)
-        room.room_manager.register_room(r_1)
-
         get_cache()["player"] = Player("Player", 0)
         p: Player = get_cache()["player"]
         p.coin_purse.gain(0, 100)
+
+        inventory_action = ViewInventoryAction()
+
+        r_0 = room.Room(name="A Debug Room", action_list=[inventory_action, exit_r_1], enter_text="You enter a debug room", id=0)
+        r_1 = room.Room(name="A Second Debug Room", action_list=[inventory_action, exit_r_0, shop],
+                        enter_text="You enter yet another debug room", id=1)
+        room.room_manager.register_room(r_0)
+        room.room_manager.register_room(r_1)
 
     def _startup(self):
         """

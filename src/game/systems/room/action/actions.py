@@ -99,8 +99,10 @@ class ViewInventoryAction(Action):
     def get_stack_inspection_options(cls) -> list[list[str]]:
         return [[opt] for opt in cls.stack_inspect_options.keys()]
 
-    def __init__(self, menu_name: str, activation_text: str, *args, **kwargs):
-        super().__init__(menu_name, activation_text, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__("View inventory", "",
+                         ViewInventoryAction.States, ViewInventoryAction.States.DEFAULT, InputType.SILENT,
+                         *args, **kwargs)
         self.player_ref: entity.entities.Player = weakref.proxy(cache.get_cache()["player"])
         self.stack_index: int = None
 
@@ -203,4 +205,4 @@ class ViewInventoryAction(Action):
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
         def logic(_:any) -> None:
-            game.state_device_controller.add_state_device(UseItemEvent(self.stack_index))
+            game.state_device_controller.add_state_device(events.UseItemEvent(self.stack_index))
