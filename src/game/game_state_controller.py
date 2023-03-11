@@ -79,7 +79,7 @@ class GameStateController:
 
         # There has got to be a better way to do this.
         while self._get_state_device().input_type == enums.InputType.SILENT:
-            logger.info("Detected silent state. Advancing...")
+            logger.info(f"[{self._get_state_device().__class__.__name__}] Detected silent state. Advancing...")
             self._get_state_device().input("")
 
     # Public functions

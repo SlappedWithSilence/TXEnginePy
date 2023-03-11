@@ -1,7 +1,7 @@
 """
 Contains the main Room object
 """
-
+import copy
 import weakref
 
 import game
@@ -9,6 +9,8 @@ import game.structures.enums as enums
 import game.structures.state_device as state_device
 import game.systems.room.action.actions as actions
 import game.systems.room as room
+
+from loguru import logger
 
 
 class Room(state_device.StateDevice):
@@ -58,7 +60,13 @@ class Room(state_device.StateDevice):
             game.state_device_controller.set_dead()
 
         # Launch the selected Action as a StateDevice
-        game.state_device_controller.add_state_device(self.visible_actions[user_input])
+        if self.visible_actions[user_input].persistent:
+            logger.info("Detected persistent Action")
+            game.state_device_controller.add_state_device(self.visible_actions[user_input])
+        else:
+            logger.info("Detected not-persistent Action")
+            game.state_device_controller.add_state_device(copy.deepcopy(self.visible_actions[user_input]))
+
 
 
 

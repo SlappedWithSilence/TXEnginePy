@@ -12,6 +12,8 @@ import game.systems.requirement.requirements as requirements
 from game.structures.messages import StringContent, ComponentFactory
 from game.systems import entity
 
+from loguru import logger
+
 
 class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
     """
@@ -21,8 +23,8 @@ class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
     def __init__(self, menu_name: str, activation_text: str,
                  states: Enum, default_state, default_input_type: InputType,
                  visible: bool = True, reveal_other_action_index: int = -1,
-                 hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None, *args,
-                 **kwargs):
+                 hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None,
+                 persistent: bool = False, *args, **kwargs):
         super().__init__(default_input_type, states, default_state, *args, **kwargs)
 
         self._menu_name: str = menu_name  # Name of the Action when viewed from a room
@@ -31,7 +33,8 @@ class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
         self.reveal_other_action_index: int = reveal_other_action_index  # If >= 0 set room.actions[idx].hidden to False
         self.hide_after_use: bool = hide_after_use  # If True, the action will set itself to hidden after being used
         self.room: room.Room = None  # The Room that owns this action. Should ONLY be a weakref.proxy
-        self.requirements = requirement_list or []
+        self.requirements: list = requirement_list or []
+        self.persistent: bool = persistent
 
     @property
     def menu_name(self) -> str:
@@ -88,6 +91,7 @@ class ViewInventoryAction(Action):
         USE_ITEM = 5
         DESC_ITEM = 6
         EQUIP_ITEM = 7
+        EMPTY = 8,
         TERMINATE = -1
 
     stack_inspect_options = {"Inspect": States.DESC_ITEM,
@@ -107,15 +111,33 @@ class ViewInventoryAction(Action):
         self.stack_index: int = None
 
         # DEFAULT
+
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            self.set_state(self.States.DISPLAY_INVENTORY)
+
+            if self.player_ref.inventory.size == 0:
+                logger.warning("Transitioning to EMPTY")
+                self.set_state(self.States.EMPTY)
+            else:
+                logger.warning("Transitioning to DISPLAY_INVENTORY")
+                self.set_state(self.States.DISPLAY_INVENTORY)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
             return ComponentFactory.get([""])
 
+        # EMPTY
+
+        @FiniteStateDevice.state_logic(self, self.States.EMPTY, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.EMPTY)
+        def logic() -> dict:
+            return ComponentFactory.get(["Your inventory is empty"])
+
         # DISPLAY_INVENTORY
+
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_INVENTORY, InputType.INT, -1,
                                        lambda: self.player_ref.inventory.size)
         def logic(user_input: int) -> None:
@@ -204,5 +226,23 @@ class ViewInventoryAction(Action):
         # USE_ITEM
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
-        def logic(_:any) -> None:
+        def logic(_: any) -> None:
             game.state_device_controller.add_state_device(events.UseItemEvent(self.stack_index))
+
+        @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get(
+                ["You use ",
+                 StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, formatting="item_name")
+                 ]
+            )
+
+        # TERMINATE
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content() -> dict:
+            return ComponentFactory.get([""])
