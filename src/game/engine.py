@@ -56,9 +56,14 @@ class Engine:
 
         inventory_action = ViewInventoryAction()
 
-        r_0 = room.Room(name="A Debug Room", action_list=[inventory_action, exit_r_1], enter_text="You enter a debug room", id=0)
-        r_1 = room.Room(name="A Second Debug Room", action_list=[inventory_action, exit_r_0, shop],
-                        enter_text="You enter yet another debug room", id=1)
+        r_0 = room.Room(name="A Debug Room",
+                        action_list=[inventory_action, exit_r_1],
+                        enter_text="You enter a debug room",
+                        id=0)
+        r_1 = room.Room(name="A Second Debug Room",
+                        action_list=[inventory_action, exit_r_0, shop],
+                        enter_text="You enter yet another debug room",
+                        id=1)
         room.room_manager.register_room(r_0)
         room.room_manager.register_room(r_1)
 
