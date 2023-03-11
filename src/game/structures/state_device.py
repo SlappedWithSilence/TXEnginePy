@@ -99,6 +99,9 @@ class StateDevice(ABC):
                                                                        length: {length}
                               """)
 
+    def reset(self) -> None:
+        pass
+
     @property
     @abstractmethod
     def components(self) -> dict[str, any]:
@@ -223,11 +226,11 @@ class FiniteStateDevice(StateDevice, ABC):
     A subclass of StateDevice that adds support for explicit state ordering and transitions
     """
 
-    def __init__(self, default_input_type: InputType, states: enum.Enum, default_state=None):
+    def __init__(self, default_input_type: InputType, states: enum.Enum, default_state):
         super().__init__(default_input_type)
 
         self.states: enum.Enum = states
-        self.current_state = default_state
+        self.current_state = self.default_state = default_state
 
         state_data_dict = {
             "input_type": enums.InputType.ANY,
@@ -240,6 +243,7 @@ class FiniteStateDevice(StateDevice, ABC):
 
         self.state_data: dict[states, dict] = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
+
 
     def dump(self) -> None:
         """A debug method. Prints a large volume of useful information about the FiniteStateDevice."""
@@ -384,3 +388,6 @@ class FiniteStateDevice(StateDevice, ABC):
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
         return self.state_data[self.current_state.value]['content']()
+
+    def reset(self) -> None:
+        self.set_state(self.default_state)
