@@ -59,13 +59,10 @@ class Room(state_device.StateDevice):
         if type(self.visible_actions[user_input] == actions.ExitAction):
             game.state_device_controller.set_dead()
 
-        # Launch the selected Action as a StateDevice
-        if self.visible_actions[user_input].persistent:
+
             logger.info("Detected persistent Action")
             game.state_device_controller.add_state_device(self.visible_actions[user_input])
-        else:
-            logger.info("Detected not-persistent Action")
-            game.state_device_controller.add_state_device(copy.deepcopy(self.visible_actions[user_input]))
+
 
 
 
