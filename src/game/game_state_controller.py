@@ -113,6 +113,7 @@ class GameStateController:
             raise TypeError("device must be of type sd.StateDevice!")
 
         logger.info(f"Adding state device: {str(device)}")
+        device.reset()
         self.state_device_stack.append((device, StackState()))
 
     def set_dead(self, val: bool = True) -> None:
