@@ -15,8 +15,8 @@ from game.systems.item.item import Usable
 
 class Event(FiniteStateDevice, ABC):
 
-    def __init__(self, default_input_type: InputType, states: Enum):
-        super().__init__(default_input_type, states)
+    def __init__(self, default_input_type: InputType, states: Enum, default_state):
+        super().__init__(default_input_type, states, default_state)
 
 
 class FlagEvent(Event):
@@ -26,7 +26,7 @@ class FlagEvent(Event):
         DEFAULT = 0
 
     def __init__(self, flags: [tuple[str, bool]]):
-        super().__init__(default_input_type=InputType.SILENT, states=FlagEvent.States)
+        super().__init__(InputType.SILENT, FlagEvent.States, self.States.DEFAULT)
         self.flags = flags  # The flags to set and their corresponding values
         self.current_state = self.States.DEFAULT
 
@@ -52,7 +52,7 @@ class AbilityEvent(Event):
         TERMINATE = 3
 
     def __init__(self, ability: int):
-        super().__init__(default_input_type=InputType.SILENT, states=AbilityEvent.States)
+        super().__init__(InputType.SILENT, AbilityEvent.States, self.States.DEFAULT)
         self.target_ability: int = ability
 
         @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
@@ -124,7 +124,7 @@ class AddItemEvent(Event):
 
         Returns: An instance of an AddItemEvent
         """
-        super().__init__(InputType.SILENT, AddItemEvent.States)
+        super().__init__(InputType.SILENT, AddItemEvent.States, self.States.DEFAULT)
         self.item_id = item_id
         self.item_quantity = item_quantity
         self.remaining_quantity = item_quantity
@@ -193,8 +193,11 @@ class AddItemEvent(Event):
 
 class CurrencyEvent(Event):
 
+    class States(Enum):
+        DEFAULT = 0
+
     def __init__(self, currency_id: int | str, quantity: int):
-        super().__init__(input_type=InputType.ANY)
+        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.currency_id = currency_id
         self.quantity = quantity
         self.cur = currency.currency_manager.to_currency(currency_id, abs(quantity))
@@ -226,8 +229,11 @@ class CurrencyEvent(Event):
 
 class RecipeEvent(Event):
 
+    class States(Enum):
+        DEFAULT = 0
+
     def __init__(self, recipe_id: int):
-        super().__init__(input_type=InputType.ANY)
+        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.recipe_id = recipe_id
 
     # TODO: Implement RecipeEvent logic
@@ -241,8 +247,11 @@ class RecipeEvent(Event):
 
 class ReputationEvent(Event):
 
+    class States(Enum):
+        DEFAULT = 0
+
     def __init__(self, faction_id: int, reputation_change: int, silent: bool = False):
-        super().__init__(input_type=InputType.SILENT if silent else InputType.ANY)
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
         self.message = [StringContent(value="Your reputation with "),
@@ -268,8 +277,11 @@ class ReputationEvent(Event):
 
 class ResourceEvent(Event):
 
+    class States(Enum):
+        DEFAULT = 0
+
     def __init__(self, stat_name: str, stat_change: int | float):
-        super().__init__(input_type=InputType.ANY)
+        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.stat_name = stat_name
         self.stat_name: int | float = stat_change
 
@@ -290,7 +302,7 @@ class UseItemEvent(Event):
         TERMINATE = -1
 
     def __init__(self, stack_index: int):
-        super().__init__(InputType.SILENT, UseItemEvent.States)
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.stack_index = stack_index
         self.player_ref: entities.Player = cache.get_cache()['player']
 
