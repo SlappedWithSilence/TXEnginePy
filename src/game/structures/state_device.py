@@ -356,6 +356,7 @@ class FiniteStateDevice(StateDevice, ABC):
             """
             instance.state_data[state.value]['content'] = fn
             return fn
+
         return decorate
 
     def _logic(self, user_input: any) -> None:
@@ -365,7 +366,8 @@ class FiniteStateDevice(StateDevice, ABC):
             self.dump()
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
-        if 'logic' not in self.state_data[self.current_state.value]:
+        if 'logic' not in self.state_data[self.current_state.value] \
+                or not self.state_data[self.current_state.value]['logic']:
             self.dump()
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
@@ -377,7 +379,8 @@ class FiniteStateDevice(StateDevice, ABC):
         if self.current_state.value not in self.state_data:
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
-        if 'content' not in self.state_data[self.current_state.value]:
+        if 'content' not in self.state_data[self.current_state.value] \
+                or not self.state_data[self.current_state.value]['content']:
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
         return self.state_data[self.current_state.value]['content']()
