@@ -39,6 +39,8 @@ def root():
     logger.info(f"max: {device.domain_max}")
     logger.info(f"min: {device.domain_min}")
     logger.info(f"len: {device.domain_length}")
+    logger.info("Input Domain struct:")
+    logger.info(device.input_domain)
 
     if isinstance(device, FiniteStateDevice):
 
