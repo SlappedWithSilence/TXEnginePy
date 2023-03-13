@@ -41,7 +41,10 @@ class Engine:
         currency.currency_manager.currencies[0] = currency.Currency(0, "USD", {"cents": 1, "dollars": 100})
 
         i0 = item.Item("Generic Item", 0, {0: 10}, "A generic Item. It does nothing and is nothing.")
+        i1 = item.Item("Item Number Two", 1, {0: 15}, "The second Item every created.")
+
         item.item_manager.register_item(i0)
+        item.item_manager.register_item(i1)
 
         exit_r_1 = actions.ExitAction(1)
         exit_r_0 = actions.ExitAction(0)
@@ -53,6 +56,7 @@ class Engine:
         get_cache()["player"] = Player("Player", 0)
         p: Player = get_cache()["player"]
         p.coin_purse.gain(0, 100)
+        p.inventory.new_stack(1, 1)
 
         inventory_action = ViewInventoryAction()
 
