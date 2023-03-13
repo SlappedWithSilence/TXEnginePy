@@ -1,15 +1,20 @@
+import typing
+
 from game.structures.enums import InputType
 
 
-def is_valid_range(input_type: InputType, min_value: any = None, max_value: any = None, length: int = None) -> bool:
+def is_valid_range(input_type: InputType,
+                   min_value: int | None = None,
+                   max_value: int | None = None,
+                   length: int | None = None) -> bool:
     """
     Determine if a given input range is valid for a given InputType
 
     Parameters:
         input_type (InputType): The type of InputType to evaluate
-        min_value (any): optional lower limit value
-        max_value (any): optional upper limit value
-        length (int) : optional length limit
+        min_value (int | None): optional lower limit value
+        max_value (int | None): optional upper limit value
+        length (int | None) : optional length limit
 
     Returns:
         True if the given parameters are valid for the given InputType, False otherwise
@@ -21,18 +26,8 @@ def is_valid_range(input_type: InputType, min_value: any = None, max_value: any 
         return not min_value and not max_value and not length
 
     if input_type == InputType.INT:
-
-        # If upper or lower is provided, it must be an int
-        if (max_value and not type(max_value) == int) or (min_value and not type(min_value) == int):
-            return False
-
-        # If only an upper or lower limit is provided, that is valid
-        if (max_value and not min_value) or (min_value and not max_value):
-            return True
-
-        # If both upper and lower limit, upper limit must be higher than lower limit
-        else:
-            return (max_value or 0) >= min_value
+        return (min_value is None or type(min_value) == int or callable(min_value)) and (
+                    max_value is None or type(max_value) == int or callable(max_value))
 
     if input_type == InputType.STR:
         return not length or (type(length) == int and length > 0)
@@ -75,4 +70,3 @@ def affirmative_to_bool(user_input: str) -> bool:
         return False
     else:
         return None
-
