@@ -58,9 +58,6 @@ class Room(state_device.StateDevice):
         # If the user selected and ExitAction, terminate the current room
         if type(self.visible_actions[user_input] == actions.ExitAction):
             game.state_device_controller.set_dead()
-
-
-            logger.info("Detected persistent Action")
             game.state_device_controller.add_state_device(self.visible_actions[user_input])
 
 
