@@ -7,7 +7,7 @@ from game.cache import get_cache
 from game.structures import enums
 from game.structures.enums import InputType
 from game.structures.messages import StringContent, ComponentFactory
-from game.systems.event.events import AddItemEvent
+from game.systems.event.add_item_event import AddItemEvent
 from game.systems.room.action.actions import Action
 
 

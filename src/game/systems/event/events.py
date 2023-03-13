@@ -1,4 +1,3 @@
-import weakref
 from abc import ABC
 from enum import Enum
 
@@ -6,11 +5,7 @@ from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
 import game.systems.currency as currency
 import game.util.input_utils
-from game import cache
 from game.structures.messages import StringContent, ComponentFactory
-import game.systems.entity.entities as entities
-import game.systems.item as item
-from game.systems.item.item import Usable
 
 
 class Event(FiniteStateDevice, ABC):
@@ -39,7 +34,7 @@ class FlagEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
-            return ComponentFactory.get([""])
+            return ComponentFactory.get()
 
 
 class AbilityEvent(Event):
@@ -57,7 +52,7 @@ class AbilityEvent(Event):
 
         @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
         def content() -> dict:
-            return ComponentFactory.get([""])
+            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
@@ -95,100 +90,11 @@ class AbilityEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.TERMINATE)
         def content() -> dict:
-            return ComponentFactory.get([""])
+            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
         def logic(_: any) -> None:
             game.state_device_controller.set_dead()
-
-
-class AddItemEvent(Event):
-    """
-    An Event that flows the user through the process of adding an item to their inventory.
-
-    This is usually an automatic process, but occasionally requires user intervention, particularly when there isn't
-    enough inventory space.
-    """
-
-    class States(Enum):
-        DEFAULT = 0
-        PROMPT_KEEP_NEW_ITEM = 1
-        INSERT_ITEM = 2
-        TERMINATE = -1
-
-    def __init__(self, item_id: int, item_quantity: int = 1):
-        """
-        Args:
-            item_id: The ID of the Item to attempt to add to the player's inventory.
-            item_quantity: The quantity of the Item to attemtp to add to the player's inventory.
-
-        Returns: An instance of an AddItemEvent
-        """
-        super().__init__(InputType.SILENT, AddItemEvent.States, self.States.DEFAULT)
-        self.item_id = item_id
-        self.item_quantity = item_quantity
-        self.remaining_quantity = item_quantity
-        self.current_state = self.States.DEFAULT  # Set the starting state to DEFAULT
-        self.player_ref: entities.Player = weakref.proxy(cache.get_cache()['player'])  # Grab a weak reference to Player
-        self._build_states()
-
-    def _build_states(self) -> None:
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
-        def logic(_: any) -> None:
-            # Detect collision
-            if self.player_ref.inventory.is_collidable(self.item_id, self.remaining_quantity):
-                self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)  # Make player choose to keep or drop new item
-            else:
-                self.set_state(self.States.INSERT_ITEM)  # Insert items
-
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get([""])
-
-        @FiniteStateDevice.state_logic(self, self.States.PROMPT_KEEP_NEW_ITEM, InputType.AFFIRMATIVE)
-        def logic(user_input: bool) -> None:
-            if user_input:
-                self.set_state(self.States.INSERT_ITEM)
-            else:
-                self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.PROMPT_KEEP_NEW_ITEM)
-        def content() -> dict:
-            c = ["Would you like to make room in your inventory for ",
-                 StringContent(value=f"{self.remaining_quantity}x ", formatting="item_quantity"),
-                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
-                 "?"
-                 ]
-            return ComponentFactory.get(c)
-
-        @FiniteStateDevice.state_logic(self, self.States.INSERT_ITEM, InputType.ANY)
-        def logic(_: any) -> None:
-            self.remaining_quantity = self.player_ref.inventory.insert_item(self.item_id, self.item_quantity)
-
-            if self.remaining_quantity > 0:
-                self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)
-            else:
-                self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.INSERT_ITEM)
-        def content() -> dict:
-            return ComponentFactory.get(
-                [
-                    f"You added ",
-                    StringContent(value=str(self.item_quantity), formatting="item_quantity"),
-                    "x ",
-                    StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
-                    " to your inventory."
-                ]
-            )
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get([])
 
 
 class CurrencyEvent(Event):
@@ -293,88 +199,3 @@ class ResourceEvent(Event):
         return {}
 
 
-class UseItemEvent(Event):
-    class States(Enum):
-        DEFAULT = 0
-        USE_ITEM = 1
-        NOT_USABLE = 2
-        NOT_REQUIREMENTS = 3
-        TERMINATE = -1
-
-    def __init__(self, stack_index: int):
-        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
-        self.stack_index = stack_index
-        self.player_ref: entities.Player = cache.get_cache()['player']
-
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
-        def logic(_: any) -> None:
-            if isinstance(self.player_ref.inventory.items[self.stack_index].ref, Usable):
-
-                if self.player_ref.inventory.items[self.stack_index].ref.is_requirements_fulfilled():
-                    self.set_state(self.States.USE_ITEM)
-                else:
-                    self.set_state(self.States.NOT_REQUIREMENTS)
-
-            else:
-                self.set_state(self.States.NOT_USABLE)
-
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get([""])
-
-        @FiniteStateDevice.state_logic(self, self.States.NOT_REQUIREMENTS, InputType.ANY)
-        def logic(_: any) -> None:
-            self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
-        def content(_: any) -> dict:
-            c = [
-                "Failed to use ",
-                StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, formatting="item_name"),
-                ". Requirements are not met."
-            ]
-            return ComponentFactory.get(c)
-
-        @FiniteStateDevice.state_logic(self, self.States.NOT_USABLE, InputType.ANY)
-        def logic(_: any) -> None:
-            self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.NOT_USABLE)
-        def content() -> dict:
-            return ComponentFactory.get(
-                [
-                    StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name,
-                                  formatting="item_name"),
-                    " cannot be used."
-                ]
-            )
-
-        @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
-        def logic(_: any) -> None:
-            stack = self.player_ref.inventory.items[self.stack_index]
-            stack.ref.use()
-
-            if stack.ref.consumable:
-                stack.quantity = stack.quantity - 1
-
-            self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
-        def content() -> dict:
-            stack = self.player_ref.inventory.items[self.stack_index]
-
-            return ComponentFactory.get(
-                [
-                    "You used ",
-                    stack.ref.name,
-                    "."
-                ]
-            )
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get([""])

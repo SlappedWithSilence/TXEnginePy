@@ -64,7 +64,7 @@ class ComponentFactory:
     'components' field of Frame and StateDevice objects.
     """
     @classmethod
-    def get(cls, content: list[str | StringContent], options: list[list[str | StringContent]] = None) -> dict[str, list]:
+    def get(cls, content: list[str | StringContent] = None, options: list[list[str | StringContent]] = None) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
