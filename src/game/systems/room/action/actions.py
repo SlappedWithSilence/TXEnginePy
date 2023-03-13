@@ -116,10 +116,8 @@ class ViewInventoryAction(Action):
         def logic(_: any) -> None:
 
             if self.player_ref.inventory.size == 0:
-                logger.warning("Transitioning to EMPTY")
                 self.set_state(self.States.EMPTY)
             else:
-                logger.warning("Transitioning to DISPLAY_INVENTORY")
                 self.set_state(self.States.DISPLAY_INVENTORY)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
