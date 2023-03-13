@@ -1,5 +1,6 @@
 import copy
 import enum
+import typing
 import weakref
 import inspect
 from abc import abstractmethod, ABC
@@ -20,7 +21,7 @@ class StateDevice(ABC):
 
     def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = "StateDevice"):
         self.input_type: InputType = input_type
-        self.input_range: dict[str, int] = input_range or to_range()
+        self.input_range: dict[str, int | callable] = input_range or to_range()
         self.name: str = name
         self._controller: any = None  # This value should only be set by the GameStateController
 
@@ -33,52 +34,52 @@ class StateDevice(ABC):
         self._controller = weakref.ref(engine_in)
 
     @property
-    def domain_min(self) -> any:
-        return self.input_range["min"]
+    def domain_min(self) -> int | None:
+        return self.input_range["min"]() if callable(self.input_range["min"]) else self.input_range["min"]
 
     @domain_min.setter
-    def domain_min(self, val: any) -> None:
-        if is_valid_range(self.input_type,
-                          min_value=val,
-                          max_value=self.domain_max,
-                          length=self.domain_length):
+    def domain_min(self, val: int | typing.Callable | None) -> None:
+        if callable(val) or is_valid_range(self.input_type,
+                                           min_value=val,
+                                           max_value=self.domain_max,
+                                           length=self.domain_length):
             self.input_range["min"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
     @property
-    def domain_max(self) -> any:
+    def domain_max(self) -> int | None:
         """
         An optional value that determines the maximum value a submitted int can have
         """
-        return self.input_range["max"]
+        return self.input_range["max"]() if callable(self.input_range["max"]) else self.input_range["max"]
 
     @domain_max.setter
-    def domain_max(self, val: any) -> None:
-        if is_valid_range(self.input_type,
-                          min_value=self.domain_min,
-                          max_value=val,
-                          length=self.domain_length):
+    def domain_max(self, val: int | typing.Callable | None) -> None:
+        if callable(val) or is_valid_range(self.input_type,
+                                           min_value=self.domain_min,
+                                           max_value=val,
+                                           length=self.domain_length):
             self.input_range["max"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
     @property
-    def domain_length(self) -> [int, None]:
+    def domain_length(self) -> int | None:
         """
         An optional value that determines the maximum length of a submitted string
         """
         if "length" not in self.input_range:
             return None
 
-        return self.input_range["length"]
+        return self.input_range["length"]() if callable(self.input_range["length"]) else self.input_range["length"]
 
     @domain_length.setter
-    def domain_length(self, val: [int, None]) -> None:
-        if is_valid_range(self.input_type,
-                          min_value=self.domain_min,
-                          max_value=self.domain_max,
-                          length=self.domain_length):
+    def domain_length(self, val: [int | typing.Callable | None]) -> None:
+        if callable(val) or is_valid_range(self.input_type,
+                                           min_value=self.domain_min,
+                                           max_value=self.domain_max,
+                                           length=self.domain_length):
             self.input_range["min"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
@@ -244,7 +245,6 @@ class FiniteStateDevice(StateDevice, ABC):
         self.state_data: dict[states, dict] = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
 
-
     def dump(self) -> None:
         """A debug method. Prints a large volume of useful information about the FiniteStateDevice."""
         logger.error(f"Something went wrong with FiniteStateDevice::{self.__class__}::{self.name}!")
@@ -260,10 +260,18 @@ class FiniteStateDevice(StateDevice, ABC):
 
         self.current_state = next_state
         self.input_type = self.state_data[next_state.value]['input_type']
-        self.domain_min = self.state_data[next_state.value]['min'] \
-            if not callable(self.state_data[next_state.value]['min']) else self.state_data[next_state.value]['min']()
-        self.domain_max = self.state_data[next_state.value]['max'] \
-            if not callable(self.state_data[next_state.value]['max']) else self.state_data[next_state.value]['max']()
+
+        if callable(self.state_data[next_state.value]['min']):
+            logger.warning(f"Evaluating callable for {next_state}.min...")
+            self.domain_min = self.state_data[next_state.value]['min']()
+        else:
+            self.domain_min = self.state_data[next_state.value]['min']
+
+        if callable(self.state_data[next_state.value]['max']):
+            logger.warning(f"Evaluating callable for {next_state}.max...")
+            self.domain_max = self.state_data[next_state.value]['max']()
+        else:
+            self.domain_max = self.state_data[next_state.value]['max']
 
         self.domain_length = self.state_data[next_state.value]['len']
 
