@@ -137,12 +137,12 @@ class ViewInventoryAction(Action):
         # DISPLAY_INVENTORY
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_INVENTORY, InputType.INT, -1,
-                                       lambda: self.player_ref.inventory.size)
+                                       lambda: self.player_ref.inventory.size - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
                 self.set_state(self.States.TERMINATE)
             else:
-                self.select_stack = user_input
+                self.stack_index = user_input
                 self.set_state(self.States.INSPECT_STACK)
 
         @FiniteStateDevice.state_content(self, self.States.DISPLAY_INVENTORY)
@@ -152,7 +152,7 @@ class ViewInventoryAction(Action):
 
         # INSPECT STACK
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_STACK, InputType.INT, -1,
-                                       len(self.stack_inspect_options))
+                                       len(self.stack_inspect_options) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
                 self.set_state(self.States.DISPLAY_INVENTORY)
