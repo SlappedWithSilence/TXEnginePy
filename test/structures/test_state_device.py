@@ -51,3 +51,21 @@ def test_components_trivial():
     assert type(res['content']) == list
     assert len(res['content']) == 1
     assert res['content'][0] == '0'
+
+def test_input_int():
+    pass
+
+def test_input_affirmative():
+    pass
+
+def test_input_silent():
+    pass
+
+def test_domain_getter():
+    pass
+
+def test_domain_setter():
+    pass
+
+def test_frame():
+    pass
