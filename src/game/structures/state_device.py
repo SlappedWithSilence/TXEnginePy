@@ -19,10 +19,10 @@ class StateDevice(ABC):
     An abstract class that defines an object that represents game logic
     """
 
-    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = "StateDevice"):
+    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = None):
         self.input_type: InputType = input_type
-        self.input_range: dict[str, int | callable] = input_range or to_range()
-        self.name: str = name
+        self.input_range: dict[str, int] = input_range or to_range()
+        self.name: str = name or f"StateDevice::{self.__class__.__name__}"
         self._controller: any = None  # This value should only be set by the GameStateController
 
     @property
