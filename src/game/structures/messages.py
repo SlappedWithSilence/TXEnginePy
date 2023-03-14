@@ -64,22 +64,24 @@ class ComponentFactory:
     'components' field of Frame and StateDevice objects.
     """
     @classmethod
-    def get(cls, content: list[str | StringContent] = None, options: list[list[str | StringContent]] = None) -> dict[str, list]:
+    def get(cls,
+            content: list[str | StringContent] | None = None,
+            options: list[list[str | StringContent]] | None = None) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
-        Args: content: A list of str or str-like objects. This is the main text the user sees. options: A list of
-        lists of str or str-like objects. If there are options for the user to choose from within a given frame,
-        they are embedded inside 'options'.
+        Args: content: A list of str or str-like objects. This is the main text the user sees.
+        options: A list of lists of str or str-like objects. If there are options for the user to choose from within a
+        given frame, they are embedded inside 'options'.
 
         Returns: A structured dict containing all the passed fields.
         """
 
-        if type(content) != list:
-            raise TypeError(f"components.content must be of type list[str | StringContent]! Got {type(content)} instead.")
+        if content and type(content) != list:
+            raise TypeError(f"components.content must be of type list! Got {type(content)} instead.")
 
         if options and type(options) != list:
-            raise TypeError(f"components.options must be of type list[str | StringContent]! Got {type(options)} instead.")
+            raise TypeError(f"components.options must be of type list! Got {type(options)} instead.")
 
         return {
             "content": content,
