@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import pytest
 
+import game
 from src.game.systems.currency.currency import Currency
 
 currencies = {
@@ -39,8 +40,8 @@ add_int_str_cases = [
     ["USD", [12, 12, 13], "37 cents"],
     ["USD", [0, 0, 0, 0], "0 cents"],
     ["USD", [1, 100, 0], "1 dollars 1 cents"],
-    ["USD", [1111], "10 dollars"],
-    ["USD", [100000], "1 k"],
+    ["USD", [1111], "11 dollars 11 cents"],
+    ["USD", [100000], "1 k 0 dollars 0 cents"],
 ]
 
 
