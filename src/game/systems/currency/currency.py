@@ -27,15 +27,27 @@ class Currency:
 
         base: str = ""
         working_quantity: int = self.quantity
+        non_zero_stage_found: bool = False
+
+        # If the currency is zero
+        if self.quantity == 0:
+            return f"0 {sorted_stages[-1][0]}"
 
         for stage_name, stage_scale in sorted_stages:
             stage_quantity: int = int(working_quantity / stage_scale)  # Amount of currency that fit into the stage
+
+            if stage_quantity != 0:
+                non_zero_stage_found = True
+
+            if stage_quantity == 0 and not non_zero_stage_found:
+                continue
+
             remainder: int = int(working_quantity - (stage_scale * stage_quantity))  # How much currency is left
             working_quantity = remainder
             stage_str = f"{stage_quantity} {stage_name} "
             base = base + stage_str
 
-        return base
+        return base.strip()
 
     def __repr__(self):
         return self.__str__()
