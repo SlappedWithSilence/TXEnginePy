@@ -1,5 +1,6 @@
 from enum import Enum
 
+import game
 from game import cache
 from game.structures.enums import InputType
 from game.structures.messages import ComponentFactory, StringContent
