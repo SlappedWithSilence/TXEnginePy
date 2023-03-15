@@ -1,5 +1,7 @@
 from game.structures.enums import InputType
 
+from loguru import logger
+
 
 def is_valid_range(input_type: InputType,
                    min_value: int | None = None,
@@ -23,9 +25,30 @@ def is_valid_range(input_type: InputType,
     if input_type == InputType.AFFIRMATIVE or input_type == InputType.ANY or input_type == InputType.SILENT:
         return True
 
+    # Mins and maxes must be int or None and must make sense
     if input_type == InputType.INT:
-        return (min_value is None or type(min_value) == int or callable(min_value)) and (
-                    max_value is None or type(max_value) == int or callable(max_value))
+
+        # Check for if min and max both exist
+        if min_value is not None and max_value is not None:
+
+            # Type check
+            if type(min_value) != int or type(max_value) != int:
+                return False
+
+            # Value check
+            if min_value > max_value:
+                return False
+
+            return True
+
+        # If only min or only max is set, check that it's an int
+        if min_value is not None and type(min_value) == int:
+            return True
+
+        if max_value is not None and type(max_value) == int:
+            return True
+
+        return False
 
     if input_type == InputType.STR:
         return not length or (type(length) == int and length > 0)

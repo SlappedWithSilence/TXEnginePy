@@ -21,7 +21,7 @@ class StateDevice(ABC):
 
     def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = None):
         self.input_type: InputType = input_type
-        self.input_range: dict[str, int] = input_range or to_range()
+        self._input_range: dict[str, int] = input_range or to_range()
         self.name: str = name or f"StateDevice::{self.__class__.__name__}"
         self._controller: any = None  # This value should only be set by the GameStateController
 
@@ -35,13 +35,13 @@ class StateDevice(ABC):
 
     @property
     def domain_min(self) -> int | None:
-        return self.input_range["min"]
+        return self._input_range["min"]
 
     @domain_min.setter
     def domain_min(self, val: int | None) -> None:
 
         if is_valid_range(self.input_type, val, self.domain_max, self.domain_length):
-            self.input_range["min"] = val
+            self._input_range["min"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
@@ -50,12 +50,12 @@ class StateDevice(ABC):
         """
         An optional value that determines the maximum value a submitted int can have
         """
-        return self.input_range["max"]
+        return self._input_range["max"]
 
     @domain_max.setter
     def domain_max(self, val: int | None) -> None:
         if is_valid_range(self.input_type, self.domain_min, val, self.domain_length):
-            self.input_range["max"] = val
+            self._input_range["max"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
@@ -64,15 +64,15 @@ class StateDevice(ABC):
         """
         An optional value that determines the maximum length of a submitted string
         """
-        if "length" not in self.input_range:
+        if "length" not in self._input_range:
             return None
 
-        return self.input_range["length"]
+        return self._input_range["length"]
 
     @domain_length.setter
     def domain_length(self, val: int | None) -> None:
-        if is_valid_range(self.input_type,self.domain_min,self.domain_max,self.domain_length):
-            self.input_range["len"] = val
+        if is_valid_range(self.input_type, self.domain_min, self.domain_max, self.domain_length):
+            self._input_range["len"] = val
         else:
             raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
 
@@ -81,14 +81,14 @@ class StateDevice(ABC):
         """
         A map that stores the domain of the allowed values for the StateDevice
         """
-        return self.input_range
+        return self._input_range
 
     @input_domain.setter
-    def input_domain(self, input_type: InputType, max: int=None, min: int=None, length: int=None) -> None:
-        if not is_valid_range(input_type, max, min, length):
+    def input_domain(self, input_type: InputType, i_max: int = None, i_min: int = None, length: int = None) -> None:
+        if not is_valid_range(input_type, i_max, i_min, length):
             raise ValueError(f"""Invalid input domain values for type {input_type}:\n 
-                                                                       min: {min}\n
-                                                                       max: {max}\n
+                                                                       min: {i_min}\n
+                                                                       max: {i_max}\n
                                                                        length: {length}
                               """)
 
@@ -127,14 +127,14 @@ class StateDevice(ABC):
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
             if type(input_value) == int:
-                if self.input_range["min"] and input_value < self.input_range["min"]:
+                if self._input_range["min"] and input_value < self._input_range["min"]:
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {input_value} must be >= {self.input_range['min']}")
+                        f"[{self}]: Failed to validate input! {input_value} must be >= {self._input_range['min']}")
                     return False
 
-                if self.input_range["max"] and input_value > self.input_range["max"]:
+                if self._input_range["max"] and input_value > self._input_range["max"]:
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {input_value} must be <= {self.input_range['max']}")
+                        f"[{self}]: Failed to validate input! {input_value} must be <= {self._input_range['max']}")
                     return False
 
                 return True
@@ -144,11 +144,11 @@ class StateDevice(ABC):
         # Input must be a str shorter than length
         elif self.input_type == InputType.STR:
             if type(input_value) == str:
-                if self.input_range["len"] and len(input_value) <= self.input_range["len"]:
+                if self._input_range["len"] and len(input_value) <= self._input_range["len"]:
                     return True
 
             logger.warning(
-                f"[{self}]: Failed to validate input! {input_value} is not a str of len <= {self.input_range['len']}"
+                f"[{self}]: Failed to validate input! {input_value} is not a str of len <= {self._input_range['len']}"
             )
             return False
         else:
@@ -197,7 +197,7 @@ class StateDevice(ABC):
         """
         return Frame(components=self.components,
                      input_type=self.input_type,
-                     input_range=self.input_range,
+                     input_range=self._input_range,
                      frame_type=self.__class__.__name__
                      )
 
