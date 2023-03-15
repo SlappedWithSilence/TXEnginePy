@@ -84,12 +84,15 @@ class StateDevice(ABC):
         return self._input_range
 
     @input_domain.setter
-    def input_domain(self, input_type: InputType, i_max: int = None, i_min: int = None, length: int = None) -> None:
-        if not is_valid_range(input_type, i_max, i_min, length):
-            raise ValueError(f"""Invalid input domain values for type {input_type}:\n 
-                                                                       min: {i_min}\n
-                                                                       max: {i_max}\n
-                                                                       length: {length}
+    def input_domain(self, range_dict: dict[str: int | None]) -> None:
+        if is_valid_range(self.input_type, range_dict['min'], range_dict['max'], range_dict['len']):
+            self._input_range = range_dict
+
+        else:
+            raise ValueError(f"""Invalid input domain values for type {self.input_type}:\n 
+                                                                       min: {range_dict['min']}\n
+                                                                       max: {range_dict['max']}\n
+                                                                       length: {range_dict['max']}
                               """)
 
     def reset(self) -> None:
