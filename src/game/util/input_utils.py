@@ -25,8 +25,12 @@ def is_valid_range(input_type: InputType,
     if input_type == InputType.AFFIRMATIVE or input_type == InputType.ANY or input_type == InputType.SILENT:
         return True
 
-    # Mins and maxes must be int or None and must make sense
+    # Min and max must be int or None and must make sense
     if input_type == InputType.INT:
+
+        # If min and max are both None
+        if min_value is None and max_value is None:
+            return True
 
         # Check for if min and max both exist
         if min_value is not None and max_value is not None:
@@ -51,7 +55,7 @@ def is_valid_range(input_type: InputType,
         return False
 
     if input_type == InputType.STR:
-        return not length or (type(length) == int and length > 0)
+        return length is None or (type(length) == int and length > 0)
 
     # If you got here, something isn't right.
     return None
