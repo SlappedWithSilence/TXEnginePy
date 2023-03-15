@@ -90,7 +90,7 @@ domain_max_set_cases_good = [0, -1, 2222222, None]
 @pytest.mark.parametrize("value", domain_max_set_cases_good)
 def test_domain_max_set_good(value):
     """
-    Test that a given valid value is correctly set using StateDevice::max property.
+    Test that a given valid value is correctly set using StateDevice::domain_max property.
 
     Note that correctness is dependent on input_utils.is_valid_range
     """
@@ -104,7 +104,7 @@ domain_max_set_cases_bad = [2.2, lambda: pow(2, 2), '5']
 
 
 @pytest.mark.parametrize("value", domain_max_set_cases_bad)
-def test_domain_max_set_good(value):
+def test_domain_max_set_bad(value):
     """
     Test that StateDevice::domain_max setter rejects badly-typed values
 
@@ -113,6 +113,37 @@ def test_domain_max_set_good(value):
     with pytest.raises(ValueError) as e_info:
         md = MockDevice(InputType.INT)
         md.domain_max = value
+
+
+domain_len_set_cases_good = [1, 2222222, None]
+
+
+@pytest.mark.parametrize("value", domain_len_set_cases_good)
+def test_domain_len_set_good(value):
+    """
+    Test that a given valid value is correctly set using StateDevice::domain_length property.
+
+    Note that correctness is dependent on input_utils.is_valid_range
+    """
+    md = MockDevice(InputType.STR)
+    md.domain_length = value
+
+    assert md.input_domain['len'] == value
+
+
+domain_len_set_cases_bad = [2.2, lambda: pow(2, 2), '5', 0, -1]
+
+
+@pytest.mark.parametrize("value", domain_len_set_cases_bad)
+def test_domain_len_set_bad(value):
+    """
+    Test that StateDevice::domain_length setter rejects badly-typed values
+
+    Note that correctness is dependent on input_utils.is_valid_range
+    """
+    with pytest.raises(ValueError) as e_info:
+        md = MockDevice(InputType.STR)
+        md.domain_length = value
 
 
 def test_input_any():
