@@ -5,7 +5,7 @@ from enum import Enum
 import game
 import game.cache as cache
 import game.systems.room as room
-import game.systems.event.use_item_event
+import game.systems.event.use_item_event as uie
 from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
 import game.systems.event.events as events
@@ -225,17 +225,14 @@ class ViewInventoryAction(Action):
 
         # USE_ITEM
 
-        @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.SILENT)
         def logic(_: any) -> None:
-            game.state_device_controller.add_state_device(systems.event.use_item_event.UseItemEvent(self.stack_index))
+            game.state_device_controller.add_state_device(uie.UseItemEvent(self.stack_index))
+            self.set_state(self.States.INSPECT_STACK)
 
         @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
         def content() -> dict:
-            return ComponentFactory.get(
-                ["You use ",
-                 StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, formatting="item_name")
-                 ]
-            )
+            return ComponentFactory.get()
 
         # TERMINATE
 
