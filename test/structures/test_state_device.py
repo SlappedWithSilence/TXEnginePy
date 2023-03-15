@@ -3,6 +3,7 @@ import pytest
 from game.structures.enums import InputType
 from game.structures.state_device import StateDevice
 from game.structures.messages import ComponentFactory
+from game.util.input_utils import to_range
 
 
 class MockDevice(StateDevice):
@@ -146,10 +147,99 @@ def test_domain_len_set_bad(value):
         md.domain_length = value
 
 
+setter_mixed_cases_good = [
+    # Trivial
+    [InputType.INT, None, None, None],
+    [InputType.STR, None, None, None],
+    [InputType.ANY, None, None, None],
+    [InputType.AFFIRMATIVE, None, None, None],
+    [InputType.SILENT, None, None, None],
+
+    # Int
+    [InputType.INT, 0, None, None],
+    [InputType.INT, -1, None, None],
+    [InputType.INT, 1, None, None],
+    [InputType.INT, 1000, None, None],
+    [InputType.INT, 0, 0, None],
+    [InputType.INT, -1, 0, None],
+    [InputType.INT, -1, -1, None],
+    [InputType.INT, 0, 1, None],
+    [InputType.INT, -1, 1, None],
+    [InputType.INT, -1, 13, None],
+    [InputType.INT, -100, -20, None],
+
+    # Str
+    [InputType.STR, None, None, 1],
+    [InputType.STR, None, None, 10],
+
+]
+
+
+@pytest.mark.parametrize("input_type, i_min, i_max, i_len", setter_mixed_cases_good)
+def test_domain_setters_mixed(input_type: InputType, i_min: int | None, i_max: int | None, i_len: int | None):
+    md = MockDevice(input_type)
+    md.domain_min = i_min
+    md.domain_max = i_max
+    md.domain_length = i_len
+
+
+@pytest.mark.parametrize("input_type, i_min, i_max, i_len", setter_mixed_cases_good)
+def test_input_domain_property_setter(input_type: InputType, i_min: int | None, i_max: int | None, i_len: int | None):
+    md = MockDevice(input_type)
+    md.input_domain = to_range(i_min, i_max, i_len)
+
+
+setter_mixed_cases_bad = [
+    # INT
+    [InputType.INT, 1, -1, None],  # Inverted min/max
+    [InputType.INT, 6, 3, None],
+    [InputType.INT, 3, 6, 5],  # Extraneous length
+    [InputType.INT, None, None, 1],
+    [InputType.INT, '3', 6, None],  # Bad types
+    [InputType.INT, 3, '6', None],
+    [InputType.INT, 3.2, 6, None],
+    [InputType.INT, 3, 6.2, None],
+    [InputType.INT, 3, 6, 1.1],
+    [InputType.INT, 3, 6, "Definitely a number"],
+    [InputType.INT, lambda: pow(2, 2), 6, None],
+    [InputType.INT, -1, lambda: pow(2, 2), None],
+
+    # STR
+    [InputType.STR, None, None, 0],  # Bad length value
+    [InputType.STR, None, None, -1],
+    [InputType.STR, 3, 6, 0],
+    [InputType.STR, 3, 6, -1],
+    [InputType.STR, 3, 6, None],  # Extraneous values
+    [InputType.STR, 3, 6, 1],
+    [InputType.STR, True, 6, None],
+    [InputType.STR, 3, False, None],
+    [InputType.STR, None, False, 4],
+
+]
+
+
+@pytest.mark.parametrize("input_type, i_min, i_max, i_len", setter_mixed_cases_bad)
+def test_domain_setters_mixed_bad(input_type, i_min, i_max, i_len):
+    with pytest.raises(ValueError) as e_info:
+        md = MockDevice(input_type)
+        md.domain_min = i_min
+        md.domain_max = i_max
+        md.domain_length = i_len
+
+
+@pytest.mark.parametrize("input_type, i_min, i_max, i_len", setter_mixed_cases_bad)
+def test_input_domain_property_setter_bad(input_type, i_min, i_max, i_len):
+    with pytest.raises(ValueError) as e_info:
+        md = MockDevice(input_type)
+        md.input_domain = to_range(i_min, i_max, i_len)
+
+
 def test_input_any():
     """
     Test that StateDevice::input() correctly handles an input when
     state_device.input_type == InputType.ANY
+
+    A counter must be tracked, so parameterization doesn't work on this test.
     """
     md = MockDevice(InputType.ANY)
 
