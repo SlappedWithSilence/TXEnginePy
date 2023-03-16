@@ -1,8 +1,11 @@
+import random
+
 import pytest
 
 from game.structures.enums import InputType
 from game.structures.state_device import StateDevice
 from game.structures.messages import ComponentFactory
+from game.util import input_utils
 from game.util.input_utils import to_range
 
 
@@ -252,17 +255,86 @@ def test_input_any():
         assert md.counter == idx + 1
 
 
-def test_input_int():
-    pass
+test_input_int_cases_good = [
+    [0, 0, 0],  # Trivial
+    [-1, 0, 0],  # Negative min, zero payload
+    [-1, 0, -1],  # Negative min, inclusive payload
+    [None, None, -1],  # Unbound, negative payload
+    [None, None, 0],  # Unbound, zero payload
+    [None, None, 1],  # Unbound, positive payload
+    [None, None, random.Random().randint(-100000, 999999)],  # Unbound, random payload
+    [None, 1, -1],  # Sole max, negative payload
+    [None, 1, 1],  # Sole max, positive payload inclusive
+    [None, 1, 0],  # Sole max, zero payload
+    [1, None, 1],  # Sole min, inclusive payload
+    [1, None, 2]  # Sole min, positive payload
+]
 
 
-def test_input_affirmative():
-    pass
+@pytest.mark.parametrize("i_min, i_max, payload", test_input_int_cases_good)
+def test_input_int_good(i_min, i_max, payload):
+    """
+    Test that StateDevice::input() correctly accepts valid inputs for InputType.INT
+    """
+    md = MockDevice(InputType.INT)
+    md.domain_min = i_min
+    md.domain_max = i_max
+    assert md.input(payload)
+    assert md.counter == 1
 
 
-def test_input_silent():
-    pass
+test_input_int_cases_bad = [
+    [None, None, None],  # Bad payload type, None
+    [1, None, None],
+    [1, 1, None],
+    [None, 1, None],
+    [None, None, "5"],  # Bad payload type, str
+    [1, None, "3"],
+    [1, 1, "1"],
+    [None, 1, "-1"],
+    [None, None, lambda: pow(2, 2)],  # Bad typed
+    [-1, 0, 1],  # Out of bounds, large
+    [None, 2, 3],  # Out of bounds, large
+    [-1, None, -3],  # Out of bounds, small
+    [1, 4, 0],  # Out of bounds, small
+]
+
+
+@pytest.mark.parametrize("i_min, i_max, payload", test_input_int_cases_bad)
+def test_input_int_bad(i_min, i_max, payload):
+    """Test that StateDevice::input correctly rejects invalid input payloads"""
+    md = MockDevice(InputType.INT)
+    md.domain_min = i_min
+    md.domain_max = i_max
+    assert not md.input(payload)
+    assert md.counter == 0
+
+
+test_input_affirmative_cases_good = input_utils.affirmative_range
+
+
+@pytest.mark.parametrize("payload", test_input_affirmative_cases_good)
+def test_input_affirmative_good(payload: str):
+    """Test that StateDevice::input correctly accepts and transforms valid input payloads when InputType.AFFIRMATIVE"""
+    md = MockDevice(InputType.AFFIRMATIVE)
+    assert md.input(payload)
+    assert md.counter == 1
+    assert md.input(payload.upper())
+    assert md.counter == 2
+
+
+test_input_affirmative_cases_bad = [
+    'nah', 'sure', 0, 1, None, True, False, 'g', 'G', 'l', 'K'
+]
+
+
+@pytest.mark.parametrize("payload", test_input_affirmative_cases_bad)
+def test_input_affirmative_bad(payload):
+    """Test that StateDevice::input correctly reject invalid input payloads when InputType.AFFIRMATIVE"""
+    md = MockDevice(InputType.AFFIRMATIVE)
+    assert not md.input(payload)
+    assert md.counter == 0
 
 
 def test_frame():
-    pass
+    """Tests whether a StateDevice correctly converts itself to a Frame object"""
