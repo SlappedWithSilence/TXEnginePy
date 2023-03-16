@@ -130,12 +130,12 @@ class StateDevice(ABC):
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
             if type(input_value) == int:
-                if self._input_range["min"] and input_value < self._input_range["min"]:
+                if self.domain_min is not None and input_value < self.domain_min:
                     logger.warning(
                         f"[{self}]: Failed to validate input! {input_value} must be >= {self._input_range['min']}")
                     return False
 
-                if self._input_range["max"] and input_value > self._input_range["max"]:
+                if self.domain_max is not None and (input_value > self.domain_max):
                     logger.warning(
                         f"[{self}]: Failed to validate input! {input_value} must be <= {self._input_range['max']}")
                     return False
