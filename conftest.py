@@ -3,7 +3,10 @@ A file that contains configuration and utility code pertaining to PyTest
 """
 
 import sys
+
+import pytest
 from loguru import logger
 
-logger.info("Modifying sys.path...")
-sys.path.insert(0, '../src')
+def pytest_configure(config):
+    logger.info("Modifying sys.path...")
+    sys.path.insert(0, 'src')
