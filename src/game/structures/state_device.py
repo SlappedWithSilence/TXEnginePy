@@ -64,10 +64,10 @@ class StateDevice(ABC):
         """
         An optional value that determines the maximum length of a submitted string
         """
-        if "length" not in self._input_range:
+        if "len" not in self._input_range:
             return None
 
-        return self._input_range["length"]
+        return self._input_range["len"]
 
     @domain_length.setter
     def domain_length(self, val: int | None) -> None:
@@ -147,9 +147,15 @@ class StateDevice(ABC):
         # Input must be a str shorter than length
         elif self.input_type == InputType.STR:
             if type(input_value) == str:
-                if self._input_range["len"] and len(input_value) <= self._input_range["len"]:
-                    return True
+                if self._input_range["len"] is not None:
+                    if len(input_value) <= self._input_range["len"]:
+                        return True
 
+                    else:
+                        return False
+
+                else:
+                    return True
             logger.warning(
                 f"[{self}]: Failed to validate input! {input_value} is not a str of len <= {self._input_range['len']}"
             )
@@ -222,32 +228,22 @@ class FiniteStateDevice(StateDevice, ABC):
     A subclass of StateDevice that adds support for explicit state ordering and transitions
     """
 
+    state_data_dict = {
+        "input_type": enums.InputType.ANY,
+        "min": None,
+        "max": None,
+        "len": None,
+        "logic": None,
+        "content": None
+    }
+
     def __init__(self, default_input_type: InputType, states: enum.Enum, default_state):
         super().__init__(default_input_type)
 
         self.states: enum.Enum = states
         self.current_state = self.default_state = default_state
-
-        state_data_dict = {
-            "input_type": enums.InputType.ANY,
-            "min": None,
-            "max": None,
-            "len": None,
-            "logic": None,
-            "content": None
-        }
-
-        self.state_data: dict[states, dict] = {k.value: copy.deepcopy(state_data_dict) for k in self.states}
+        self.state_data: dict[states, dict] = {k.value: copy.deepcopy(self.state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
-
-    def dump(self) -> None:
-        """A debug method. Prints a large volume of useful information about the FiniteStateDevice."""
-        logger.error(f"Something went wrong with FiniteStateDevice::{self.__class__}::{self.name}!")
-        logger.error(f"State history::{self.state_history}")
-        logger.error(f"State data")
-        for state in self.state_data:
-            logger.error(f"state::{state}")
-            logger.error(self.state_data[state])
 
     def set_state(self, next_state) -> None:
         if next_state.value not in self.state_data:
@@ -269,7 +265,10 @@ class FiniteStateDevice(StateDevice, ABC):
             self.domain_max = self.state_data[next_state.value]['max']
 
         # Assign length
-        self.domain_length = self.state_data[next_state.value]['len']
+        if callable(self.state_data[next_state.value]['len']):
+            self.domain_length = self.state_data[next_state.value]['len']()
+        else:
+            self.domain_length = self.state_data[next_state.value]['len']
 
         # Append history for debugging purposes
         self.state_history.append(next_state)
@@ -278,7 +277,7 @@ class FiniteStateDevice(StateDevice, ABC):
     @staticmethod
     def state_logic(instance, state, input_type: enums.InputType,
                     input_min: int | Callable = None, input_max: int | Callable = None,
-                    input_len: int = None):
+                    input_len: int = None, override: bool = False):
         """
         A decorator factory that registers a function as a logic provider within an instance of FiniteStateDevice and
         stores auxiliary state information such as input type and input range.
@@ -290,6 +289,7 @@ class FiniteStateDevice(StateDevice, ABC):
             input_min: The input range's min for this state. This may be an int or a callable that returns an int.
             input_max: The input range's max for this state. This may be an int or a callable that returns an int.
             input_len: The input range's length for this state. This must be an int.
+            override: If True, ignore collision errors
 
         Returns: A decorator that registers the wrapped function and passed input information to 'instance'
         """
@@ -299,20 +299,19 @@ class FiniteStateDevice(StateDevice, ABC):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
 
         if state not in instance.state_data and state.value not in instance.state_data:
-            instance.dump()
             raise ValueError(f"Unknown state {state}:{state.value}!")
 
-        if instance.state_data[state.value]['logic']:
-            instance.dump()
+        if not override and instance.state_data[state.value]['logic']:
             raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
 
-        if input_min and (not callable(input_min) and not type(input_min) == int):
-            instance.dump()
+        if input_min is not None and (not callable(input_min) and not type(input_min) == int):
             raise TypeError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
 
-        if input_max and (not callable(input_max) and not type(input_max) == int):
-            instance.dump()
+        if input_max is not None and (not callable(input_max) and not type(input_max) == int):
             raise TypeError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
+
+        if input_len is not None and (not callable(input_len) and not type(input_len) == int):
+            raise TypeError(f"input_len must be an int or a callable! Got {type(input_len)} instead.")
 
         def decorate(fn):
             """
@@ -353,10 +352,8 @@ class FiniteStateDevice(StateDevice, ABC):
         if not isinstance(instance, FiniteStateDevice):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
         if state.value not in instance.state_data:
-            instance.dump()
             raise ValueError(f"Unknown state {state}!")
         if instance.state_data[state.value]['content']:
-            instance.dump()
             raise ValueError(f"State.content collision! {state} already has a content function registered.")
 
         # Inner decorator that receives the function
@@ -373,12 +370,10 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Check for bad state data
         if self.current_state.value not in self.state_data:
-            self.dump()
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
         if 'logic' not in self.state_data[self.current_state.value] \
                 or not self.state_data[self.current_state.value]['logic']:
-            self.dump()
             raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
 
         self.state_data[self.current_state.value]['logic'](user_input)
