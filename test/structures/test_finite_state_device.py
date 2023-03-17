@@ -1,6 +1,7 @@
 from enum import Enum
 
 from game.structures.enums import InputType
+from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 
 import pytest
@@ -8,7 +9,142 @@ import pytest
 
 class MockFiniteStateDevice(FiniteStateDevice):
     class States(Enum):
-        DEFAULT = -1
+        DEFAULT = 0
+        A = 1
+        B = 2
+        C = 3
+        TERMINATE = -1
 
-    def __init__(self, default_input_type: InputType, states: Enum, default_state):
-        super().__init__(default_input_type, states, default_state)
+    def __init__(self):
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+        self.counter: int = 0
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.set_state(self.States.A)
+            self.counter += 1
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.A, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.B)
+            self.counter += 1
+
+        @FiniteStateDevice.state_content(self, self.States.A)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.B, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.C)
+            self.counter += 1
+
+        @FiniteStateDevice.state_content(self, self.States.B)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.C, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+            self.counter += 1
+
+        @FiniteStateDevice.state_content(self, self.States.C)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.ANY)
+        def logic(_: any) -> None:
+            self.counter += 1
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+
+def test_init_trivial():
+    """Test that a trivial subclass of FiniteStateDevice initializes without error"""
+    md = MockFiniteStateDevice()
+    assert md.counter == 0  # No logic is run on init
+    assert md.states is not None  # State enums are set correctly
+    assert md.states == md.States  # State enums are set correctly
+    assert md.current_state == md.default_state
+    assert len(md.state_data) == len([e.value for e in md.states])  # State data created
+
+
+def test_init_state_history():
+    """Verify that FiniteStateDevice::init correctly initializes state_history"""
+    md = MockFiniteStateDevice()
+    assert md.state_history is not None
+    assert len(md.state_history) == 1
+
+
+@pytest.mark.parametrize("state", MockFiniteStateDevice.States)
+def test_init_state_data(state):
+    """Verify that the state data of each state in a FiniteStateDevice are correctly initialized"""
+    md = MockFiniteStateDevice()
+    dd = md.state_data[state.value]
+
+    # The state has a correct copy of
+    assert len(dd) == len(md.state_data_dict)
+
+    # No domain values are set
+    assert dd["min"] is None
+    assert dd["max"] is None
+    assert dd["len"] is None
+
+    # Logic provider is set
+    assert dd["logic"] is not None
+    assert callable(dd["logic"])
+
+    # Content provider is set
+    assert dd["content"] is not None
+    assert callable(dd["content"])
+
+
+state_logic_decorator_cases_good = [
+    [MockFiniteStateDevice.States.A, InputType.ANY, None, None, None, ""],  # ANY Trivial
+    [MockFiniteStateDevice.States.A, InputType.SILENT, None, None, None, ""],  # SILENT Trivial
+    [MockFiniteStateDevice.States.A, InputType.AFFIRMATIVE, None, None, None, "yes"],  # AFFIRMATIVE Trivial
+    [MockFiniteStateDevice.States.A, InputType.INT, None, None, None, 16],  # ANY Trivial
+    [MockFiniteStateDevice.States.A, InputType.INT, 0, None, None, 1],  # INT lonely min
+    [MockFiniteStateDevice.States.A, InputType.INT, 0, 1, None, 1],  # INT ranged
+    [MockFiniteStateDevice.States.A, InputType.INT, None, 1, None, -1],  # INT lonely max
+    [MockFiniteStateDevice.States.A, InputType.INT, lambda: pow(-1, 2), None, None, 1],  # INT lonely callable min
+    [MockFiniteStateDevice.States.A, InputType.INT, lambda: pow(-1, 2), lambda: pow(2, 2), None, 4],  # lambdas
+    [MockFiniteStateDevice.States.A, InputType.ANY, None, lambda: pow(2, 3), None, 8],  # INT lonely callable max
+    [MockFiniteStateDevice.States.A, InputType.STR, None, None, None, "A String"],  # STR Trivial
+    [MockFiniteStateDevice.States.A, InputType.STR, None, None, 1, "f"],  # Constant len
+    [MockFiniteStateDevice.States.A, InputType.STR, None, None, lambda: pow(2, 4), "AStringWithLen16"]
+
+]
+
+
+@pytest.mark.parametrize("state, input_type, i_min, i_max, i_len, payload", state_logic_decorator_cases_good)
+def test_state_logic_decorator_integration(state, input_type, i_min, i_max, i_len, payload):
+    """An integration test that validates the full chain of state parameter assignment down to input handling.
+
+    - Tests that the state_logic decorator correctly assigns the logic operator to the state
+    - Tests that FiniteStateDevice::set_state correctly executes the state transition
+    """
+
+    md = MockFiniteStateDevice()
+
+    @FiniteStateDevice.state_logic(md, state, input_type, i_min, i_max, i_len, True)
+    def logic(_: any) -> None:
+        md.counter += 1
+
+    md.set_state(state)  # State transition
+    assert md.current_state == state  # Assess state
+
+    # Verify input domain has changed
+    assert md.input_type == md.state_data[state.value]['input_type']
+    assert md.domain_min == md.state_data[state.value]['min'] if not callable(md.state_data[state.value]['min']) else md.state_data[state.value]['min']()
+    assert md.domain_max == md.state_data[state.value]['max'] if not callable(md.state_data[state.value]['max']) else md.state_data[state.value]['max']()
+    assert md.domain_length == md.state_data[state.value]['len'] if not callable(md.state_data[state.value]['len']) else md.state_data[state.value]['len'](), f"i_len:{md.domain_length}"
+
+    # Assign a valid input
+    assert md.input(payload)  # Verify accepted
+    assert md.counter == 1  # Verify logic was executed
