@@ -90,7 +90,7 @@ class Currency:
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
 
-    def __divmod__(self, other):
+    def __truediv__(self, other):
         if isinstance(other, int) or isinstance(other, float):
             return Currency(self.id, self.name, self.stages, int(self.quantity / other))
 
