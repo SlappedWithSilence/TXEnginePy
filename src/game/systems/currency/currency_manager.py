@@ -10,6 +10,14 @@ class CurrencyManager(manager.Manager):
     validating various currency conversions, and more.
     """
 
+    def __contains__(self, item: int | Currency):
+        if type(item) == int:
+            return item in self.currencies
+        elif type(item) == Currency:
+            return item.id in self.currencies
+        else:
+            return False
+
     def load(self) -> None:
         pass
 
