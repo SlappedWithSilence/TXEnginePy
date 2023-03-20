@@ -107,7 +107,10 @@ class Currency:
             self.quantity = self.quantity + amount
 
         elif type(amount) == float:
-            self.quantity = int(self.quantity * amount)
+            self.quantity = round(self.quantity * amount)
+
+        else:
+            raise TypeError(f"Unknown type: {type(amount)}! Expected type: int | float")
 
     def set(self, quantity: int):
         """Set 'quantity' to the passed value."""
@@ -117,17 +120,3 @@ class Currency:
         else:
             raise TypeError(f"Cannot set a Currency's quantity to type {type(quantity)}! Must be of type int.")
 
-
-if __name__ == "__main__":
-    stages = {"cents": 1, "dollars": 100}
-    currency = Currency(1, "USD", stages, quantity=533)
-    currency_2 = Currency(2, "USD", stages, quantity=15)
-    print(currency)
-    print(currency * 2)
-    print(currency * 0)
-    print(currency + currency_2)
-    print(currency + 55)
-
-    stages = {"bronze": 1, "silver": 100, "gold": 1000}
-    currency = Currency(3, "Imperial", stages, 66021)
-    print(currency)
