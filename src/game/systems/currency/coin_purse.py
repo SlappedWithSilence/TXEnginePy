@@ -9,6 +9,22 @@ from game.systems.currency import currency_manager
 class CoinPurse:
     currencies: dict[int, Currency] = dataclasses.field(default_factory=dict)
 
+    def __contains__(self, item: int | Currency) -> bool:
+        if type(item) == Currency:
+            return item.id in self.currencies
+        elif type(item) == int:
+            return item in self.currencies
+        else:
+            raise KeyError(f"Cannot look up Currency with id of type {type(item)}! Expected id of type: int.")
+
+    def __getitem__(self, item: int | Currency) -> Currency:
+        if type(item) == Currency:
+            return self.currencies[item.id]
+        elif type(item) == int:
+            return self.currencies[item]
+        else:
+            raise KeyError(f"Cannot look up Currency with id of type {type(item)}! Expected id of type: int.")
+
     def __post_init__(self):
 
         # Initialize the currencies map.
@@ -16,19 +32,22 @@ class CoinPurse:
             self.currencies[currency] = currency_manager.to_currency(currency, 0)
 
     def balance(self, cur: Currency | int) -> int:
-        # If the passed value is a Currency
-        if type(cur) == Currency:
-            if cur.id in self.currencies:
-                return self.currencies[cur.id].quantity
+        """
+        Retrieve the quantity of the currency passed in
 
-        # TODO: Improve lookup syntax
-        # If the passed type is Currency.id or Currency.name
-        if type(cur) == int:
-            return self.currencies[cur].quantity
+        Args:
+            cur: The ID of the currency to retrieve or an instance of the currency to retrieve
 
-        return 0
+        Returns:
+            The quantity of the currency requested
+        """
 
-    def spend(self, cur: Currency | int, quantity: int | None = None) -> bool:
+        if cur not in self:
+            raise KeyError(f"Unknown currency: {cur}")
+
+        return self[cur].quantity
+
+    def spend(self, cur: Currency | int, quantity: int) -> bool:
         """
         Attempt to spend currency.
 
@@ -38,36 +57,52 @@ class CoinPurse:
 
         Returns: True if the currency was successfully spent, False otherwise
         """
-        if type(cur) == Currency:
-            if self.balance(cur) >= cur.quantity:
-                self.currencies[cur.id] = self.currencies[cur.id] - cur
-                return True
 
-        elif (type(cur) == int) and type(quantity) == int:
-            if self.balance(cur) >= quantity:
-                self.currencies[cur.id] = self.currencies[cur.id] - quantity
-                return True
+        if cur not in self:
+            raise KeyError(f"Unknown currency: {cur}")
 
-        return False
+        if type(quantity) != int:
+            raise TypeError(f"Cannot spend not-int values! Got type{type(quantity)}. Expected type: int")
 
-    def gain(self, currency_id: int, quantity: int) -> None:
-        self.currencies[currency_id] = self.currencies[currency_id] + quantity
+        if quantity < 1:
+            raise ValueError(f"Cannot spend values less than 1! Got {quantity}.")
 
-    def test_currency(self, currency_id: int, quantity: int) -> bool:
+        if self[cur].quantity < quantity:
+            return False
+
+        self.adjust(cur, quantity * -1)
+        return True
+
+    def adjust(self, cur: int | Currency, quantity: int | float) -> None:
+        """
+        Adjusts a currency by a specified amount.
+
+        Args:
+            cur: The id of the currency to adjust or an instance of the currency to adjust
+            quantity: The amount to adjust by. If this is an int, simply add. If it is a float, simply multiply.
+
+        Returns: None
+        """
+        if cur not in self:
+            raise KeyError(f"Unknown currency: {cur}")
+
+        self[cur].adjust(quantity)
+
+    def test_currency(self, cur: int | Currency, quantity: int) -> bool:
         """
         Test if there is enough of currency 'currency_id' such that currency.quantity >= quantity
 
         Args:
-            currency_id: The ID of the currency to test
+            cur: The ID of the currency to test or an instance of the currency to test
             quantity: The amount of currency that must be present to return True
 
         Returns: True if currency.quantity >= quantity, False otherwise
         """
 
-        if currency_id not in self.currencies:
-            return False
+        if cur not in self:
+            raise KeyError(f"Unknown currency: {cur}")
 
-        return self.currencies[currency_id].quantity >= quantity
+        return self[cur].quantity >= quantity
 
     def test_all_purchase(self, item_id: int) -> list[int]:
         """
