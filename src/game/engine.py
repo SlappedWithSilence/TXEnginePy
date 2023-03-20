@@ -55,7 +55,7 @@ class Engine:
 
         get_cache()["player"] = Player("Player", 0)
         p: Player = get_cache()["player"]
-        p.coin_purse.gain(0, 100)
+        p.coin_purse.adjust(0, 100)
         p.inventory.new_stack(1, 1)
 
         inventory_action = ViewInventoryAction()
