@@ -1,7 +1,5 @@
 import pytest
 
-import game  # Needed to force engine initialization
-
 from game.systems.currency.coin_purse import CoinPurse
 from game.systems.currency.currency import Currency
 from game.systems.item import Item
@@ -122,11 +120,11 @@ def test_balance_int():
     Test that CoinPurse::balance correctly retrieves values when fed a key of type int
     """
     cp = CoinPurse()
-    cp.currencies[0].quantity = 12
-    cp.currencies[1].quantity = 100231
+    cp.currencies[-110].quantity = 12
+    cp.currencies[-111].quantity = 100231
 
-    assert cp.balance(0) == 12
-    assert cp.balance(1) == 100231
+    assert cp.balance(-110) == 12
+    assert cp.balance(-111) == 100231
 
 
 def test_balance_currency():
@@ -134,11 +132,11 @@ def test_balance_currency():
     Test that CoinPurse::balance correctly retrieves values when fed a key of type Currency
     """
     cp = CoinPurse()
-    cp.currencies[0].quantity = 12
-    cp.currencies[1].quantity = 100231
+    cp.currencies[-110].quantity = 12
+    cp.currencies[-111].quantity = 100231
 
-    cur0 = currency_manager.to_currency(0, 0)
-    cur1 = currency_manager.to_currency(1, 0)
+    cur0 = currency_manager.to_currency(-110, 0)  # Special testing currencies
+    cur1 = currency_manager.to_currency(-111, 0)
 
     assert cp.balance(cur0) == 12
     assert cp.balance(cur1) == 100231
@@ -159,11 +157,11 @@ def test_balance_bad(cur: int | Currency):
 
 
 spend_cases_good = [
-    [0, 1, 1, 0],
-    [0, 100, 50, 50],
-    [0, 73, 12, 61],
-    [1, 1, 1, 0],
-    [1, 51, 2, 49]
+    [-110, 1, 1, 0],
+    [-110, 100, 50, 50],
+    [-110, 73, 12, 61],
+    [-111, 1, 1, 0],
+    [-111, 51, 2, 49]
 ]
 
 
@@ -179,8 +177,8 @@ def test_spend(cur: int | Currency, start: int, offset: int, result: int):
 
 
 spend_cases_false = [
-    [0, 0, 1],
-    [0, 100, 101],
+    [-110, 0, 1],
+    [-110, 100, 101],
 ]
 
 
@@ -196,7 +194,7 @@ def test_spend_false(cur: int, start: int, offset: int):
 spend_cases_bad = [
     [-12, 0, 0],
     [None, 0, 0],
-    [0, 0, None],
+    [-110, 0, None],
     ['a', 100, -101],
 ]
 
@@ -211,12 +209,71 @@ def test_spend_bad(cur: int, start: int, offset: int):
         cp.spend(cur, offset)
 
 
-def test_gain():
-    pass
+adjust_int_cases_good = [
+    [[0], 0],
+    [[1], 1],
+    [[0, 1], 1],
+    [[0, 0], 0],
+    [[1, -1], 0],
+    [[2, -1], 1],
+    [[100, 1], 101],
+    [[7, 23], 30],
+    [[4, -8], -4],
+    [[-4, 8], 4],
+    [[-1, 0], -1]
+]
 
 
-def test_gain_bad():
-    pass
+@pytest.mark.parametrize("offsets, result", adjust_int_cases_good)
+def test_adjust_int(offsets: list[int], result):
+    cp = CoinPurse()
+    for cur in cp:
+        assert cp.balance(cur) == 0
+
+        for offset in offsets:
+            cp.adjust(cur, offset)
+
+
+adjust_float_cases_good = [
+    [0, [0.0], 0],
+    [0, [1.0], 0],
+    [0, [-1.0], 0],
+    [1, [0.0], 0],
+    [-1, [0.0], 0],
+    [1, [0.5], 0],
+    [7, [0.5], 3],
+    [20, [0.5], 10],
+    [9, [0.33], 3],
+    [9, [-0.33], -3],
+    [-9, [0.33], -3],
+    [1, [2.2, 0.5], 1],
+    [100, [0.25, 0.2], 5]
+]
+
+
+@pytest.mark.parametrize("start, offsets, result", adjust_float_cases_good)
+def test_adjust_float(start: int, offsets: list[int], result: int):
+    cp = CoinPurse()
+    for cur in cp:
+        assert cp.balance(cur) == 0
+
+        for offset in offsets:
+            cp.adjust(cur, offset)
+
+
+adjust_mixed_good = [
+    [1, [1, 2.0], 4]
+]
+
+
+@pytest.mark.parametrize("start, offsets, result", adjust_float_cases_good)
+def test_adjust_float(start: int, offsets: list[int], result: int):
+    cp = CoinPurse()
+    for cur in cp:
+        assert cp.balance(cur) == 0
+
+        for offset in offsets:
+            cp.adjust(cur, offset)
 
 
 def test_test_currency():
