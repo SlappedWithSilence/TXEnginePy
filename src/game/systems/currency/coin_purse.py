@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Iterator
 
 from game.cache import get_cache
 from game.systems.currency import Currency
@@ -24,6 +25,19 @@ class CoinPurse:
             return self.currencies[item]
         else:
             raise KeyError(f"Cannot look up Currency with id of type {type(item)}! Expected id of type: int.")
+
+    def __iter__(self) -> Iterator:
+        """
+        Cache an iterator for self.currencies and then return the cached copy
+        """
+        self._iterator = self.currencies.__iter__()
+        return self._iterator
+
+    def __next__(self) -> int:
+        """
+        Pass the call to the cached iterator
+        """
+        return self._iterator.__next__()
 
     def __post_init__(self):
 
