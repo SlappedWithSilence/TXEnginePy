@@ -100,7 +100,14 @@ class CoinPurse:
         if cur not in self:
             raise KeyError(f"Unknown currency: {cur}")
 
-        self[cur].adjust(quantity)
+        if type(quantity) == int:
+            self[cur].quantity += quantity
+
+        elif type(quantity) == float:
+            self[cur].quantity = round(self[cur].quantity * quantity)
+
+        else:
+            raise TypeError(f"Unknown type: {type(quantity)}! Quantity must be of type int or float")
 
     def test_currency(self, cur: int | Currency, quantity: int) -> bool:
         """
