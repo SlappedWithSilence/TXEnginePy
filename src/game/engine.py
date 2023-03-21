@@ -39,6 +39,12 @@ class Engine:
         """
         # TODO: Remove debugging code
         currency.currency_manager.currencies[0] = currency.Currency(0, "USD", {"cents": 1, "dollars": 100})
+        currency.currency_manager.currencies[1] = currency.Currency(1, "Imperial",
+                                                                    {
+                                                                        "bronze": 1,
+                                                                        "silver": 1000,
+                                                                        "gold": 1000000
+                                                                    })
 
         i0 = item.Item("Generic Item", 0, {0: 10}, "A generic Item. It does nothing and is nothing.")
         i1 = item.Item("Item Number Two", 1, {0: 15}, "The second Item every created.")
