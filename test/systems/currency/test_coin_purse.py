@@ -277,24 +277,89 @@ def test_adjust_float(start: int, offsets: list[int], result: int):
 
 
 def test_test_currency():
+    cp = CoinPurse()
+
+    assert cp.balance(-110) == 0
+    cp.adjust(-110, 100)
+
+    assert cp.test_currency(-110, 1)
+    assert cp.test_currency(-110, 0)
+    assert not cp.test_currency(-110, 101)
+
+
+def test_test_currency_keyerror():
+
+    cp = CoinPurse()
+
+    with pytest.raises(KeyError):
+        cp.test_currency(-1122213, 1)
+
+
+def test_test_currency_valueerror():
+    cp = CoinPurse()
+
+    with pytest.raises(ValueError):
+        cp.test_currency(-110, -1)
+
+
+test_purchase_cases = [
+    [-110, 0, -110, False],
+    [-110, 1, -110, False],
+    [-110, 2, -110, True],
+    [-110, 3, -110, True],
+    [-111, 3, -110, True],
+    [-111, 4, -110, True]
+]
+
+
+@pytest.mark.parametrize("cur, bal, item, result", test_purchase_cases)
+def test_purchase(cur: int, bal: int, item: int, result: bool):
+    """
+    Test that CoinPurse::test_purchase correctly looks up item costs and returns
+
+    This test specifically makes use of a special test item that was inserted into the item manager during the currency
+    test module's setup stage (see __init__.py).
+    """
+    cp = CoinPurse()
+
+    cp.adjust(cur, bal)
+    assert cp.test_purchase(item, cur) == result
+
+
+def test_purchase_bad():
     pass
 
 
-def test_test_currency_bad():
-    pass
+test_test_all_purchase_cases = [
+    [-110, {-110: 0, -111: 1}, []],
+    [-110, {-110: 1, -111: 1}, []],
+    [-110, {-110: -19, -111: -1}, []],
+    [-110, {-110: -1, -111: 1}, []],
+    [-110, {-110: 1, -111: -1}, []],
+    [-110, {-110: 2, -111: 1}, [-110]],
+    [-110, {-110: 0, -111: 3}, [-111]],
+    [-110, {-110: 10, -111: 11}, [-110, -111]],
+]
 
 
-def test_test_all_purchase():
-    pass
+@pytest.mark.parametrize("item, bal, results", test_test_all_purchase_cases)
+def test_test_all_purchase(item: int, bal: dict[int, int], results: list[int]):
+    cp = CoinPurse()
+
+
+
+    for cur in bal:
+        cp.adjust(cur, bal[cur])
+        assert cp.balance(cur) == bal[cur]
+
+    res = cp.test_all_purchase(item)
+
+    assert len(res) == len(results)  # If lists are of equal size, no need to cross-check
+    for element in results:  # Check if function results contain all expected currency ids
+        assert element in res
 
 
 def test_test_all_purchase_bad():
     pass
 
 
-def test_purchase():
-    pass
-
-
-def test_purchase_bad():
-    pass
