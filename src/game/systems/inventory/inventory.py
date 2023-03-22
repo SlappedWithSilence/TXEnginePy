@@ -1,6 +1,5 @@
 import dataclasses
 import weakref
-from collections import namedtuple
 
 import game.cache as cache
 from game.structures.messages import StringContent
