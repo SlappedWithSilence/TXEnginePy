@@ -123,6 +123,12 @@ class CoinPurse:
         if cur not in self:
             raise KeyError(f"Unknown currency: {cur}")
 
+        if quantity < 0:
+            raise ValueError("Cannot test a negative value against a currency!")
+
+        if quantity == 0:
+            return True
+
         return self[cur].quantity >= quantity
 
     def test_all_purchase(self, item_id: int) -> list[int]:
@@ -134,8 +140,9 @@ class CoinPurse:
 
         Returns: A list of currency IDs that can be used to purchase the item with item IDs
         """
+        from game.systems.item import item_manager
 
-        costs: dict[int, int] = get_cache()['managers']['ItemManager'].get_costs(item_id)
+        costs: dict[int, int] = item_manager.get_costs(item_id)
         return [cur_id for cur_id, value in costs.items() if self.test_currency(cur_id, value)]
 
     def test_purchase(self, item_id: int, currency_id: int) -> bool:
@@ -143,12 +150,13 @@ class CoinPurse:
         Test if the item with id 'item_id' can be purchased using currency with id 'currency_id'.
 
         Args:
-            item_id: The ID of the item to to test the purchase
+            item_id: The ID of the item to test the purchase
             currency_id: The ID of the currency to use to test
 
         Returns: True if the there is a sufficient quantity of currency with id 'currency_id', False otherwise
         """
-        return self.test_currency(currency_id, get_cache()['managers']['ItemManager'].get_cost(item_id, currency_id))
+        from game.systems.item import item_manager
 
+        item = item_manager.get_ref(item_id)
 
-
+        return self.test_currency(currency_id, item.value[currency_id])
