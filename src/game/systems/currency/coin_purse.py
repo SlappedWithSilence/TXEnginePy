@@ -61,7 +61,7 @@ class CoinPurse:
 
         return self[cur].quantity
 
-    def spend(self, cur: Currency | int, quantity: int) -> bool:
+    def spend(self, cur: Currency | int, quantity: int | None = None) -> bool:
         """
         Attempt to spend currency.
 
@@ -75,17 +75,27 @@ class CoinPurse:
         if cur not in self:
             raise KeyError(f"Unknown currency: {cur}")
 
-        if type(quantity) != int:
+        if quantity is not None and type(quantity) != int:
             raise TypeError(f"Cannot spend not-int values! Got type{type(quantity)}. Expected type: int")
 
-        if quantity < 1:
-            raise ValueError(f"Cannot spend values less than 1! Got {quantity}.")
+        if type(cur) == int:
+            if quantity < 1:
+                raise ValueError(f"Cannot spend values less than 1! Got {quantity}.")
 
-        if self[cur].quantity < quantity:
+            if self[cur].quantity < quantity:
+                return False
+
+            self.adjust(cur, quantity * -1)
+            return True
+
+        if type(cur) == Currency:
+            if cur.quantity <= self.balance(cur):
+                self.currencies[cur.id].quantity -= cur.quantity
+                return True
+
             return False
 
-        self.adjust(cur, quantity * -1)
-        return True
+        return False
 
     def adjust(self, cur: int | Currency, quantity: int | float) -> None:
         """
