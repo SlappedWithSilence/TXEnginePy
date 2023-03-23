@@ -20,9 +20,9 @@ def setup_module():
 
     from game.systems.item import item_manager, Item
 
-    te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 1)
-    te2 = Item("Test Item 2", -111, {-110: 2, -111: 3}, "A simple test item", 1)
-    te3 = Item("Test Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 1)
+    te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)
+    te2 = Item("Test Item 2", -111, {-110: 2, -111: 3}, "A simple test item", 3)
+    te3 = Item("Test Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
 
     item_manager.register_item(te1)
     item_manager.register_item(te2)
