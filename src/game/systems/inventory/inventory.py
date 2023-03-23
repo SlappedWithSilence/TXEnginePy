@@ -46,7 +46,7 @@ class Inventory:
 
         return [weakref.proxy(stack) for stack in self.items if stack.id == item_id]
 
-    def _total_quantity(self, item_id: int) -> int:
+    def total_quantity(self, item_id: int) -> int:
         """
         Computes the sum of the quantities of a given item in all available stacks.
 
@@ -93,7 +93,7 @@ class Inventory:
             raise TypeError(
                 f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
 
-        if self._total_quantity(item_id) < quantity:
+        if self.total_quantity(item_id) < quantity:
             return False
 
         already_consumed: int = 0
@@ -103,23 +103,26 @@ class Inventory:
             if len(self._all_stack_indexes(item_id)) < 1:
                 raise ValueError(f"Something went wrong while trying to consume item::{item_id}.")
 
+            offset = 0
             for stack_index in self._all_stack_indexes(item_id):
 
                 # If the current stack is bigger than needed, adjust its size and return True
-                if self.items[stack_index].quantity > quantity - already_consumed:
-                    self.items[stack_index] = Stack(item_id, self.items[stack_index].quantity - (
+                if self.items[stack_index - offset].quantity > quantity - already_consumed:
+                    self.items[stack_index - offset] = Stack(item_id, self.items[stack_index - offset].quantity - (
                             quantity - already_consumed))
                     return True
 
                 # If the current stack is exactly the size needed, delete it and return True
-                elif self.items[stack_index].quantity == quantity - already_consumed:
-                    del self.items[stack_index]
+                elif self.items[stack_index - offset].quantity == quantity - already_consumed:
+                    del self.items[stack_index - offset]
+                    offset += 1
                     return True
 
                 # If the stack is too small, record its size as consumed and delete it.
                 else:
-                    already_consumed = already_consumed + self.items[stack_index].quantity
-                    del self.items[stack_index]
+                    already_consumed = already_consumed + self.items[stack_index - offset].quantity
+                    del self.items[stack_index - offset]
+                    offset += 1
 
     def __contains__(self, item: int):
         if type(item) != int:
@@ -130,6 +133,9 @@ class Inventory:
                 return True
 
         return False
+
+    def __len__(self):
+        return self.size
 
     def to_options(self) -> list[list[str | StringContent]]:
         results = []
