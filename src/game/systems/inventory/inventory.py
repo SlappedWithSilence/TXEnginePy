@@ -4,6 +4,8 @@ import weakref
 import game.cache as cache
 from game.structures.messages import StringContent
 
+from loguru import logger
+
 
 @dataclasses.dataclass
 class Stack:
@@ -21,6 +23,7 @@ class Inventory:
     def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
         self.capacity: int = capacity
         self.items: list[Stack] = items or []
+        self.fragmented: bool = False
 
         if not self.capacity:
             self.capacity = cache.get_config()["inventory"]["default_capacity"]
@@ -45,6 +48,19 @@ class Inventory:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
         return [weakref.proxy(stack) for stack in self.items if stack.id == item_id]
+
+    def _consolidate_stacks(self):
+        logger.info("consolidating inventory stacks...")
+        quantity_cache = {}
+
+        for stack in self.items:
+            if stack.id not in quantity_cache:
+                quantity_cache[stack.id] = self.total_quantity(stack.id)
+
+        old_item_list = self.items
+        self.items = []
+        for item_id in quantity_cache:
+            self.insert_item(item_id, quantity_cache[item_id])
 
     def total_quantity(self, item_id: int) -> int:
         """
@@ -110,21 +126,35 @@ class Inventory:
                 if self.items[stack_index - offset].quantity > quantity - already_consumed:
                     self.items[stack_index - offset] = Stack(item_id, self.items[stack_index - offset].quantity - (
                             quantity - already_consumed))
+
+                    self._consolidate_stacks()
                     return True
 
                 # If the current stack is exactly the size needed, delete it and return True
                 elif self.items[stack_index - offset].quantity == quantity - already_consumed:
+
                     del self.items[stack_index - offset]
                     offset += 1
+
+                    self._consolidate_stacks()
                     return True
 
                 # If the stack is too small, record its size as consumed and delete it.
                 else:
                     already_consumed = already_consumed + self.items[stack_index - offset].quantity
+
                     del self.items[stack_index - offset]
                     offset += 1
 
-    def __contains__(self, item: int):
+    def __str__(self) -> str:
+        buf = ""
+
+        for idx, stack, in self.items:
+            buf = buf + f"[{idx}]: {stack.id}, x{stack.quantity}\n"
+
+        return buf
+
+    def __contains__(self, item: int) -> bool:
         if type(item) != int:
             raise TypeError("Cannot search for non-int in Inventory!")
 
@@ -225,6 +255,7 @@ class Inventory:
         Returns:
             An int that represents how many items were not inserted
         """
+
         remaining_quantity: int = quantity  # Set initial quantity
         max_stack_size: int = None
 
@@ -236,7 +267,7 @@ class Inventory:
                 if remaining_quantity > (
                         max_stack_size - stack.quantity):  # If the remaining # of items is greater than the capacity of the stack
                     remaining_quantity = remaining_quantity - (
-                                max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
+                            max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
                     stack.quantity = max_stack_size  # Fill the stack
                 else:  # If the entire remaining quantity can fit into the current stack
                     stack.quantity = stack.quantity + remaining_quantity  # Add rq to the stack
