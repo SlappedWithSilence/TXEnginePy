@@ -1,6 +1,7 @@
 import pytest
 
 from game.systems.inventory import Inventory
+from game.systems.item import item_manager
 
 
 def test_init():
@@ -174,7 +175,6 @@ def test_consume_item_mixed():
 
 
 def test_consolidate_trivial():
-
     iv = Inventory()
 
     iv.new_stack(-110, 1)
@@ -184,6 +184,7 @@ def test_consolidate_trivial():
     iv._consolidate_stacks()
     assert iv.size == 1
     assert iv.total_quantity(-110) == 2
+
 
 def test_consolidate_mixed():
     iv = Inventory()
@@ -207,14 +208,15 @@ def test_consolidate_mixed():
     assert iv.total_quantity(-112) == 2
 
 
+# TODO: Add cases
 consume_item_mixed_split_stacks_cases = [
     [{-110: 7, -111: 4, -112: 1}, [(-110, 4), (-111, 2)], {-110: 3, -111: 2, -112: 1}, 3]
 ]
 
 
 @pytest.mark.parametrize("start, seq, end, size", consume_item_mixed_split_stacks_cases)
-def test_consume_item_mixed_split_stacks(start: dict[int, int], seq: list[tuple[int, int]], end: dict[int, int], size: int):
-
+def test_consume_item_mixed_split_stacks(start: dict[int, int], seq: list[tuple[int, int]], end: dict[int, int],
+                                         size: int):
     iv = Inventory()
 
     for item_id in start:
@@ -227,3 +229,27 @@ def test_consume_item_mixed_split_stacks(start: dict[int, int], seq: list[tuple[
         assert iv.total_quantity(item_id) == end[item_id]
 
     assert iv.size == size, str(iv.to_options())
+
+
+contains_cases = [
+    [[(-110, 1)], -110, True],  # Trivial int true
+    [[], -110, False],  # Trivial false
+    [[(-110, 1)], item_manager.get_instance(-110), True],  # Trivial item true
+    [[], item_manager.get_instance(-110), False],  # Trivial item false
+    [[(-110, 1)], -111, False],  # Missing stack, int
+    [[(-110, 1)], item_manager.get_instance(-111), False],  # Missing stack, item
+    [[(-110, 1), (-111, 1)], item_manager.get_instance(-111), True],  # Mixed stacks, item
+    [[(-110, 1), (-111, 1)], -111, True],  # Mixed stacks, int
+    [[(-110, 1), (-111, 1)], item_manager.get_instance(-112), False],  # Missing stack, mixed, item
+    [[(-110, 1), (-111, 1)], -112, False],  # Missing stack, mixed, int
+]
+
+
+@pytest.mark.parametrize("items, search_term, result", contains_cases)
+def test_contains(items: list[tuple[int, int]], search_term, result: bool):
+    iv = Inventory()
+
+    for pair in items:
+        iv.new_stack(*pair)
+
+    assert (search_term in iv) == result
