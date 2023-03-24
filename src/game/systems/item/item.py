@@ -2,7 +2,6 @@ import dataclasses
 
 import game.systems.currency as currency
 import game.systems.combat.effect as effect
-import game.systems.entity.entities as entities
 import game.systems.requirement.requirements as req
 
 
@@ -30,7 +29,12 @@ class Usable(Item, req.RequirementsMixin):
     effects: list[effect.Effect] = dataclasses.field(default_factory=list)  # List of effects that trigger when item is used
     consumable: bool = False  # A flag that determines if the item should decrement quantity after each use.
 
-    def use(self, target: entities.Entity) -> None:
+    def use(self, target) -> None:
+
+        from game.systems.entity.entities import Entity
+        if not isinstance(target, Entity):
+            raise TypeError("Usable target must be an instance of Entity!")
+
         for e in self.effects:
             e.perform(target)
 
