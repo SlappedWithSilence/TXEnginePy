@@ -2,6 +2,7 @@ import dataclasses
 import weakref
 
 import game.cache as cache
+import game.systems.item as item
 from game.structures.messages import StringContent
 
 from loguru import logger
@@ -154,12 +155,16 @@ class Inventory:
 
         return buf
 
-    def __contains__(self, item: int) -> bool:
-        if type(item) != int:
-            raise TypeError("Cannot search for non-int in Inventory!")
+    def __contains__(self, element: int | item.Item) -> bool:
+
+        if type(element) != int and type(element) != item.Item:
+            logger.warning(f"Attempted to search inventory for object of type {type(element)}")
+            return False
+
+        search_for = element if type(element) == int else element.id
 
         for i in self.items:
-            if i.id == item:
+            if i.id == search_for:
                 return True
 
         return False
