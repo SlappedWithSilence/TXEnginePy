@@ -51,7 +51,6 @@ class Inventory:
         return [weakref.proxy(stack) for stack in self.items if stack.id == item_id]
 
     def _consolidate_stacks(self):
-        logger.info("consolidating inventory stacks...")
         quantity_cache = {}
 
         for stack in self.items:
@@ -203,6 +202,16 @@ class Inventory:
 
     def is_collidable(self, item_id: int, quantity: int) -> bool:
         """
+        Test if 'quantity' of an item with id=='item_id' can be inserted into the inventory without
+        creating an overflow.
+
+        Flow:
+            - Calculate 'stacks * item.max_quantity' where 'stacks' is the number of empty slots in the inventory
+            - Sum the amount of capacity remaining in each stack where stack.id == item_id
+            - Sum those two values
+            - Check if 'quantity' is greater than the sum. If so, the quantity of 'item_id' cannot be inserted without
+            an overflow.
+
         Args:
             item_id: The id of the item to check against
             quantity: The quantity of the item to check against
@@ -210,7 +219,9 @@ class Inventory:
         Returns: True if the user needs to resolve a collision, False otherwise
         """
 
-        remaining_cap: int = self.capacity - len(self.items)
+        max_quantity = item.item_manager.get_ref(item_id).max_quantity
+        remaining_cap: int = (self.capacity - len(self.items)) * max_quantity
+
         for stack in self._all_stacks(item_id):
             remaining_cap = remaining_cap + (stack.ref.max_quantity - stack.quantity)
 
