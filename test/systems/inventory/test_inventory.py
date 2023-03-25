@@ -13,6 +13,15 @@ def test_init():
     assert not iv.full
 
 
+def test_new_stack():
+    iv = Inventory()
+
+    for i in range(iv.capacity):
+        iv.new_stack(-110, 3)
+        assert iv.size == i + 1
+        assert iv.total_quantity(-110) == (i + 1) * 3
+
+
 def test_full():
     """Test that Inventory::full correctly returns True when all stacks are created"""
     iv = Inventory()
@@ -253,3 +262,97 @@ def test_contains(items: list[tuple[int, int]], search_term, result: bool):
         iv.new_stack(*pair)
 
     assert (search_term in iv) == result
+
+
+def test_drop_stack_trivial():
+    iv = Inventory()
+
+    iv.new_stack(-110, 1)
+    assert iv.size == 1
+    iv.drop_stack(0)
+    assert iv.size == 0
+
+
+def test_drop_stack_mixed():
+    """
+    Test that drop_stack correctly re-indexes the remaining stacks
+    """
+    iv = Inventory()
+    for i in range(5):
+        iv.new_stack(-110, 3)
+
+    assert iv.size == 5
+
+    for i in range(5):
+        iv.drop_stack(0)
+        assert iv.size == 5 - (i + 1)
+
+
+is_collidable_cases = [
+    [2, [], (-110, 1), False],
+    [2, [], (-110, 3), False],
+    [2, [], (-110, 6), False],
+    [2, [], (-110, 7), True],
+    [2, [(-110, 3), (-110, 1)], (-110, 2), False],
+    [2, [(-110, 3), (-110, 1)], (-110, 3), True],
+    [2, [(-110, 3)], (-110, 3), False],
+    [2, [(-110, 3), (-111, 1)], (-110, 2), True],
+    [2, [(-110, 3), (-111, 1)], (-111, 2), False],
+]
+
+
+@pytest.mark.parametrize("capacity, stacks, test, result", is_collidable_cases)
+def test_is_collidable(capacity: int, stacks: list[tuple[int, int]], test: tuple[int, int], result: bool):
+    """
+    Test that Inventory::is_collidable correctly detects if a proposed item insertion would result in an overflow.
+    """
+
+    iv = Inventory()
+    iv.capacity = capacity
+
+    for stack in stacks:
+        iv.new_stack(*stack)
+
+    assert iv.size == len(stacks)  # Check that all stacks are added correctly
+    assert iv.is_collidable(*test) == result
+    assert iv.size == len(stacks)  # Check that is_collidable didn't modify the inventory
+
+
+def test_insert_item_trivial():
+    iv = Inventory()
+
+    assert iv.insert_item(-110, 1) == 0
+    assert iv.size == 1
+    assert iv.insert_item(-110, 2) == 0
+    assert iv.size == 1
+    assert iv.insert_item(-111, 4) == 0
+    assert iv.size == 3
+
+
+def test_insert_item_split():
+    """Test that Inventory::insert_item correctly fills all available stacks before making new ones"""
+
+    iv = Inventory()
+
+    for i in range(3):
+        iv.new_stack(-110, i + 1)
+
+    assert iv.size == 3
+    assert iv.total_quantity(-110) == 6
+
+    assert iv.insert_item(-110, 3) == 0
+    assert iv.total_quantity(-110) == 9
+    assert iv.size == 3
+
+
+def test_insert_item_overflow():
+
+    iv = Inventory()
+    iv.capacity = 2
+
+    assert iv.insert_item(-111, 7) == 1
+    assert iv.size == 2
+    assert iv.total_quantity(-111) == 6
+    assert iv.insert_item(-110, 1) == 1
+    assert iv.size == 2
+    assert iv.total_quantity(-110) == 0
