@@ -45,12 +45,13 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
         def content(_: any) -> dict:
+            ref: Usable = self.player_ref.inventory.items[self.stack_index].ref
             c = [
                 "Failed to use ",
-                StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, formatting="item_name"),
+                StringContent(value=ref.name, formatting="item_name"),
                 ". Requirements are not met."
             ]
-            return ComponentFactory.get(c)
+            return ComponentFactory.get(c, ref.get_requirements_as_options())
 
         @FiniteStateDevice.state_logic(self, self.States.NOT_USABLE, InputType.ANY)
         def logic(_: any) -> None:
