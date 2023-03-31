@@ -22,7 +22,7 @@ class ConsumeItemEvent(Event):
         ACCEPTED_CONSUME = 4
         TERMINATE = -1
 
-    def __init__(self, item_id: int, item_quantity: int, callback: None):
+    def __init__(self, item_id: int, item_quantity: int, callback: any = None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.item_id = item_id
         self.item_quantity = item_quantity
@@ -97,6 +97,8 @@ class ConsumeItemEvent(Event):
                 "."
             ])
 
+        # REFUSED_CONSUME
+
         @FiniteStateDevice.state_logic(self, self.States.REFUSED_CONSUME, InputType.ANY)
         def logic(_: any) -> None:
             self.callback(False)  # Transmit that the player did not consume items to the callback
@@ -110,6 +112,8 @@ class ConsumeItemEvent(Event):
                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
                 "."
             ])
+
+        # TERMINATE
 
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
         def logic(_: any):
