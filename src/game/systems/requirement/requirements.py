@@ -5,6 +5,7 @@ from game.structures.messages import StringContent
 import game.systems.entity.entities as entities
 
 import game.systems.item as item
+from game.systems.event.consume_item_event import ConsumeItemEvent
 
 
 class Requirement(ABC):
@@ -91,8 +92,21 @@ class ConsumeItemRequirement(ItemRequirement):
     Enforce that the player must have and consume 'n' of a given item in his/her inventory.
     """
 
+    def __init__(self, item_id: int, item_quantity: int):
+        super().__init__(item_id, item_quantity)
+
+        self.passed_event: bool = False
+
+    def set_passed(self, passed: bool) -> None:
+        self.passed_event = passed
+
     def fulfilled(self, entity=None) -> bool:
-        pass
+        if self.player_ref.inventory.total_quantity(self.item_id) < self.item_quantity:
+            return False
+
+        e = ConsumeItemEvent(self.item_id, self.item_quantity, self.set_passed)
+        game.state_device_controller.add_state_device(e)
+        return self.passed_event
 
     @property
     def description(self) -> list[str | StringContent]:
