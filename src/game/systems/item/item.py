@@ -16,8 +16,8 @@ class Item:
     description: str  # The user-facing description of the item
     max_quantity: int = 10  # The maximum number of items allowed in an inventory stack
 
-    def get_currency_value(self, currency_id: int) -> currency.Currency:
-        return currency.currency_manager.to_currency(currency_id, self.value[currency_id])
+    def get_currency_value(self, currency_id: int = None) -> currency.Currency:
+        return currency.currency_manager.to_currency(currency_id, self.value[currency_id]) if currency is not None else self.value
 
 
 @dataclasses.dataclass
