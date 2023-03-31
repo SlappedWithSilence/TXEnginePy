@@ -1,5 +1,10 @@
-import dataclasses
 from abc import ABC
+
+import game.cache
+from game.structures.messages import StringContent
+import game.systems.entity.entities as entities
+
+import game.systems.item as item
 
 
 class Requirement(ABC):
@@ -16,6 +21,20 @@ class Requirement(ABC):
         """
         raise NotImplementedError
 
+    @property
+    def description(self) -> list[str | StringContent]:
+        """
+        Args:
+        Returns:
+            A list of strings and StringContents that provides the reader with a textual representation of the
+            conditions that are specified for this Requirement to be 'fulfilled' such that self. Fulfilled==True
+        """
+        raise NotImplementedError
+
+    def __str__(self):
+        """Return a conjoined string that strings self. Description of styling data"""
+        return " ".join([str(e) for e in self.description])
+
 
 class RequirementsMixin:
     """
@@ -23,7 +42,6 @@ class RequirementsMixin:
     """
 
     def __init__(self, requirements: list[Requirement] = None):
-
         self.requirements: list[Requirement] = requirements or None
 
     def is_requirements_fulfilled(self) -> bool:
@@ -34,3 +52,48 @@ class RequirementsMixin:
         """
 
         return all([req.fulfilled for req in self.requirements])
+
+    def get_requirements_as_str(self) -> list[str]:
+        """Get a list of strings that represent the conditions for the requirements associated with this object"""
+        return [str(r) for r in self.requirements]
+
+    def get_requirements_as_options(self) -> list[list[str | StringContent]]:
+        """Get a list of lists that contain styling data that can be used by Frame objects"""
+        return [r.description for r in self.requirements]
+
+
+class ItemRequirement(Requirement):
+    """
+    Enforce that the player must have 'n' of a given item in his/her inventory.
+    """
+
+    def __init__(self, item_id: int, item_quantity: int):
+        self.item_id: int = item_id
+        self.item_quantity: int = item_quantity
+        self.player_ref: entities.Player = game.cache.get_cache()['player']  # Ref to Player obj to check inv for items
+
+    def fulfilled(self, entity=None) -> bool:
+        return self.player_ref.inventory.total_quantity(self.item_id) >= self.item_quantity
+
+    @property
+    def description(self) -> list[str | StringContent]:
+        return [
+            "You must have at least",
+            StringContent(value=f"{self.item_quantity}x", formatting="item_quantity"),
+            " ",
+            StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
+            "!"
+        ]
+
+
+class ConsumeItemRequirement(ItemRequirement):
+    """
+    Enforce that the player must have and consume 'n' of a given item in his/her inventory.
+    """
+
+    def fulfilled(self, entity=None) -> bool:
+        pass
+
+    @property
+    def description(self) -> list[str | StringContent]:
+        pass
