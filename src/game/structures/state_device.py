@@ -1,8 +1,7 @@
 import copy
 import enum
-import typing
-import weakref
 import inspect
+import weakref
 from abc import abstractmethod, ABC
 from typing import Callable
 
@@ -10,8 +9,8 @@ from loguru import logger
 
 from game.structures import enums
 from game.structures.enums import InputType
-from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
 from game.structures.messages import Frame
+from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
 
 
 class StateDevice(ABC):
@@ -237,10 +236,10 @@ class FiniteStateDevice(StateDevice, ABC):
         "content": None
     }
 
-    def __init__(self, default_input_type: InputType, states: enum.Enum, default_state):
+    def __init__(self, default_input_type: InputType, states: type[enum.Enum], default_state):
         super().__init__(default_input_type)
 
-        self.states: enum.Enum = states
+        self.states: type[enum.Enum] = states
         self.current_state = self.default_state = default_state
         self.state_data: dict[states, dict] = {k.value: copy.deepcopy(self.state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
