@@ -346,7 +346,7 @@ def test_insert_item_split():
 
 
 def test_insert_item_overflow():
-
+    """Test that Inventory::insert_item correctly detects overflows"""
     iv = Inventory()
     iv.capacity = 2
 
