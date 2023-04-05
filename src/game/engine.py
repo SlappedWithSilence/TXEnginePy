@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 
 from .systems import currency, room, item
 from .systems.entity.entities import Player
+from .systems.event.consume_item_event import ConsumeItemEvent
 from .systems.room.action import actions
 from .systems.room.action.actions import ViewInventoryAction
 
@@ -64,10 +65,13 @@ class Engine:
         p.coin_purse.adjust(0, 100)
         p.inventory.new_stack(1, 1)
 
+        consume_event = ConsumeItemEvent(1, 1)
+        consume_test = game.systems.room.action.actions.WrapperAction("Get robbed", "", consume_event)
+
         inventory_action = ViewInventoryAction()
 
         r_0 = room.Room(name="A Debug Room",
-                        action_list=[inventory_action, exit_r_1],
+                        action_list=[inventory_action, exit_r_1, consume_test],
                         enter_text="You enter a debug room",
                         id=0)
         r_1 = room.Room(name="A Second Debug Room",
