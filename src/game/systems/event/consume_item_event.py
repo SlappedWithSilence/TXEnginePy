@@ -28,10 +28,12 @@ class ConsumeItemEvent(Event):
         self.item_quantity = item_quantity
         self.player_ref: entities.Player = game.cache.get_cache()['player']
 
-        if callback is not None and callable(callback):
+        if callable(callback):
             self.callback = callback
-        else:
+        elif callback is not None:
             raise TypeError(f"Callback must be callable! Got {type(callback)} instead.")
+        else:
+            self.callback = None
 
         # DEFAULT
 
@@ -51,7 +53,8 @@ class ConsumeItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.INSUFFICIENT_QUANTITY, InputType.ANY)
         def logic(_: any) -> None:
-            self.callback(False)  # Transmit that the player failed to consume items to the callback
+            if self.callback:
+                self.callback(False)  # Transmit that the player failed to consume items to the callback
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.INSUFFICIENT_QUANTITY)
@@ -85,7 +88,8 @@ class ConsumeItemEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.ACCEPTED_CONSUME, InputType.ANY)
         def logic(_: any) -> None:
             assert self.player_ref.inventory.consume_item(self.item_id, self.item_quantity)
-            self.callback(True)  # Transmit that the player successfully consumed items to the callback
+            if self.callback:
+                self.callback(True)  # Transmit that the player successfully consumed items to the callback
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.ACCEPTED_CONSUME)
@@ -101,7 +105,8 @@ class ConsumeItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.REFUSED_CONSUME, InputType.ANY)
         def logic(_: any) -> None:
-            self.callback(False)  # Transmit that the player did not consume items to the callback
+            if self.callback:
+                self.callback(False)  # Transmit that the player did not consume items to the callback
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.REFUSED_CONSUME)
