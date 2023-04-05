@@ -1,3 +1,4 @@
+import enum
 import weakref
 from abc import ABC
 from enum import Enum
@@ -7,7 +8,7 @@ import game.cache as cache
 import game.systems.room as room
 import game.systems.event.use_item_event as uie
 from game.structures.enums import InputType
-from game.structures.state_device import FiniteStateDevice
+from game.structures.state_device import FiniteStateDevice, StateDevice
 import game.systems.event.events as events
 import game.systems.requirement.requirements as requirements
 from game.structures.messages import StringContent, ComponentFactory
@@ -22,7 +23,7 @@ class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
     """
 
     def __init__(self, menu_name: str, activation_text: str,
-                 states: Enum, default_state, default_input_type: InputType,
+                 states: type[enum.Enum], default_state, default_input_type: InputType,
                  visible: bool = True, reveal_other_action_index: int = -1,
                  hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None,
                  persistent: bool = False, *args, **kwargs):
@@ -243,3 +244,41 @@ class ViewInventoryAction(Action):
         @FiniteStateDevice.state_content(self, self.States.TERMINATE)
         def content() -> dict:
             return ComponentFactory.get([""])
+
+
+class WrapperAction(Action):
+    """Simply wrap and launch a state device. This Action is mostly designed to be used as a shortcut for debugging!"""
+    
+    class States(Enum):
+        DEFAULT = 0
+        TERMINATE = -1
+
+    def __init__(self, menu_name: str, activation_text: str, wrap: StateDevice, *args, **kwargs):
+        super().__init__(menu_name, activation_text, WrapperAction.States, WrapperAction.States.DEFAULT,
+                         InputType.SILENT, *args, **kwargs)
+
+        if not isinstance(wrap, StateDevice):
+            raise TypeError(f"Cannot wrap object of type {type(wrap)}! Must be a subclass of StateDevice!")
+
+        self.wrapped_device = wrap
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            if self.wrapped_device is None:
+                raise TypeError("Cannot launch WrapperAction, wrapped_device is None!")
+
+            game.state_device_controller.add_state_device(self.wrapped_device)
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content():
+            return ComponentFactory.get()
+
