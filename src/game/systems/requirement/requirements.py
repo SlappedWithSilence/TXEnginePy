@@ -110,4 +110,10 @@ class ConsumeItemRequirement(ItemRequirement):
 
     @property
     def description(self) -> list[str | StringContent]:
-        pass
+        return [
+            "You must have at least",
+            StringContent(value=f"{self.item_quantity}x", formatting="item_quantity"),
+            " ",
+            StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
+            "!"
+        ]
