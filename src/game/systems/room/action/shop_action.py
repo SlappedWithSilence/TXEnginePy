@@ -7,6 +7,7 @@ from game.cache import get_cache
 from game.structures import enums
 from game.structures.enums import InputType
 from game.structures.messages import StringContent, ComponentFactory
+from game.structures.state_device import FiniteStateDevice
 from game.systems.event.add_item_event import AddItemEvent
 from game.systems.room.action.actions import Action
 
@@ -31,27 +32,128 @@ class ShopAction(Action):
     - 12. Terminate
     """
 
-    class ShopState(Enum):
+    class States(Enum):
         """
         Enum values to be used to represent state information within the ShopAction.
 
         Each enum value is correlated to the states described within the ShopAction docstring.
         """
+        DEFAULT = 0
         DISPLAY_WARES = 2,
         WARE_SELECTED = 3,
         READ_WARE_DESC = 5,
         CONFIRM_WARE_PURCHASE = 8,
         PURCHASE_FAILURE = 10,
-        TERMINATE = 12
+        TERMINATE = -1
 
     def __init__(self, menu_name: str, activation_text: str, wares: list[int],
                  default_currency: int = 0, *args, **kwargs):
-        super().__init__(menu_name, activation_text, ShopAction.ShopState, ShopAction.ShopState.DISPLAY_WARES,
+        super().__init__(menu_name, activation_text, ShopAction.States, ShopAction.States.DISPLAY_WARES,
                          InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
-        self.state = self.ShopState.DISPLAY_WARES
         self._ware_of_interest: item.Item = None  # The tuple of the ware last selected by the user
         self.default_currency: int = default_currency
+
+        @FiniteStateDevice.state_logic(self, self.States.DISPLAY_WARES, InputType.INT, -1, len(self.wares) - 1)
+        def logic(user_input: int) -> None:
+            if user_input == -1:  # Chose to exit
+                self.set_state(self.States.TERMINATE)
+            else:  # Chose an item
+                self.ware_of_interest = self.wares[user_input]
+                self.set_state(self.States.WARE_SELECTED)
+
+        @FiniteStateDevice.state_content(self, self.States.DISPLAY_WARES)
+        def content():
+            return ComponentFactory.get([self.activation_text], self._ware_to_option())
+
+        @FiniteStateDevice.state_logic(self, self.States.WARE_SELECTED, InputType.INT, -1,
+                                       lambda:
+                                       len(self._get_ware_options()) - 1)
+        def logic(user_input: int) -> None:
+            # TODO: Handle input dispatching better. Remove hardcoded state transitions
+            if user_input == -1:
+                self.set_state(self.States.DISPLAY_WARES)
+            elif user_input == 0:
+                self.set_state(self.States.CONFIRM_WARE_PURCHASE)
+            elif user_input == 1:
+                self.set_state(self.States.READ_WARE_DESC)
+
+        @FiniteStateDevice.state_content(self, self.States.WARE_SELECTED)
+        def content():
+            return ComponentFactory.get(
+                ["What would you like to do with ",
+                 StringContent(value=self.ware_of_interest.name, formatting="item_name"),
+                 "?"
+                 ],
+                self._get_ware_options()
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.READ_WARE_DESC, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.WARE_SELECTED)
+
+        @FiniteStateDevice.state_content(self, self.States.READ_WARE_DESC)
+        def content():
+            return ComponentFactory.get([
+                StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
+                self.ware_of_interest.description
+            ]
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.CONFIRM_WARE_PURCHASE, InputType.AFFIRMATIVE)
+        def logic(user_input: bool) -> None:
+            if user_input:
+
+                player: entities.Player = get_cache()['player']
+                if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
+                    player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
+                    game.state_device_controller.add_state_device(
+                        AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
+                    self.set_state(self.States.DISPLAY_WARES)
+
+                else:
+                    self.set_state(self.States.PURCHASE_FAILURE)
+
+            else:
+                self.set_state(self.States.WARE_SELECTED)
+
+        @FiniteStateDevice.state_content(self, self.States.CONFIRM_WARE_PURCHASE)
+        def content():
+            return ComponentFactory.get(
+                [
+                    "Are you sure that you would like to purchase 1x ",
+                    StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
+                    " for ",
+                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
+                                  formatting="item_cost"),
+                    "?"
+                ]
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.PURCHASE_FAILURE, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.DISPLAY_WARES)
+
+        @FiniteStateDevice.state_content(self, self.States.PURCHASE_FAILURE)
+        def content():
+            return ComponentFactory.get(
+                [
+                    "Cannot purchase ",
+                    StringContent(value=self.ware_of_interest.name, formatting="item_name"),
+                    ". Item costs ",
+                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
+                                  formatting="item_cost"),
+                    ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
+                ]
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.ANY)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content():
+            return ComponentFactory.get(["You leave the shop."])
 
     @property
     def ware_of_interest(self) -> item.Item:
@@ -96,9 +198,10 @@ class ShopAction(Action):
                            formatting="item_cost")]
             for item_id in self.wares]
 
+    """
     @property
     def components(self) -> dict[str, any]:
-        if self.state == self.ShopState.DISPLAY_WARES:
+        if self.state == self.States.DISPLAY_WARES:
 
             # Adjust input type and domain
             self.input_type = enums.InputType.INT
@@ -108,7 +211,7 @@ class ShopAction(Action):
             return {"content": [self.activation_text],
                     "options": self._ware_to_option()
                     }
-        elif self.state == self.ShopState.WARE_SELECTED:
+        elif self.state == self.States.WARE_SELECTED:
 
             # Adjust input type and domain
             self.input_type = enums.InputType.INT
@@ -119,7 +222,7 @@ class ShopAction(Action):
                        "?"
                        ]
             return ComponentFactory.get(content, self._get_ware_options())
-        elif self.state == self.ShopState.READ_WARE_DESC:
+        elif self.state == self.States.READ_WARE_DESC:
             self.input_type = enums.InputType.ANY
 
             return {
@@ -128,7 +231,7 @@ class ShopAction(Action):
                     self.ware_of_interest.description
                 ]
             }
-        elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
+        elif self.state == self.States.CONFIRM_WARE_PURCHASE:
             self.input_type = enums.InputType.AFFIRMATIVE
 
             return {
@@ -142,7 +245,7 @@ class ShopAction(Action):
                 ]
             }
 
-        elif self.state == self.ShopState.PURCHASE_FAILURE:
+        elif self.state == self.States.PURCHASE_FAILURE:
             self.input_type = enums.InputType.ANY
             return {
                 "content": [
@@ -155,60 +258,63 @@ class ShopAction(Action):
                 ]
             }
 
-        elif self.state == self.ShopState.TERMINATE:
+        elif self.state == self.States.TERMINATE:
             self.input_type = enums.InputType.ANY
             return {
                 "content": ["You leave the shop."]
             }
-
+    
+    
     def _logic(self, user_input: any) -> None:
 
-
         # State 2
-        if self.state == self.ShopState.DISPLAY_WARES:  # Select a ware
+        if self.state == self.States.DISPLAY_WARES:  # Select a ware
             if user_input == -1:  # Chose to exit
-                self.state = self.ShopState.TERMINATE
+                self.state = self.States.TERMINATE
             else:  # Chose an item
                 self.ware_of_interest = self.wares[user_input]
-                self.state = self.ShopState.WARE_SELECTED
+                self.state = self.States.WARE_SELECTED
 
         # State 3
-        elif self.state == self.ShopState.WARE_SELECTED:
+        elif self.state == self.States.WARE_SELECTED:
 
             # TODO: Handle input dispatching better. Remove hardcoded state transitions
             if user_input == -1:
-                self.state = self.ShopState.DISPLAY_WARES
+                self.state = self.States.DISPLAY_WARES
             elif user_input == 0:
-                self.state = self.ShopState.CONFIRM_WARE_PURCHASE
+                self.state = self.States.CONFIRM_WARE_PURCHASE
             elif user_input == 1:
-                self.state = self.ShopState.READ_WARE_DESC
+                self.state = self.States.READ_WARE_DESC
 
         # State 5
-        elif self.state == self.ShopState.READ_WARE_DESC:
-            self.state = self.ShopState.WARE_SELECTED
+        elif self.state == self.States.READ_WARE_DESC:
+            self.state = self.States.WARE_SELECTED
 
         # State 8
-        elif self.state == self.ShopState.CONFIRM_WARE_PURCHASE:
+        elif self.state == self.States.CONFIRM_WARE_PURCHASE:
             if user_input:
 
                 player: entities.Player = get_cache()['player']
                 if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
                     player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
-                    game.state_device_controller.add_state_device(AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
-                    self.state = self.ShopState.DISPLAY_WARES
+                    game.state_device_controller.add_state_device(
+                        AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
+                    self.state = self.States.DISPLAY_WARES
 
                 else:
-                    self.state = self.ShopState.PURCHASE_FAILURE
+                    self.state = self.States.PURCHASE_FAILURE
 
             else:
-                self.state = self.ShopState.WARE_SELECTED
+                self.state = self.States.WARE_SELECTED
 
-        elif self.state == self.ShopState.PURCHASE_FAILURE:
-            self.state = self.ShopState.DISPLAY_WARES
+        elif self.state == self.States.PURCHASE_FAILURE:
+            self.state = self.States.DISPLAY_WARES
             self.input_type = enums.InputType.INT
             self.domain_min = -1
             self.domain_max = len(self.wares)
 
         # State 12
-        elif self.state == self.ShopState.TERMINATE:
+        elif self.state == self.States.TERMINATE:
             game.state_device_controller.set_dead()
+        
+        """
