@@ -9,7 +9,9 @@ from omegaconf import OmegaConf
 
 from .systems import currency, room, item
 from .systems.entity.entities import Player
+from .systems.event.add_item_event import AddItemEvent
 from .systems.event.consume_item_event import ConsumeItemEvent
+from .systems.requirement.requirements import ItemRequirement
 from .systems.room.action import actions
 from .systems.room.action.actions import ViewInventoryAction
 
@@ -49,12 +51,11 @@ class Engine:
 
         i0 = item.Item("Generic Item", 0, {0: 10}, "A generic Item. It does nothing and is nothing.")
         i1 = item.Item("Item Number Two", 1, {0: 15}, "The second Item every created.")
+        i2 = item.Item("Key", 2, {0: 1}, "A simple key.", max_quantity=1)
 
         item.item_manager.register_item(i0)
         item.item_manager.register_item(i1)
-
-        exit_r_1 = actions.ExitAction(1)
-        exit_r_0 = actions.ExitAction(0)
+        item.item_manager.register_item(i2)
 
         shop_w = [0]
         shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
@@ -68,16 +69,24 @@ class Engine:
         consume_event = ConsumeItemEvent(1, 1)
         consume_test = game.systems.room.action.actions.WrapperAction("Get robbed", "", consume_event)
 
+        get_key_event = AddItemEvent(2, 1)
+        get_key_action = game.systems.room.action.actions.WrapperAction("Inspect glinting object on the floor", "",
+                                                                        get_key_event)
+        key_req = ItemRequirement(2, 1)
         inventory_action = ViewInventoryAction()
 
+        exit_r_1 = actions.ExitAction(1, requirement_list=[key_req])
+        exit_r_0 = actions.ExitAction(0)
+
         r_0 = room.Room(name="A Debug Room",
-                        action_list=[inventory_action, exit_r_1, consume_test],
+                        action_list=[inventory_action, exit_r_1, consume_test, get_key_action],
                         enter_text="You enter a debug room",
-                        id=0)
+                        rid=0)
+
         r_1 = room.Room(name="A Second Debug Room",
                         action_list=[inventory_action, exit_r_0, shop],
                         enter_text="You enter yet another debug room",
-                        id=1)
+                        rid=1)
         room.room_manager.register_room(r_0)
         room.room_manager.register_room(r_1)
 
