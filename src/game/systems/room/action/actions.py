@@ -58,14 +58,14 @@ class ExitAction(Action):
     def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False, requirement_list: list = None,
                  on_exit: list[events.Event] = None):
-        super().__init__(menu_name, "", ExitAction.States, ExitAction.States.DEFAULT, InputType.ANY,
+        super().__init__(menu_name, "", ExitAction.States, ExitAction.States.DEFAULT, InputType.SILENT,
                          visible, reveal_other_action_index, hide_after_use, requirement_list)
 
         # Set instance variables
         self.target_room = target_room
         self.__on_exit: list[events.Event] = on_exit or []
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             cache.get_cache()["player_location"] = self.target_room
             room.room_manager.visit_room(self.room.id)  # Inform the room manager that this room has been "visited"
@@ -73,7 +73,7 @@ class ExitAction(Action):
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
-            return ComponentFactory.get([f"You moved to {room.room_manager.get_name(self.target_room)}"])
+            return ComponentFactory.get()
 
     @property
     def menu_name(self) -> str:
