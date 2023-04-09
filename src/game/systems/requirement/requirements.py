@@ -7,6 +7,8 @@ import game.systems.entity.entities as entities
 import game.systems.item as item
 from game.systems.event.consume_item_event import ConsumeItemEvent
 
+from loguru import logger
+
 
 class Requirement(ABC):
     """
@@ -14,6 +16,7 @@ class Requirement(ABC):
     and allow other objects to compose them to enforce a wide variety of gameplay mechanics.
     """
 
+    @property
     def fulfilled(self, entity=None) -> bool:
         """
         Computes whether the requirement is fulfilled by the owner
@@ -73,7 +76,9 @@ class ItemRequirement(Requirement):
         self.item_quantity: int = item_quantity
         self.player_ref: entities.Player = game.cache.get_cache()['player']  # Ref to Player obj to check inv for items
 
+    @property
     def fulfilled(self, entity=None) -> bool:
+        logger.warning(f"Checking for {self.item_quantity} of {self.item_id}... Found {self.player_ref.inventory.total_quantity(self.item_id)}x")
         return self.player_ref.inventory.total_quantity(self.item_id) >= self.item_quantity
 
     @property
@@ -100,6 +105,7 @@ class ConsumeItemRequirement(ItemRequirement):
     def set_passed(self, passed: bool) -> None:
         self.passed_event = passed
 
+    @property
     def fulfilled(self, entity=None) -> bool:
         if self.player_ref.inventory.total_quantity(self.item_id) < self.item_quantity:
             return False
