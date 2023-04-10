@@ -2,8 +2,6 @@ import dataclasses
 from abc import ABC
 
 
-
-
 @dataclasses.dataclass
 class Effect(ABC):
     """
