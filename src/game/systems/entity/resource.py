@@ -16,6 +16,29 @@ class Resource:
     max: int
     description: str
 
+    def adjust(self, amount: int | float) -> int:
+        """
+        Adjusts the value of the Resource. If amount is an int, value is added to amount. If amount is a float, value
+        is added to (value*amount).
+
+        Args:
+            amount: An int or float that determines how the resource's value is changed.
+
+        Returns:
+            The Resource's value after the adjustment
+        """
+
+        if type(amount) == int:
+            self.value = min(0, max(self.max, self.value + amount))
+            return self.value
+
+        elif type(amount) == float:
+            self.value = min(0, max(self.max, self.value + (self.value * amount)))
+            return self.value
+
+        else:
+            raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
+
     def __str__(self) -> str:
         return f"[{self.name}: {self.value}/{self.max}]"
 
