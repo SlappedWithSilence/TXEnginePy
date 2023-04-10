@@ -1,3 +1,4 @@
+import weakref
 from abc import ABC
 from enum import Enum
 
@@ -6,6 +7,7 @@ from game.structures.state_device import FiniteStateDevice
 import game.systems.currency as currency
 import game.util.input_utils
 from game.structures.messages import StringContent, ComponentFactory
+from game.systems.entity.resource import ResourceController
 
 
 class Event(FiniteStateDevice, ABC):
@@ -183,19 +185,33 @@ class ReputationEvent(Event):
 
 class ResourceEvent(Event):
 
+
     class States(Enum):
         DEFAULT = 0
+        APPLY = 1
+        TERMINATE = -1
 
-    def __init__(self, stat_name: str, stat_change: int | float):
+    def __init__(self, stat_name: str, stat_change: int | float, target):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
-        self.stat_name = stat_name
-        self.stat_name: int | float = stat_change
+        self.stat_name: str = stat_name
+        self.amount: int | float = stat_change
+        self.target = weakref.proxy(target)
 
-    def _logic(self, _: any) -> None:
-        pass
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_):
+            from game.systems.entity.entities import Entity
 
-    @property
-    def components(self) -> dict[str, any]:
-        return {}
+            if not isinstance(self.target, Entity):
+                raise TypeError(f"Cannot apply a ResourceEvent to an object of type {self.target}")
 
+            self.set_state(self.States.APPLY)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.ANY)
+        def logic(_):
+            resource_controller: ResourceController = self.target.resources
+            resource_controller.resources[self.stat_name].adjust(self.amount)
 
