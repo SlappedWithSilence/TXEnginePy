@@ -35,6 +35,16 @@ class Requirement(ABC):
         """
         raise NotImplementedError
 
+    def visit(self) -> None:
+        """
+        Requirement::visit is an optionally-implement function that performs pre-check logic and spawns any pre-check
+        StateDevice objects.
+
+        Args:
+        Returns: None
+        """
+        logger.warning(f"{self.__class__.__name__} has not implemented a visit function!")
+
     def __str__(self):
         """Return a conjoined string that strings self. Description of styling data"""
         return " ".join([str(e) for e in self.description])
@@ -103,6 +113,7 @@ class ConsumeItemRequirement(ItemRequirement):
         self.passed_event: bool = False
 
     def set_passed(self, passed: bool) -> None:
+        logger.warning(f"set_passed: {passed}")
         self.passed_event = passed
 
     @property
