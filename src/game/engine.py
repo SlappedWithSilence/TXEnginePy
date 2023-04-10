@@ -11,7 +11,7 @@ from .systems import currency, room, item
 from .systems.entity.entities import Player
 from .systems.event.add_item_event import AddItemEvent
 from .systems.event.consume_item_event import ConsumeItemEvent
-from .systems.requirement.requirements import ItemRequirement
+from .systems.requirement.requirements import ItemRequirement, ConsumeItemRequirement
 from .systems.room.action import actions
 from .systems.room.action.actions import ViewInventoryAction
 
@@ -72,7 +72,8 @@ class Engine:
         get_key_event = AddItemEvent(2, 1)
         get_key_action = game.systems.room.action.actions.WrapperAction("Inspect glinting object on the floor", "",
                                                                         get_key_event)
-        key_req = ItemRequirement(2, 1)
+        key_req = ConsumeItemRequirement(2, 1)
+
         inventory_action = ViewInventoryAction()
 
         exit_r_1 = actions.ExitAction(1, requirement_list=[key_req])
