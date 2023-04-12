@@ -103,13 +103,6 @@ class Room(FiniteStateDevice):
         def content():
             return ComponentFactory.get([f"You leave {self.name}"])
 
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_):
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content():
-            return ComponentFactory.get()
 
     @property
     def visible_actions(self) -> list[actions.Action]:

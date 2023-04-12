@@ -54,6 +54,7 @@ class ExitAction(Action):
 
     class States(Enum):
         DEFAULT = 0
+        TERMINATE = -1
 
     def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False, requirement_list: list = None,
@@ -69,7 +70,7 @@ class ExitAction(Action):
         def logic(_: any) -> None:
             cache.get_cache()["player_location"] = self.target_room
             room.room_manager.visit_room(self.room.id)  # Inform the room manager that this room has been "visited"
-            game.state_device_controller.set_dead()
+            self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
@@ -235,16 +236,6 @@ class ViewInventoryAction(Action):
         def content() -> dict:
             return ComponentFactory.get()
 
-        # TERMINATE
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get([""])
-
 
 class WrapperAction(Action):
     """Simply wrap and launch a state device. This Action is mostly designed to be used as a shortcut for debugging!"""
@@ -271,14 +262,6 @@ class WrapperAction(Action):
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
         def content():
             return ComponentFactory.get()
 

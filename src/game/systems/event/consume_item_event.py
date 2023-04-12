@@ -117,13 +117,3 @@ class ConsumeItemEvent(Event):
                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
                 "."
             ])
-
-        # TERMINATE
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any):
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content():
-            return ComponentFactory.get()

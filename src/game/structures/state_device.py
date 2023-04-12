@@ -7,9 +7,10 @@ from typing import Callable
 
 from loguru import logger
 
+import game
 from game.structures import enums
 from game.structures.enums import InputType
-from game.structures.messages import Frame
+from game.structures.messages import Frame, ComponentFactory
 from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
 
 
@@ -236,6 +237,22 @@ class FiniteStateDevice(StateDevice, ABC):
         "content": None
     }
 
+    @staticmethod
+    class States(enum.Enum):
+        """
+        The default inner-class for States.
+
+        Proper convention for designing FiniteStateDevices requires:
+        - State flow starts with DEFAULT and ends with TERMINATE
+        - No state calls game.state_device_controller.set_dead() except for TERMINATE
+        - TERMINATE must call game.state_device_controller.set_dead()
+        - TERMINATE == -1, DEFAULT == 0
+        - No two states have the same value
+        - States are assigned INT values
+        """
+        DEFAULT = 0
+        TERMINATE = -1
+
     def __init__(self, default_input_type: InputType, states: type[enum.Enum], default_state):
         super().__init__(default_input_type)
 
@@ -243,6 +260,7 @@ class FiniteStateDevice(StateDevice, ABC):
         self.current_state = self.default_state = default_state
         self.state_data: dict[states, dict] = {k.value: copy.deepcopy(self.state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
+        self.set_defaults()
 
     def set_state(self, next_state) -> None:
         if next_state.value not in self.state_data:
@@ -335,7 +353,7 @@ class FiniteStateDevice(StateDevice, ABC):
         return decorate
 
     @staticmethod
-    def state_content(instance, state):  # Outer decorator
+    def state_content(instance, state, override: bool = False):  # Outer decorator
         """
         A decorator factory that returns a factory that registers the wrapped function as the content provider for
         state 'state'.
@@ -343,6 +361,7 @@ class FiniteStateDevice(StateDevice, ABC):
         Args:
             instance: An instance of the FiniteStateDevice to modify
             state: The state to register the content function to
+            override: If True, ignore collisions
 
         Returns: A decorator function that registers the wrapped function as a content provider for a given state
         """
@@ -352,7 +371,7 @@ class FiniteStateDevice(StateDevice, ABC):
             raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
         if state.value not in instance.state_data:
             raise ValueError(f"Unknown state {state}!")
-        if instance.state_data[state.value]['content']:
+        if instance.state_data[state.value]['content'] and not override:
             raise ValueError(f"State.content collision! {state} already has a content function registered.")
 
         # Inner decorator that receives the function
@@ -391,3 +410,13 @@ class FiniteStateDevice(StateDevice, ABC):
 
     def reset(self) -> None:
         self.set_state(self.default_state)
+
+    def set_defaults(self) -> None:
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any):
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content():
+            return ComponentFactory.get()

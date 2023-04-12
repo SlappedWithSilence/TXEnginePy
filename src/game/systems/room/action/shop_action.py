@@ -147,11 +147,7 @@ class ShopAction(Action):
                 ]
             )
 
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.ANY)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE, True)
         def content():
             return ComponentFactory.get(["You leave the shop."])
 
