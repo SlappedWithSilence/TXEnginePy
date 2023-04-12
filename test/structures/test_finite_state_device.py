@@ -55,13 +55,9 @@ class MockFiniteStateDevice(FiniteStateDevice):
         def content() -> dict:
             return ComponentFactory.get()
 
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.ANY, override=True)
         def logic(_: any) -> None:
             self.counter += 1
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
 
 def test_init_trivial():
