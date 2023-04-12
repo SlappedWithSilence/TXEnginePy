@@ -100,7 +100,6 @@ class AbilityEvent(Event):
 
 
 class CurrencyEvent(Event):
-
     class States(Enum):
         DEFAULT = 0
 
@@ -136,7 +135,6 @@ class CurrencyEvent(Event):
 
 
 class RecipeEvent(Event):
-
     class States(Enum):
         DEFAULT = 0
 
@@ -154,7 +152,6 @@ class RecipeEvent(Event):
 
 
 class ReputationEvent(Event):
-
     class States(Enum):
         DEFAULT = 0
 
@@ -184,22 +181,31 @@ class ReputationEvent(Event):
 
 
 class ResourceEvent(Event):
-
-
     class States(Enum):
         DEFAULT = 0
         APPLY = 1
+        SUMMARY = 2
         TERMINATE = -1
 
-    def __init__(self, stat_name: str, stat_change: int | float, target):
+    def _build_summary(self, start_value: int, end_value: int) -> None:
+        """Assemble a list[str | StringContent] to be printed within the SUMMARY state"""
+        self._summary = [
+            f"{self.target.name} {'lost' if self.amount < 0 else 'gained'}",
+            f"{abs(start_value - end_value)} ",
+            StringContent(value=f"{self.stat_name}.", formatting="resource_name")
+        ]
+
+    def __init__(self, stat_name: str, stat_change: int | float, target, silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.stat_name: str = stat_name
         self.amount: int | float = stat_change
-        self.target = weakref.proxy(target)
+        self.target = weakref.proxy(target)  # Weakref to an Entity object
+        self._summary: list[str | StringContent] = None
+        self._silent = silent
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_):
-            from game.systems.entity.entities import Entity
+            from game.systems.entity.entities import Entity  # Import locally to prevent circular import issues
 
             if not isinstance(self.target, Entity):
                 raise TypeError(f"Cannot apply a ResourceEvent to an object of type {self.target}")
@@ -210,8 +216,29 @@ class ResourceEvent(Event):
         def content():
             return ComponentFactory.get()
 
-        @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.SILENT)
         def logic(_):
             resource_controller: ResourceController = self.target.resources
-            resource_controller.resources[self.stat_name].adjust(self.amount)
+            self._build_summary(resource_controller.resources[self.stat_name].value,                # Current value
+                                resource_controller.resources[self.stat_name].adjust(self.amount))  # Post-adjust value
+            self.set_state(self.States.SUMMARY)
 
+        @FiniteStateDevice.state_content(self, self.States.APPLY)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.SUMMARY, InputType.SILENT if self._silent else InputType.ANY)
+        def logic(_: any):
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.SUMMARY)
+        def content():
+            return ComponentFactory.get(self._summary)
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic(_: any) -> None:
+            game.state_device_controller.set_dead()
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content():
+            return ComponentFactory.get()
