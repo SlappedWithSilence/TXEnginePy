@@ -3,10 +3,11 @@ import dataclasses
 import game.systems.currency as currency
 import game.systems.combat.effect as effect
 import game.systems.requirement.requirements as req
+from game.structures.loadable import LoadableMixin
 
 
 @dataclasses.dataclass
-class Item:
+class Item(LoadableMixin):
     """
     A basic item. Objects of this type are inert.
     """
@@ -18,6 +19,27 @@ class Item:
 
     def get_currency_value(self, currency_id: int = None) -> currency.Currency:
         return currency.currency_manager.to_currency(currency_id, self.value[currency_id]) if currency is not None else self.value
+
+    @classmethod
+    def from_json(cls, json: dict[str, any]):
+        """
+        Instantiate an Item object from a JSON blob.
+
+        Args:
+            json: a dict-form representation of a JSON object
+
+        Returns: An Item instance with the properties defined in the JSON
+
+        Required JSON fields:
+        - name: str
+        - id: int
+        - value: {int, int}
+        - description: str
+
+        Optional JSON fields:
+        - max_quantity: int (default value 10)
+        """
+
 
 
 @dataclasses.dataclass
