@@ -29,25 +29,25 @@ def root(user_input: int | str):
     return r
 
 
-@tx_engine.get("/dump")
-def root():
-    device = game.state_device_controller._get_state_device()
+@tx_engine.get("/cache")
+def root(cache_path: str):
+    from game.cache import get_cache
+    obj: any = get_cache()
+    count: int = 0
 
-    logger.info("******************************************")
-    logger.info(f"name: {device.name}")
-    logger.info(f"input_type: {device.input_type}")
-    logger.info(f"max: {device.domain_max}")
-    logger.info(f"min: {device.domain_min}")
-    logger.info(f"len: {device.domain_length}")
-    logger.info("Input Domain struct:")
-    logger.info(device.input_domain)
+    if cache_path == r".":
+        return str(obj)
 
-    if isinstance(device, FiniteStateDevice):
+    try:
+        for key in cache_path.split('.'):
+            obj = obj[key]
+            count += 1
 
-        logger.info(f"current_state: {device.current_state}")
-        logger.info(device.state_data)
+        return str(obj)
+    except KeyError:
+        logger.warning("Failed to retrieve")
+        return f"No value located at {cache_path}! Traveled to {'.'.join(cache_path.split('.')[:count])}"
 
-    logger.info("******************************************")
 
 # Begin service logic
 if __name__ == "__main__":
