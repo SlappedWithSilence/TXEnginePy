@@ -4,6 +4,7 @@ import game.systems.currency as currency
 import game.systems.combat.effect as effect
 import game.systems.requirement.requirements as req
 from game.structures.loadable import LoadableMixin
+from game.cache import get_cache
 
 from loguru import logger
 
@@ -44,17 +45,26 @@ class Item(LoadableMixin):
         Optional JSON fields:
         - max_quantity: int (default value 10)
         """
+        return Item(json['name'],
+                    json['id'],
+                    json['value'],
+                    json['description'],
+                    json['max_quantity'] if 'max_quantity' in json else 10
+                    )
 
 
-@dataclasses.dataclass
 class Usable(Item, req.RequirementsMixin):
     """
     A consumable item. When consumed, this item's stack quantity decreases by 1 and the effects in 'effects' are
     triggered in sequence.
     """
-    effects: list[effect.Effect] = dataclasses.field(
-        default_factory=list)  # List of effects that trigger when item is used
-    consumable: bool = False  # A flag that determines if the item should decrement quantity after each use.
+
+    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
+                 effects: list[effect.Effect] = None, consumable: bool = False):
+        super().__init__(name, iid, value, description, max_quantity)
+
+        self.effects: list[effect.Effect] = effects or []  # List of effects that trigger when item is used
+        self.consumable: bool = consumable  # Determines if the item should decrement quantity after each use.
 
     def use(self, target) -> None:
 
@@ -64,3 +74,37 @@ class Usable(Item, req.RequirementsMixin):
 
         for e in self.effects:
             e.perform(target)
+
+    @classmethod
+    def from_json(cls, json: dict[str, any]):
+        """
+        Instantiate an Item object from a JSON blob.
+
+        Args:
+            json: a dict-form representation of a JSON object
+
+        Returns: An Item instance with the properties defined in the JSON
+
+        Required JSON fields:
+        - name: str
+        - id: int
+        - value: {int, int}
+        - description: str
+
+        Optional JSON fields:
+        - max_quantity: int (default value 10)
+        - effects: [Effect]
+        - consumable: bol
+        """
+
+        effects = [get_cache()['loader']['Effect'](effect_json) for effect_json in
+                   json['effects']] if 'effects' in json else []
+
+        return Usable(json['name'],
+                      json['id'],
+                      json['value'],
+                      json['description'],
+                      json['max_quantity'] if 'max_quantity' in json else 10,
+                      effects,
+                      json['consumable']
+                      )
