@@ -1,12 +1,9 @@
-import dataclasses
-
-import game.systems.currency as currency
 import game.systems.combat.effect as effect
+import game.systems.currency as currency
 import game.systems.requirement.requirements as req
-from game.structures.loadable import LoadableMixin
 from game.cache import get_cache
-
-from loguru import logger
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable import cached
 
 
 class Item(LoadableMixin):
@@ -26,8 +23,8 @@ class Item(LoadableMixin):
         return currency.currency_manager.to_currency(currency_id,
                                                      self.value[currency_id]) if currency is not None else self.value
 
-    @classmethod
-    def from_json(cls, json: dict[str, any]):
+    @cached(LoadableMixin.LOADER_KEY, "Item")
+    def from_json(self, json: dict[str, any]):
         """
         Instantiate an Item object from a JSON blob.
 
@@ -75,8 +72,8 @@ class Usable(Item, req.RequirementsMixin):
         for e in self.effects:
             e.perform(target)
 
-    @classmethod
-    def from_json(cls, json: dict[str, any]):
+    @cached(LoadableMixin.LOADER_KEY, "Usable")
+    def from_json(self, json: dict[str, any]):
         """
         Instantiate an Item object from a JSON blob.
 
@@ -97,7 +94,7 @@ class Usable(Item, req.RequirementsMixin):
         - consumable: bol
         """
 
-        effects = [get_cache()['loader']['Effect'](effect_json) for effect_json in
+        effects = [get_cache()['loader'][effect_json['class']](effect_json) for effect_json in
                    json['effects']] if 'effects' in json else []
 
         return Usable(json['name'],
