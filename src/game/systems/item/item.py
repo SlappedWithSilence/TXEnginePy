@@ -1,9 +1,8 @@
 import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
-from game.cache import get_cache
+from game.cache import get_cache, cached
 from game.structures.loadable import LoadableMixin
-from game.structures.loadable import cached
 
 
 class Item(LoadableMixin):

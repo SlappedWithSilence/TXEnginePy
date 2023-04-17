@@ -1,27 +1,4 @@
-from typing import Callable
-
-from game.cache import get_cache
-
-
-# TODO: Improve Loadable to set loader on definition
-
-
-def cached(root_key: str, attr_key: str) -> Callable:
-
-    def decorate(func: Callable):
-
-        if root_key not in get_cache():
-            get_cache()[root_key] = {}
-
-        if attr_key not in get_cache()[root_key]:
-            get_cache()[root_key][attr_key] = func
-
-        elif get_cache()[root_key][attr_key] != func:
-            raise RuntimeError(f"Cannot cache [{root_key}][{attr_key}]! Something else was already cached!")
-
-        return func
-
-    return decorate
+from game.cache import cached
 
 
 class LoadableMixin:
