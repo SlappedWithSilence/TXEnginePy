@@ -13,9 +13,15 @@ class FlagManager(Manager):
     def save(self) -> None:
         pass
 
+    def clear(self) -> None:
+        self._flags = {}
+
     def get_flag(self, key: str) -> bool:
         """
-        Gets a the value of the flag associated with key
+        Gets the value of the flag associated with key.
+
+        If the flag does not exist, but COULD exist (IE wouldn't cause a collision), return False. If the flag would
+        cause a collision, throw an error instead.
 
         TXEngine Flags are slightly different from exact str-bool mappings. A Flag may define itself to be a part of a
         flag "subgroup" using dot-notation.
@@ -27,7 +33,7 @@ class FlagManager(Manager):
         level: dict | bool = self._flags
         for part in key.split('.'):
             if part not in level:
-                raise KeyError(f"Flag {key} not found!")
+                return False
 
             level = level[part]
 
