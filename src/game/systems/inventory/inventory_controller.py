@@ -19,7 +19,7 @@ class Stack:
         self.ref: Item = item_manager.get_ref(self.id)
 
 
-class Inventory:
+class InventoryController:
 
     def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
         self.capacity: int = capacity

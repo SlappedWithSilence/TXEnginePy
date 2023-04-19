@@ -1,12 +1,12 @@
 import pytest
 
-from game.systems.inventory import Inventory
+from game.systems.inventory import InventoryController
 from game.systems.item import item_manager
 
 
 def test_init():
-    """Trivially initialize an Inventory object"""
-    iv = Inventory()
+    """Trivially initialize an InventoryController object"""
+    iv = InventoryController()
 
     assert iv.capacity > 0
     assert iv.size == 0
@@ -14,7 +14,7 @@ def test_init():
 
 
 def test_new_stack():
-    iv = Inventory()
+    iv = InventoryController()
 
     for i in range(iv.capacity):
         iv.new_stack(-110, 3)
@@ -23,8 +23,8 @@ def test_new_stack():
 
 
 def test_full():
-    """Test that Inventory::full correctly returns True when all stacks are created"""
-    iv = Inventory()
+    """Test that InventoryController::full correctly returns True when all stacks are created"""
+    iv = InventoryController()
 
     assert iv.capacity > 0
 
@@ -35,8 +35,8 @@ def test_full():
 
 
 def test_size():
-    """Trivially test that Inventory::size increments as stacks are created"""
-    iv = Inventory()
+    """Trivially test that InventoryController::size increments as stacks are created"""
+    iv = InventoryController()
 
     assert iv.size == 0
 
@@ -47,14 +47,14 @@ def test_size():
 
 def test_consume_item_present():
     """
-    Test that Inventory::consume_item correctly decrements a stack of items and returns True
+    Test that InventoryController::consume_item correctly decrements a stack of items and returns True
 
     Flow:
         - Make a new stack of size 2
         - Consume 1 item
         - Verify stack is of size 1
     """
-    iv = Inventory()
+    iv = InventoryController()
 
     assert iv.new_stack(-110, 2) == 0
     assert iv.size == 1
@@ -64,14 +64,14 @@ def test_consume_item_present():
 
 def test_consume_item_last_present():
     """
-    Test that Inventory::consume_item handles stacks with exact sizes
+    Test that InventoryController::consume_item handles stacks with exact sizes
 
     Flow:
         - Make a new stack of size 2
         - Consume 2 items
         - Verify that the stack fully consumed and no longer exists
     """
-    iv = Inventory()
+    iv = InventoryController()
 
     assert iv.new_stack(-110, 2) == 0
     assert iv.size == 1
@@ -81,7 +81,7 @@ def test_consume_item_last_present():
 
 def test_consume_item_multiple_stacks():
     """
-    Test that Inventory::consume_item can consume items from more than one stack.
+    Test that InventoryController::consume_item can consume items from more than one stack.
 
     Flow:
         - Make a stack of size 3
@@ -90,7 +90,7 @@ def test_consume_item_multiple_stacks():
         - Verify that only one stack remains and is of size 1
     """
 
-    iv = Inventory()
+    iv = InventoryController()
     assert iv.new_stack(-110, 3) == 0
     assert iv.new_stack(-110, 2) == 0
     assert iv.size == 2
@@ -101,7 +101,7 @@ def test_consume_item_multiple_stacks():
 
 def test_consume_item_multiple_stacks_exact():
     """
-    Test that Inventory::consume_item consumes and deletes multiple stacks if exactly the right quantity of items are
+    Test that InventoryController::consume_item consumes and deletes multiple stacks if exactly the right quantity of items are
     present between them.
 
     Flow:
@@ -111,7 +111,7 @@ def test_consume_item_multiple_stacks_exact():
         - Verify that there are 0 remaining stacks
     """
 
-    iv = Inventory()
+    iv = InventoryController()
     iv.new_stack(-110, 3)
     iv.new_stack(-110, 2)
     assert iv.size == 2
@@ -121,19 +121,19 @@ def test_consume_item_multiple_stacks_exact():
 
 def test_consume_item_no_stacks():
     """
-    Test that Inventory::consume_item doesn't modify the inventory if there are no stacks
+    Test that InventoryController::consume_item doesn't modify the inventory if there are no stacks
     """
-    iv = Inventory()
+    iv = InventoryController()
     assert iv.size == 0
     assert not iv.consume_item(-110, 1)
 
 
 def test_consume_item_not_enough_stacks():
     """
-    Test that Inventory::consume_item doesn't modify the inventory if there are not enough items
+    Test that InventoryController::consume_item doesn't modify the inventory if there are not enough items
     between the stacks
     """
-    iv = Inventory()
+    iv = InventoryController()
     assert iv.size == 0
 
     iv.new_stack(-110, 2)
@@ -146,7 +146,7 @@ def test_consume_item_not_enough_stacks():
 
 def test_consume_item_mixed():
     """
-    Test that Inventory::consume_item only modifies stacks that contain the specified Item
+    Test that InventoryController::consume_item only modifies stacks that contain the specified Item
 
     Flow:
         - Make a stack of -110 x3
@@ -165,7 +165,7 @@ def test_consume_item_mixed():
         - Verify -110 quantity of 2
     """
 
-    iv = Inventory()
+    iv = InventoryController()
     iv.new_stack(-110, 3)
     iv.new_stack(-111, 3)
     iv.new_stack(-112, 3)
@@ -184,7 +184,7 @@ def test_consume_item_mixed():
 
 
 def test_consolidate_trivial():
-    iv = Inventory()
+    iv = InventoryController()
 
     iv.new_stack(-110, 1)
     iv.new_stack(-110, 1)
@@ -196,7 +196,7 @@ def test_consolidate_trivial():
 
 
 def test_consolidate_mixed():
-    iv = Inventory()
+    iv = InventoryController()
 
     iv.new_stack(-110, 1)
     iv.new_stack(-110, 1)
@@ -226,7 +226,7 @@ consume_item_mixed_split_stacks_cases = [
 @pytest.mark.parametrize("start, seq, end, size", consume_item_mixed_split_stacks_cases)
 def test_consume_item_mixed_split_stacks(start: dict[int, int], seq: list[tuple[int, int]], end: dict[int, int],
                                          size: int):
-    iv = Inventory()
+    iv = InventoryController()
 
     for item_id in start:
         iv.insert_item(item_id, start[item_id])
@@ -256,7 +256,7 @@ contains_cases = [
 
 @pytest.mark.parametrize("items, search_term, result", contains_cases)
 def test_contains(items: list[tuple[int, int]], search_term, result: bool):
-    iv = Inventory()
+    iv = InventoryController()
 
     for pair in items:
         iv.new_stack(*pair)
@@ -265,7 +265,7 @@ def test_contains(items: list[tuple[int, int]], search_term, result: bool):
 
 
 def test_drop_stack_trivial():
-    iv = Inventory()
+    iv = InventoryController()
 
     iv.new_stack(-110, 1)
     assert iv.size == 1
@@ -277,7 +277,7 @@ def test_drop_stack_mixed():
     """
     Test that drop_stack correctly re-indexes the remaining stacks
     """
-    iv = Inventory()
+    iv = InventoryController()
     for i in range(5):
         iv.new_stack(-110, 3)
 
@@ -304,10 +304,10 @@ is_collidable_cases = [
 @pytest.mark.parametrize("capacity, stacks, test, result", is_collidable_cases)
 def test_is_collidable(capacity: int, stacks: list[tuple[int, int]], test: tuple[int, int], result: bool):
     """
-    Test that Inventory::is_collidable correctly detects if a proposed item insertion would result in an overflow.
+    Test that InventoryController::is_collidable correctly detects if a proposed item insertion would result in an overflow.
     """
 
-    iv = Inventory()
+    iv = InventoryController()
     iv.capacity = capacity
 
     for stack in stacks:
@@ -319,7 +319,7 @@ def test_is_collidable(capacity: int, stacks: list[tuple[int, int]], test: tuple
 
 
 def test_insert_item_trivial():
-    iv = Inventory()
+    iv = InventoryController()
 
     assert iv.insert_item(-110, 1) == 0
     assert iv.size == 1
@@ -330,9 +330,9 @@ def test_insert_item_trivial():
 
 
 def test_insert_item_split():
-    """Test that Inventory::insert_item correctly fills all available stacks before making new ones"""
+    """Test that InventoryController::insert_item correctly fills all available stacks before making new ones"""
 
-    iv = Inventory()
+    iv = InventoryController()
 
     for i in range(3):
         iv.new_stack(-110, i + 1)
@@ -346,8 +346,8 @@ def test_insert_item_split():
 
 
 def test_insert_item_overflow():
-    """Test that Inventory::insert_item correctly detects overflows"""
-    iv = Inventory()
+    """Test that InventoryController::insert_item correctly detects overflows"""
+    iv = InventoryController()
     iv.capacity = 2
 
     assert iv.insert_item(-111, 7) == 1

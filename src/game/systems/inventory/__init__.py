@@ -1,4 +1,5 @@
-from game.systems.inventory.inventory import Inventory, Stack
-from game.systems.inventory.equipment import EquipmentController, EquipmentManager
+from game.systems.inventory.inventory_controller import InventoryController, Stack
+from game.systems.inventory.equipment_controller import EquipmentController
+from game.systems.inventory.equipment_manager import EquipmentManager
 
 equipment_manager = EquipmentManager()

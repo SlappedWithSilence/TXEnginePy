@@ -1,4 +1,4 @@
-from game.systems.inventory.inventory import Stack
+from game.systems.inventory.inventory_controller import Stack
 
 
 def test_init():
