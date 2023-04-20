@@ -31,8 +31,44 @@ def get_config() -> dict:
     return config
 
 
-def cached(root_key: str, attr_key: str) -> Callable:
+def get_loader(cls: type | str) -> Callable:
+    """
+    A convenience wrapper that fetches loader functions from the cache for a given class.
 
+    args:
+        cls: Either a type or a string representation of a type whose loader to fetch
+
+    returns: A reference to the requested loader function
+    """
+
+    key = str(cls)
+    if key in get_cache()['loader']:
+        return get_cache()['loader'][key]
+
+    else:
+        raise KeyError(
+            f"No loader found for class {key}! Available loaders:\n{' '.join(list(get_cache()['loader'].keys()))}"
+        )
+
+
+def cached(root_key: str, attr_key: str) -> Callable:
+    """
+    A parameterized decorator that caches a given function under the key 'root_key' and sub-key 'attr_key'.
+
+    For example,
+    @cached('fancy', 'func')
+    def some_func():
+        pass
+
+    would cache some_func under:
+    get_cache()['fancy']['func']
+
+    args:
+        root_key: The root-level key under which to cache the func
+        attr_key: The second-level key under which to cache the func
+
+    returns: The base-level decorator
+    """
     def decorate(func: Callable):
 
         if root_key not in get_cache():
