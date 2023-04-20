@@ -78,6 +78,20 @@ class EquipmentManager(Manager):
     def get_slots(self) -> dict:
         return copy.deepcopy(self._slots)
 
+    def is_valid_slot(self, slot: str) -> str:
+        """
+        Validates that a given slot key exists. If it does, return the slot. Otherwise, raise an Error.
+
+        args:
+            slot: The slot key to validate
+
+        returns: slot if slot exists, None otherwise
+        """
+        if slot in self._slots:
+            return slot
+
+        raise ValueError(f"Slot {slot} does not exist! Possible slots are {','.join(list(self._slots.keys()))}")
+
     def load(self) -> None:
         pass
 
