@@ -39,3 +39,21 @@ def test_get_flag(payload: list):
 
     flag_manager.set_flag(payload[0], payload[1])
     assert flag_manager.get_flag(payload[0]) == payload[1]
+
+
+test_set_flag_blocked_cases = [
+    ["store0", False],
+    ["store0.enabled", True],
+    ["store0.props.enabled", True]
+]
+
+
+@pytest.mark.parametrize("key, throws", test_set_flag_blocked_cases)
+def test_get_flag(key: str, throws: bool):
+    if not throws:
+        flag_manager.clear()
+        flag_manager.set_flag(key, True)
+
+    if throws:
+        with pytest.raises(KeyError) as error:
+            flag_manager.set_flag(key, True)
