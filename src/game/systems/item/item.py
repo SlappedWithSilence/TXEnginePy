@@ -43,6 +43,7 @@ class Item(LoadableMixin):
         Optional JSON fields:
         - max_quantity: int (default value 10)
         """
+
         return Item(json['name'],
                     json['id'],
                     json['value'],
@@ -145,8 +146,8 @@ class Equipment(Item, req.RequirementsMixin):
        - max_quantity: int (default value 10)
        - start_of_combat_effects: [Effect]
        - requirements: [Requirement]
-
        """
+
         start_of_combat_effects = [
             get_cache()['loader'][effect_json['class']](effect_json) for effect_json in json['start_of_combat_effects']
         ] if 'start_of_combat_effects' in json else []
@@ -155,3 +156,12 @@ class Equipment(Item, req.RequirementsMixin):
             get_cache()['loader'][req_json['class']](req_json) for req_json in json['requirements']
         ] if 'requirements' in json else []
 
+        return Equipment(json['name'],
+                         json['id'],
+                         json['value'],
+                         json['description'],
+                         json['slot'],
+                         requirements,
+                         start_of_combat_effects,
+                         max_quantity=json['max_quantity'] if 'max_quantity' in json else 10
+                         )
