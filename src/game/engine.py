@@ -122,6 +122,10 @@ class Engine:
 
         get_cache()["player_location"] = get_config()["room"]["default_id"]
 
+        # Load assets from disk
+        for manager in get_cache()['managers']:
+            get_cache()['managers'][manager].load()
+
         logger.info("Engine::startup.done")
         self._debug_init_late()
 
@@ -130,8 +134,11 @@ class Engine:
         Perform required shutdown logic
 
         Returns: None
-
         """
+
+        # Save state data to disk
+        for manager in get_cache()['managers']:
+            get_cache()['managers'][manager].save()
 
     def __init__(self):
         self._startup()  # Call startup logic.

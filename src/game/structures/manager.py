@@ -17,6 +17,7 @@ class Manager(ABC):
         self.name = self.__class__.__name__
 
         if "managers" not in cache.get_cache():
+            logger.debug("Creating managers cache...")
             cache.get_cache()["managers"] = {}
 
         logger.info(f"[{self.name}] Registering manager with cache...")
