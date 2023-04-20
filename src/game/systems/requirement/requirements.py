@@ -55,7 +55,8 @@ class RequirementsMixin:
     A mixin class that enables a child class to accept requirements.
     """
 
-    def __init__(self, requirements: list[Requirement] = None):
+    def __init__(self, requirements: list[Requirement] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.requirements: list[Requirement] = requirements or None
 
     def is_requirements_fulfilled(self) -> bool:
