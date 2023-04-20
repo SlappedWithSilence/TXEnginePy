@@ -37,3 +37,24 @@ class EquipmentController:
 
         else:
             raise TypeError(f"Unknown type for value! Expected int, bool, or None. Got {type(value)}!")
+
+    def equip(self, item_id: int) -> int | None:
+        """
+        Pops the item currently in the slot for the item and returns it's ID, then sets slot's id to item_id
+
+        args:
+            item_id: The ID of the item to equip
+
+        returns: The ID of the item currently equipped in that slot, or None
+        """
+        from game.systems.item import item_manager
+        from game.systems.item.item import Equipment
+
+        item_ref = item_manager.get_ref(item_id)
+
+        if isinstance(item_ref, Equipment):
+            temp: int | None = self._slots[item_ref.slot].item_id if self._slots[item_ref.slot] else None
+            self[item_ref.slot] = item_id
+            return temp
+
+        raise TypeError(f"Cannot equip item of type {type(item_ref)}! Expected item of type Equipment")
