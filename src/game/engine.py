@@ -1,17 +1,16 @@
 import os.path
 
-import game.systems.room.action.shop_action
-from .formatting import register_arguments, register_style
-from .cache import get_config, set_config, get_cache
-
 from loguru import logger
 from omegaconf import OmegaConf
 
+import game.systems.room.action.shop_action
+from .cache import get_config, set_config, get_cache
+from .formatting import register_arguments, register_style
 from .systems import currency, room, item
 from .systems.entity.entities import Player
 from .systems.event.add_item_event import AddItemEvent
 from .systems.event.consume_item_event import ConsumeItemEvent
-from .systems.requirement.requirements import ItemRequirement, ConsumeItemRequirement
+from .systems.requirement.requirements import ConsumeItemRequirement
 from .systems.room.action import actions
 from .systems.room.action.actions import ViewInventoryAction
 
