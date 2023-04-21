@@ -1,11 +1,9 @@
 import pytest
+from loguru import logger
 
+from game.systems.currency import currency_manager
 from game.systems.currency.coin_purse import CoinPurse
 from game.systems.currency.currency import Currency
-from game.systems.item import Item
-from game.systems.currency import currency_manager
-
-from loguru import logger
 
 
 def test_init():
