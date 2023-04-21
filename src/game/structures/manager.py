@@ -20,12 +20,8 @@ class Manager(ABC):
             logger.debug("Creating managers cache...")
             cache.get_cache()["managers"] = {}
 
-        logger.info(f"[{self.name}] Registering manager with cache...")
-
-        def cb():
-            logger.info(f"[{self.name}] is dead.")
-
-        cache.get_cache()["managers"][self.name] = weakref.proxy(self, cb)
+        logger.debug(f"[{self.name}] Registering manager with cache...")
+        cache.get_cache()["managers"][self.name] = weakref.proxy(self)
 
     def load(self) -> None:
         raise NotImplementedError
