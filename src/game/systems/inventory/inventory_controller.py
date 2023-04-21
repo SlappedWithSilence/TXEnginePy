@@ -59,7 +59,6 @@ class InventoryController:
             if stack.id not in quantity_cache:
                 quantity_cache[stack.id] = self.total_quantity(stack.id)
 
-        old_item_list = self.items
         self.items = []
         for item_id in quantity_cache:
             self.insert_item(item_id, quantity_cache[item_id])
@@ -283,7 +282,7 @@ class InventoryController:
 
             if stack.quantity < max_stack_size:  # If stack is not full
                 if remaining_quantity > (
-                        max_stack_size - stack.quantity):  # If the remaining # of items is greater than the capacity of the stack
+                        max_stack_size - stack.quantity):  # If num remaining items > capacity of the stack
                     remaining_quantity = remaining_quantity - (
                             max_stack_size - stack.quantity)  # Reduce remaining quantity by the capacity of the stack
                     stack.quantity = max_stack_size  # Fill the stack
