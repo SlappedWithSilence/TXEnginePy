@@ -1,5 +1,9 @@
+import game
+import game.systems.entity.entities as entities
+from game.systems.event.add_item_event import AddItemEvent
 from game.systems.inventory import equipment_manager
 from game.systems.inventory.equipment_manager import SlotProperties
+import game.systems.item as item
 
 
 class EquipmentController:
@@ -8,7 +12,8 @@ class EquipmentController:
     and unequipping processes, validating that an item is allowed to fit into a slot.
     """
 
-    def __init__(self):
+    def __init__(self, owner=None):
+        self.owner = owner
         self._slots: dict[str, SlotProperties] = equipment_manager.get_slots()
 
     def __contains__(self, item: str) -> bool:
@@ -29,32 +34,75 @@ class EquipmentController:
         if key not in self._slots:
             raise KeyError(f"Unknown slot: {key}!")
 
+        # If value is a bool, treat is an enable/disable slot
         if type(value) == bool:
             self._slots[key].enabled = value
 
-        elif type(value) == int or value is None:
+        # If an int, treat it as set-id
+        elif type(value) == int:
+            from game.systems.item import item_manager
+
+            ref = item_manager.get_ref(value)
+            if not isinstance(ref, item.Equipment):
+                raise ValueError(f"Cannot assign item {str(ref)} to slot {key}! Item {str(ref)} is not an Equipment!")
+
+            if ref.slot != key:
+                raise ValueError(f"Cannot assign item {str(ref)} to slot {key}! Wrong slot! {key} != {ref.slot}")
+
             self._slots[key].item_id = value
 
+        # If None, treat it as clear-slot
+        elif value is None:
+            self._slots[key].item_id = value
+
+        # That's not right
         else:
             raise TypeError(f"Unknown type for value! Expected int, bool, or None. Got {type(value)}!")
 
-    def equip(self, item_id: int) -> int | None:
+    def equip(self, item_id: int) -> bool:
         """
         Pops the item currently in the slot for the item and returns it's ID, then sets slot's id to item_id
 
         args:
             item_id: The ID of the item to equip
 
-        returns: The ID of the item currently equipped in that slot, or None
+        returns: True if the slot is enabled, false otherwise
         """
-        from game.systems.item import item_manager
-        from game.systems.item.item import Equipment
+        from game.systems.item import item_manager, Equipment
 
         item_ref = item_manager.get_ref(item_id)
 
         if isinstance(item_ref, Equipment):
-            temp: int | None = self._slots[item_ref.slot].item_id if self._slots[item_ref.slot] else None
+            if not self._slots[item_ref.slot].enabled:
+                return False
+
+            self.unequip(item_ref.slot)
             self[item_ref.slot] = item_id
-            return temp
+            return True
 
         raise TypeError(f"Cannot equip item of type {type(item_ref)}! Expected item of type Equipment")
+
+    def unequip(self, slot: str) -> bool:
+        """
+        Remove the item from a slot and return its ID
+
+        args:
+            slot: The name of the slot to empty
+
+        returns: True if the slot is enabled, false otherwise
+        """
+
+        if not equipment_manager.is_valid_slot(slot):
+            raise ValueError(f"Unknown slot: {slot}!")
+
+        if not self._slots[slot].enabled:
+            return False
+
+        temp = self[slot].item_id
+
+        # Spawn an add-item-event to handle placing the removed-item back into player inventory
+        if isinstance(self, entities.Player) and temp is not None:
+            game.state_device_controller.add_state_device(AddItemEvent(temp, 1))
+
+        self[slot] = None
+        return True
