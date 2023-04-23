@@ -1,5 +1,4 @@
 import game
-import game.systems.entity.entities as entities
 from game.systems.event.add_item_event import AddItemEvent
 from game.systems.inventory import equipment_manager
 from game.systems.inventory.equipment_manager import SlotProperties
@@ -8,12 +7,34 @@ import game.systems.item as item
 
 class EquipmentController:
     """
-    An EquipmentController's duties are to manage the items that an Entity equips. This includes handling the equipping
+    An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling the equipping
     and unequipping processes, validating that an item is allowed to fit into a slot.
     """
 
+    @property
+    def owner(self) -> any:
+        return self._owner
+
+    @owner.setter
+    def owner(self, entity) -> None:
+        from game.systems.entity import Entity, Player
+        if entity is not None and not isinstance(entity, Entity):
+            raise TypeError(f"Cannot assign an owner of type {type(entity)}, owner must of type entities.Entity")
+
+        elif entity is None:
+            self._owner = None
+
+        elif isinstance(entity, Player):
+            self._owner = entity
+            self.player_mode = True
+
+        else:
+            self._owner = entity
+            self.player_mode = False
+
     def __init__(self, owner=None):
         self.owner = owner
+        self.player_mode: bool = False
         self._slots: dict[str, SlotProperties] = equipment_manager.get_slots()
 
     def __contains__(self, item: str) -> bool:
@@ -101,8 +122,10 @@ class EquipmentController:
         temp = self[slot].item_id
 
         # Spawn an add-item-event to handle placing the removed-item back into player inventory
-        if isinstance(self, entities.Player) and temp is not None:
+        if self.player_mode and temp is not None:
             game.state_device_controller.add_state_device(AddItemEvent(temp, 1))
+        elif not self.player_mode and temp is not None:
+            self.owner.inventory.new_stack(temp, 1)
 
         self[slot] = None
         return True
