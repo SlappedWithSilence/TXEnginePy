@@ -3,7 +3,6 @@ from abc import ABC
 import game.cache
 from game.structures.messages import StringContent
 import game.systems.entity.entities as entities
-
 import game.systems.item as item
 from game.systems.event.consume_item_event import ConsumeItemEvent
 
