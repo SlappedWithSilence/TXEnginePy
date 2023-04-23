@@ -3,6 +3,7 @@ from abc import ABC
 import game.systems.currency.coin_purse
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
+from game.systems.inventory import EquipmentController
 
 
 class InventoryMixin:
@@ -50,6 +51,24 @@ class ResourceMixin:
 
         if resource_manifest:
             self.resource_controller = resource.ResourceController(resource_manifest)
+
+
+class EquipmentMixin:
+    """
+    A mixin for Entity objects that provides EquipmentController functionality
+    """
+
+    def __init__(self, equipment_controller: EquipmentController = None,
+                 equipment_manifest: list[int] = None,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.equipment_controller = equipment_controller or EquipmentController()
+        self.equipment_controller.owner = self
+
+        # Override the currently-equipped items. The items that are overriden are lost forever.
+        if equipment_manifest:
+            for equipment_id in equipment_manifest:
+                equipment_controller.equip(equipment_id)
 
 
 class Entity(ABC):
