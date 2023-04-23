@@ -6,14 +6,13 @@ from game.systems.currency import currency_manager
 from game.systems.currency.currency import Currency
 
 
-
 def get_cur():
-
     currencies = {
         "USD": Currency(-1, "USD", {"cents": 1, "dollars": 100, "k": 100000, "m": 100000000}),
         "Imperial": Currency(-2, "Imperial", {"copper": 1, "silver": 100, "gold": 10000})
     }
     return currencies
+
 
 add_int_quantity_cases = [
     ["USD", [1], 1],
