@@ -76,6 +76,9 @@ class EquipmentManager(Manager):
         self._slots[name] = SlotProperties(name, None, enabled)
 
     def get_slots(self) -> dict:
+        """
+        Get a deep copy of the slot properties for each slot.
+        """
         return copy.deepcopy(self._slots)
 
     def is_valid_slot(self, slot: str) -> str:
