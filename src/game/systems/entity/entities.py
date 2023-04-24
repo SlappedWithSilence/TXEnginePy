@@ -3,6 +3,8 @@ from abc import ABC
 import game.systems.currency.coin_purse
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
+from game.cache import cached, get_loader
+from game.structures.loadable import LoadableMixin
 from game.systems.inventory import EquipmentController
 
 
@@ -71,14 +73,75 @@ class EquipmentMixin:
                 equipment_controller.equip(equipment_id)
 
 
-class Entity(ABC):
+class Entity(LoadableMixin, ABC):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
-    def __init__(self, name: str, entity_id: int):
+    def __init__(self, name: str, entity_id: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.name: str = name
         self.id: int = entity_id
 
+    @cached(LoadableMixin.LOADER_KEY, "Entity")
+    def from_json(self, json: dict[str, any]) -> any:
+        return EntityFactory.get(json)
+
 
 class Player(ResourceMixin, CurrencyMixin, InventoryMixin, Entity):
+
+    @cached(LoadableMixin.LOADER_KEY, "Player")
+    def from_json(self, json: dict[str, any]) -> any:
+        pass
+
     def __init__(self, *args, **kwargs):
         super().__init__(name="Player", entity_id=0, *args, **kwargs)
+
+
+class EntityFactory:
+    cls_map = {cls.__name__.__str__(): cls for cls in [InventoryMixin, CurrencyMixin, ResourceMixin, EquipmentMixin]}
+
+    @classmethod
+    def _get_type(cls, classes: list[str]):
+
+        def constructor(self, *args, **kwargs):
+            print(type(self).__mro__)
+            type(self).__mro__[1].__init__(self, *args, **kwargs)
+
+        try:
+            types: list[type] = [cls.cls_map[c] for c in classes] + [Entity]
+        except KeyError:
+            raise KeyError(f"One or more classes in {str(classes)} were not found by EntityFactory!")
+        return type("MutableEntity", tuple(types), {
+            "__init__": constructor
+        })
+
+    @classmethod
+    def _is_loadable(cls, json: dict) -> bool:
+        if type(json) == dict:
+
+            if 'class' in json:
+                return True
+
+        return False
+
+    @classmethod
+    def get(cls, json: dict[str, any]):
+        """
+        Generate an Entity object instance with the appropriate attribute definitions from a json file.
+        """
+        entity_cls: type = cls._get_type(json['features'])
+        entity_instance: Entity = entity_cls(name=json['name'], entity_id=json['id'])
+
+        # For each attribute
+        for attr in json['attributes']:
+            if hasattr(entity_instance, attr) and cls._is_loadable(json['attributes'][attr]):
+                entity_instance.__setattr__(
+                    attr, get_loader(
+                        json['attributes'][attr]['class']
+                    )(json['attributes'][attr])
+                )
+            elif hasattr(entity_instance, attr):
+                entity_instance.__setattr__(attr, json['attributes'][attr])
+
+        return entity_instance
+
+
