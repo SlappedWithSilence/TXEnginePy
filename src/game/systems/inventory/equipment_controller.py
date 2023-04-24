@@ -1,8 +1,8 @@
 import game
-from game.systems.event.add_item_event import AddItemEvent
-from game.systems.inventory import equipment_manager
-from game.systems.inventory.equipment_manager import SlotProperties
 import game.systems.item as item
+from game.cache import get_cache
+from game.systems.event.add_item_event import AddItemEvent
+from game.systems.inventory.equipment_manager import SlotProperties
 
 
 class EquipmentController:
@@ -35,7 +35,7 @@ class EquipmentController:
     def __init__(self, owner=None):
         self.owner = owner
         self.player_mode: bool = False
-        self._slots: dict[str, SlotProperties] = equipment_manager.get_slots()
+        self._slots: dict[str, SlotProperties] = get_cache()['managers']['EquipmentManager'].get_slots()
 
     def __contains__(self, item: str) -> bool:
         return self._slots.__contains__(item)
@@ -113,7 +113,7 @@ class EquipmentController:
         returns: True if the slot is enabled, false otherwise
         """
 
-        if not equipment_manager.is_valid_slot(slot):
+        if not get_cache()['managers']['EquipmentManager'].is_valid_slot(slot):
             raise ValueError(f"Unknown slot: {slot}!")
 
         if not self._slots[slot].enabled:
