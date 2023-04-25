@@ -31,6 +31,7 @@ class InventoryController(LoadableMixin):
     def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
         self.capacity: int = capacity
         self.fragmented: bool = False
+        self.items: list[Stack] = []
 
         # We cannot query the cache for the default capacity on class definition since there's no guarantee the config
         # will already be loaded.
@@ -38,8 +39,13 @@ class InventoryController(LoadableMixin):
             self.capacity = self.get_default_capacity()
 
         # Insert each stack of items. This process may re-arrange the index of each stack.
-        for t in items:
-            self.insert_item(*t)
+
+        if items is not None:
+            for t in items:
+                if type(t) == list or type(t) == tuple:
+                    self.insert_item(*t)
+                else:
+                    raise TypeError(f"Unknown type {type(t)} in inventory item_manifest!")
 
     # Private Methods
     def _all_stack_indexes(self, item_id: int) -> list[int]:
