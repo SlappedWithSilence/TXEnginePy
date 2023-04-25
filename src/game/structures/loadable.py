@@ -4,11 +4,13 @@ from game.cache import cached, get_cache, get_loader
 class LoadableMixin:
     """An interface for classes that need to define logic for building an instance from JSON"""
 
+    CLASS_KEY = "LoadableMixin"
     LOADER_KEY: str = 'loader'
     ATTR_KEY: str = "from_json"
 
-    @cached(LOADER_KEY, "LoadableMixin")
-    def from_json(self, json: dict[str, any]) -> any:
+    @classmethod
+    @cached(LOADER_KEY, CLASS_KEY)
+    def from_json(cls, json: dict[str, any]) -> any:
         raise NotImplementedError()
 
 
