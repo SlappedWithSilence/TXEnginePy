@@ -1,7 +1,8 @@
 import dataclasses
 from typing import Iterator
 
-from game.cache import get_cache
+from game.cache import cached
+from game.structures.loadable import LoadableMixin
 from game.systems.currency import Currency
 from game.systems.currency import currency_manager
 
@@ -170,3 +171,43 @@ class CoinPurse:
         item = item_manager.get_ref(item_id)
 
         return self.test_currency(currency_id, item.value[currency_id])
+
+    CLASS_KEY = "CoinPurse"
+    CURRENCIES_KEY = "currencies"
+
+    @classmethod
+    @cached(LoadableMixin.LOADER_KEY, CLASS_KEY)
+    def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
+        """
+        Instantiate an CoinPurse object from a JSON blob.
+
+        Args:
+            json: a dict-form representation of an CoinPurse object
+
+        Returns: an CoinPurse instance with the properties defined in the JSON
+
+        Required JSON fields:
+        - currencies: [{id: int, quantity: int}]
+
+        Optional JSON fields:
+        - None
+        """
+
+        # Type and field checking
+        required_fields = [cls.CLASS_KEY, cls.CURRENCIES_KEY]
+        for field in required_fields:
+            if field not in json:
+                raise ValueError(f"Required field {field} not in JSON!")
+
+        if json["class"] != cls.CLASS_KEY:
+            raise ValueError(f"Cannot load JSON for object of class {json['class']}")
+
+        if type(json[cls.CURRENCIES_KEY]) != list:
+            raise TypeError(f"Cannot parse item manifest of type {type(json[cls.CURRENCIES_KEY])}! Expect type list")
+
+        cp = CoinPurse()
+
+        for currency in json["currencies"]:
+            cp.adjust(currency['id'], currency['quantity'])
+
+        return cp
