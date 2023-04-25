@@ -1,11 +1,12 @@
 import game
 import game.systems.item as item
-from game.cache import get_cache
+from game.cache import get_cache, cached
+from game.structures.loadable import LoadableMixin
 from game.systems.event.add_item_event import AddItemEvent
 from game.systems.inventory.equipment_manager import SlotProperties
 
 
-class EquipmentController:
+class EquipmentController(LoadableMixin):
     """
     An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling the equipping
     and unequipping processes, validating that an item is allowed to fit into a slot.
@@ -82,7 +83,7 @@ class EquipmentController:
 
     def equip(self, item_id: int) -> bool:
         """
-        Pops the item currently in the slot for the item and returns it's ID, then sets slot's id to item_id
+        Pops the item currently in the slot for the item and returns its ID, then sets slot's id to item_id
 
         args:
             item_id: The ID of the item to equip
@@ -95,6 +96,10 @@ class EquipmentController:
 
         if isinstance(item_ref, Equipment):
             if not self._slots[item_ref.slot].enabled:
+                raise RuntimeError(f"Cannot equip {item_ref.name} to slot {item_ref.slot} since slot {item_ref.slot} is disabled.")
+
+            # Do not check requirements if the equipment_controller is not in player mode
+            if not (self.player_mode and item_ref.is_requirements_fulfilled()):
                 return False
 
             self.unequip(item_ref.slot)
@@ -129,3 +134,30 @@ class EquipmentController:
 
         self[slot] = None
         return True
+
+    CLASS_KEY: str = "EquipmentController"
+    SLOTS_KEY: str = "slots"
+
+    @classmethod
+    @cached(LoadableMixin.LOADER_KEY, CLASS_KEY)
+    def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
+
+        # Type and field checking
+        required_fields = [cls.CLASS_KEY, cls.SLOTS_KEY]
+        for field in required_fields:
+            if field not in json:
+                raise ValueError(f"Required field {field} not in JSON!")
+
+        if json["class"] != cls.CLASS_KEY:
+            raise ValueError(f"Cannot load JSON for object of class {json['class']}")
+
+        if type(json[cls.SLOTS_KEY]) != dict:
+            raise TypeError(f"Field {cls.SLOTS_KEY} must be of type dict! Got {type(json[cls.SLOTS_KEY])} instead.")
+
+        ec = EquipmentController()
+
+        # Equip each slot
+        for slot in json[cls.SLOTS_KEY]:
+            ec.equip(json[cls.SLOTS_KEY][slot])
+
+        return ec
