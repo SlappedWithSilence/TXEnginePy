@@ -5,8 +5,6 @@ from loguru import logger
 
 from timeit import default_timer
 
-from game.structures.state_device import FiniteStateDevice
-
 tx_engine = FastAPI()  # FastAPI service object that hosts TXEngine
 
 

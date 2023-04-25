@@ -1,7 +1,5 @@
 from game.structures.enums import InputType
 
-from loguru import logger
-
 
 def is_valid_range(input_type: InputType,
                    min_value: int | None = None,
