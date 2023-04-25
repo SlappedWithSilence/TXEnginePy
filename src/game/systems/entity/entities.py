@@ -90,7 +90,16 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         for attr in json['attributes']:
             kwargs[attr]['class'] = LoadableFactory.get(attr)
 
-        return Entity(json['name'], json['id'], kwargs=kwargs)
+        e = Entity(json['name'], json['id'], kwargs=kwargs)
+
+        # Post-init fixing
+        # Note: since the equipment_controller only gets assigned an owner assigned AFTER init, it cannot check equip
+        #       requirements. Thus, when loading the player's equipment_controller, can allow equipment to be equipped
+        #       that the player cannot normally equip.
+        if "equipment_controller" in kwargs:
+            e.equipment_controller.owner = e
+
+        return e
 
 
 class Player(Entity):
