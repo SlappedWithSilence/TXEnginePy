@@ -60,9 +60,9 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         self.name: str = name
         self.id: int = entity_id
 
-    @classmethod
+    @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
-    def from_json(cls, json: dict[str, any]) -> any:
+    def from_json(json: dict[str, any]) -> any:
         """
         Instantiate an Entity object from a JSON blob.
 
@@ -87,17 +87,17 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         """
 
         # Turn the attributes JSON fields into key-word arguments to be passed to Entity's subclasses
-        kwargs = {}
+        kw = {}
         for attr in json['attributes']:
-            kwargs[attr]['class'] = LoadableFactory.get(attr)
+            kw[attr] = LoadableFactory.get(json['attributes'][attr][0])
 
-        e = Entity(json['name'], json['id'], kwargs=kwargs)
+        e = Entity(json['name'], json['id'], kwargs=kw)
 
         # Post-init fixing
         # Note: since the equipment_controller only gets assigned an owner assigned AFTER init, it cannot check equip
         #       requirements. Thus, when loading the player's equipment_controller, can allow equipment to be equipped
         #       that the player cannot normally equip.
-        if "equipment_controller" in kwargs:
+        if "equipment_controller" in kw:
             e.equipment_controller.owner = e
 
         return e
@@ -105,8 +105,9 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
 
 class Player(Entity):
 
+    @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Player", LoadableMixin.ATTR_KEY])
-    def from_json(self, json: dict[str, any]) -> any:
+    def from_json(json: dict[str, any]) -> any:
         pass
 
     def __init__(self, *args, **kwargs):

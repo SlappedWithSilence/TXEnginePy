@@ -10,11 +10,11 @@ class LoadableMixin:
     CACHE_PATH: list[str] = [LOADER_KEY, CLASS_KEY, ATTR_KEY]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        pass
 
-    @classmethod
+    @staticmethod
     @cached(CACHE_PATH)
-    def from_json(cls, json: dict[str, any]) -> any:
+    def from_json(json: dict[str, any]) -> any:
         raise NotImplementedError()
 
 

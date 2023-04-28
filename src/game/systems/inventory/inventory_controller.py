@@ -11,6 +11,10 @@ from game.structures.messages import StringContent
 from loguru import logger
 
 
+def get_default_capacity() -> int:
+    return cache.get_config()["inventory"]["default_capacity"]
+
+
 @dataclasses.dataclass
 class Stack:
     id: int
@@ -24,11 +28,8 @@ class Stack:
 
 class InventoryController(LoadableMixin):
 
-    @classmethod
-    def get_default_capacity(cls) -> int:
-        return cache.get_config()["inventory"]["default_capacity"]
-
-    def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None):
+    def __init__(self, capacity: int = None, items: list[tuple[int, int]] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.capacity: int = capacity
         self.fragmented: bool = False
         self.items: list[Stack] = []
@@ -36,7 +37,7 @@ class InventoryController(LoadableMixin):
         # We cannot query the cache for the default capacity on class definition since there's no guarantee the config
         # will already be loaded.
         if not self.capacity:
-            self.capacity = self.get_default_capacity()
+            self.capacity = get_default_capacity()
 
         # Insert each stack of items. This process may re-arrange the index of each stack.
 
@@ -325,12 +326,9 @@ class InventoryController(LoadableMixin):
 
         return remaining_quantity  # Return the leftover quantity
 
-    CLASS_KEY = "InventoryController"
-    MANIFEST_KEY = "manifest"
-
-    @classmethod
-    @cache.cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
-    def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
+    @staticmethod
+    @cache.cached([LoadableMixin.LOADER_KEY, "InventoryController", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> "InventoryController":
         """
         Instantiate an InventoryController object from a JSON blob.
 
@@ -346,19 +344,22 @@ class InventoryController(LoadableMixin):
         - capacity: int
         """
 
+        class_key = "InventoryController"
+        manifest_key = "manifest"
+
         # Type and field checking
-        required_fields = [cls.CLASS_KEY, cls.MANIFEST_KEY]
+        required_fields = [manifest_key]
         for field in required_fields:
             if field not in json:
                 raise ValueError(f"Required field {field} not in JSON!")
 
-        if json["class"] != cls.CLASS_KEY:
+        if json["class"] != class_key:
             raise ValueError(f"Cannot load JSON for object of class {json['class']}")
 
-        if type(json[cls.MANIFEST_KEY]) != list:
-            raise TypeError(f"Cannot parse item manifest of type {type(json[cls.MANIFEST_KEY])}! Expect type list")
+        if type(json[manifest_key]) != list:
+            raise TypeError(f"Cannot parse item manifest of type {type(json[manifest_key])}! Expect type list")
 
-        capacity = json['capacity'] if ('capacity' in json) else cls.get_default_capacity()
+        capacity = json['capacity'] if ('capacity' in json) else get_default_capacity()
 
-        inv = InventoryController(capacity, json[cls.MANIFEST_KEY])
+        inv = InventoryController(capacity, json[manifest_key])
         return inv

@@ -172,12 +172,9 @@ class CoinPurse(LoadableMixin):
 
         return self.test_currency(currency_id, item.value[currency_id])
 
-    CLASS_KEY = "CoinPurse"
-    CURRENCIES_KEY = "currencies"
-
-    @classmethod
-    @cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
-    def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "CoinPurse", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> "CoinPurse":
         """
         Instantiate an CoinPurse object from a JSON blob.
 
@@ -193,17 +190,20 @@ class CoinPurse(LoadableMixin):
         - None
         """
 
+        class_key = "CoinPurse"
+        currencies_key = "currencies"
+
         # Type and field checking
-        required_fields = [cls.CLASS_KEY, cls.CURRENCIES_KEY]
+        required_fields = [class_key, currencies_key]
         for field in required_fields:
             if field not in json:
                 raise ValueError(f"Required field {field} not in JSON!")
 
-        if json["class"] != cls.CLASS_KEY:
+        if json["class"] != class_key:
             raise ValueError(f"Cannot load JSON for object of class {json['class']}")
 
-        if type(json[cls.CURRENCIES_KEY]) != list:
-            raise TypeError(f"Cannot parse item manifest of type {type(json[cls.CURRENCIES_KEY])}! Expect type list")
+        if type(json[currencies_key]) != list:
+            raise TypeError(f"Cannot parse item manifest of type {type(json[currencies_key])}! Expect type list")
 
         cp = CoinPurse()
 

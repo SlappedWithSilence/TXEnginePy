@@ -135,29 +135,29 @@ class EquipmentController(LoadableMixin):
         self[slot] = None
         return True
 
-    CLASS_KEY: str = "EquipmentController"
-    SLOTS_KEY: str = "slots"
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "EquipmentController", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> "EquipmentController":
 
-    @classmethod
-    @cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
-    def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
+        class_key: str = "EquipmentController"
+        slots_key: str = "slots"
 
         # Type and field checking
-        required_fields = [cls.CLASS_KEY, cls.SLOTS_KEY]
+        required_fields = [class_key, slots_key]
         for field in required_fields:
             if field not in json:
                 raise ValueError(f"Required field {field} not in JSON!")
 
-        if json["class"] != cls.CLASS_KEY:
+        if json["class"] != class_key:
             raise ValueError(f"Cannot load JSON for object of class {json['class']}")
 
-        if type(json[cls.SLOTS_KEY]) != dict:
-            raise TypeError(f"Field {cls.SLOTS_KEY} must be of type dict! Got {type(json[cls.SLOTS_KEY])} instead.")
+        if type(json[slots_key]) != dict:
+            raise TypeError(f"Field {slots_key} must be of type dict! Got {type(json[slots_key])} instead.")
 
         ec = EquipmentController()
 
         # Equip each slot
-        for slot in json[cls.SLOTS_KEY]:
-            ec.equip(json[cls.SLOTS_KEY][slot])
+        for slot in json[slots_key]:
+            ec.equip(json[slots_key][slot])
 
         return ec
