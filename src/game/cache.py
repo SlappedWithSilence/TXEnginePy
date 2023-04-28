@@ -7,6 +7,73 @@ config: dict[str, any] = None
 cache: dict[str, any] = {}
 
 
+def decode_path(path: list[str] | str) -> list[str]:
+    """
+    Decodes a path and returns a list[str] via dot-notation.
+    """
+
+    if type(path) != list and type(path) != str:
+        raise TypeError(f"Unexpected cache path type: {type(path)}! Allowed types are list[str] and str!")
+    elif type(path) == list:
+        for key in path:
+            if type(key) != str:
+                raise TypeError(f"Unexpected type within a listed cache path: {type(key)}! Allowed types are str")
+        return path
+    elif type(path) == str:
+        return path.split('.')
+
+
+def from_cache(path: list[str] | str) -> any:
+    """
+    A universal cache-retrieval function.
+
+    Elements cached can be retrieved via their dict-path using a list of keys or string dot-notation.
+
+    args:
+        path: A list of nested dict keys or a string of dot notation
+
+    returns:
+        The element in the cache stored at the lowest level of the dict-path
+    """
+
+    true_path = decode_path(path)
+
+    depth = get_cache()
+    for key in true_path[:-1]:  # Skip last key in path
+        if key not in depth:
+            raise KeyError()
+        if type(depth[key]) != dict:
+            raise TypeError(f"Expected key {key}'s value to be of type dict! Got {type(depth[key])} instead.")
+
+        depth = depth[key]
+
+    return depth[true_path[-1]]
+
+
+def cache_element(path: list[str] | str, element: any) -> None:
+    """
+    Universal logic for caching an element in the cache. Using a collection of strings or a dot-notated path string,
+    cache an object along a dict-path of 'path'.
+    """
+
+    true_path = decode_path(path)
+
+    depth = get_cache()
+    for key in true_path[:-1]:
+        if key in depth and type(depth[key]) != dict:
+            raise KeyError("Cannot create path dict in cache! A collision was detected.")
+
+        elif key in depth and type(depth[key] == dict):
+            pass
+
+        else:
+            depth[key] = {}
+
+        depth = depth[key]
+
+    depth[path[-1]] = element
+
+
 def get_cache() -> dict:
     """
     Retrieve a reference to the cache
@@ -51,12 +118,19 @@ def get_loader(cls: type | str) -> Callable:
         )
 
 
-def cached(root_key: str, attr_key: str) -> Callable:
+def cached(path: list[str]) -> Callable:
     """
     A parameterized decorator that caches a given function under the key 'root_key' and sub-key 'attr_key'.
 
-    For example,
-    @cached('fancy', 'func')
+    For example:
+
+    @cached(['fancy', 'func'])
+    def some_func():
+        pass
+
+    or alternatively:
+
+    @cached("fancy.func")
     def some_func():
         pass
 
@@ -64,21 +138,14 @@ def cached(root_key: str, attr_key: str) -> Callable:
     get_cache()['fancy']['func']
 
     args:
-        root_key: The root-level key under which to cache the func
-        attr_key: The second-level key under which to cache the func
+       path: A list of strings or a string following dot-notation that describes the dict-path where the element should
+       be stored.
 
     returns: The base-level decorator
     """
+
     def decorate(func: Callable):
-
-        if root_key not in get_cache():
-            get_cache()[root_key] = {}
-
-        if attr_key not in get_cache()[root_key]:
-            get_cache()[root_key][attr_key] = func
-
-        elif get_cache()[root_key][attr_key] != func:
-            raise RuntimeError(f"Cannot cache [{root_key}][{attr_key}]! Something else was already cached!")
+        cache_element(path, func)
 
         return func
 
