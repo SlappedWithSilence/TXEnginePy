@@ -24,3 +24,29 @@ init_kwargs_cases = [
 def test_init_kwargs(kwargs):
     e = Entity("Test", 1, **kwargs)
     assert e
+
+
+def test_load():
+    j = """
+       {
+        "class": "Entity",
+        "name": "Test",
+        "id": 1,
+        "attributes": [{
+            "class": "InventoryController",
+            "capacity": 16,
+            "manifest": [
+                [-110, 1],
+                [-111, 2]
+            ]
+        }]
+    }
+    """
+
+    import json
+    j_data = json.loads(j)
+    e: Entity = Entity.from_json(j_data)
+    assert e
+    assert e.name == "Test"
+    assert e.id == 1
+    assert len(e.inventory) == 2
