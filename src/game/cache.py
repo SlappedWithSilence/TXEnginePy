@@ -107,10 +107,14 @@ def get_loader(cls: type | str) -> Callable:
 
     returns: A reference to the requested loader function
     """
+    from game.structures.loadable import LoadableMixin
 
     key = str(cls)
-    if key in get_cache()['loader']:
-        return get_cache()['loader'][key]
+    loader_base_path = [LoadableMixin.LOADER_KEY]
+    loader_full_path = loader_base_path + [key, LoadableMixin.ATTR_KEY]
+
+    if key in from_cache(loader_base_path):
+        return from_cache(loader_full_path)
 
     else:
         raise KeyError(
