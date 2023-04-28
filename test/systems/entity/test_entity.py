@@ -28,18 +28,20 @@ def test_init_kwargs(kwargs):
 
 def test_load():
     j = """
-       {
+    {
         "class": "Entity",
         "name": "Test",
         "id": 1,
-        "attributes": [{
-            "class": "InventoryController",
-            "capacity": 16,
-            "manifest": [
-                [-110, 1],
-                [-111, 2]
-            ]
-        }]
+        "attributes": {
+            "inventory_controller": [{
+                "class": "InventoryController",
+                "capacity": 16,
+                "manifest": [
+                    [-110, 1],
+                    [-111, 2]
+                ]
+            }]
+        }
     }
     """
 
