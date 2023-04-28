@@ -24,7 +24,7 @@ class Item(LoadableMixin):
         return currency.currency_manager.to_currency(currency_id,
                                                      self.value[currency_id]) if currency is not None else self.value
 
-    @cached(LoadableMixin.LOADER_KEY, "Item")
+    @cached([LoadableMixin.LOADER_KEY, "Item", LoadableMixin.ATTR_KEY])
     def from_json(self, json: dict[str, any]) -> "Item":
         """
         Instantiate an Item object from a JSON blob.
@@ -74,7 +74,7 @@ class Usable(Item, req.RequirementsMixin):
         for e in self.effects:
             e.perform(target)
 
-    @cached(LoadableMixin.LOADER_KEY, "Usable")
+    @cached([LoadableMixin.LOADER_KEY, "Usable", LoadableMixin.ATTR_KEY])
     def from_json(self, json: dict[str, any]) -> "Usable":
         """
         Instantiate a Usable object from a JSON blob.
@@ -125,7 +125,7 @@ class Equipment(Item, req.RequirementsMixin):
         self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
         self.start_of_combat_effects: list[effect.Effect] = start_of_combat_effects or []
 
-    @cached(LoadableMixin.LOADER_KEY, "Equipment")
+    @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
     def from_json(self, json: dict[str, any]) -> "Equipment":
         """
        Instantiate an Equipment object from a JSON blob.
