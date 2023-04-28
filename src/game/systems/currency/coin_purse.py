@@ -8,7 +8,7 @@ from game.systems.currency import currency_manager
 
 
 @dataclasses.dataclass
-class CoinPurse:
+class CoinPurse(LoadableMixin):
     currencies: dict[int, Currency] = dataclasses.field(default_factory=dict)
 
     def __contains__(self, item: int | Currency) -> bool:
@@ -176,7 +176,7 @@ class CoinPurse:
     CURRENCIES_KEY = "currencies"
 
     @classmethod
-    @cached(LoadableMixin.LOADER_KEY, CLASS_KEY)
+    @cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
     def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
         """
         Instantiate an CoinPurse object from a JSON blob.

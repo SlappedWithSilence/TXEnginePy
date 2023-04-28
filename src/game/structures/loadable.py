@@ -7,9 +7,13 @@ class LoadableMixin:
     CLASS_KEY = "LoadableMixin"
     LOADER_KEY: str = 'loader'
     ATTR_KEY: str = "from_json"
+    CACHE_PATH: list[str] = [LOADER_KEY, CLASS_KEY, ATTR_KEY]
+
+    def __init__(self, *args, **kwargs):
+        super.__init__(*args, **kwargs)
 
     @classmethod
-    @cached(LOADER_KEY, CLASS_KEY)
+    @cached(CACHE_PATH)
     def from_json(cls, json: dict[str, any]) -> any:
         raise NotImplementedError()
 
@@ -36,4 +40,4 @@ class LoadableFactory:
         if json["class"] not in get_cache()['loader']:
             raise ValueError(f"No loader for class {json['class']} has been registered!")
 
-        return get_loader(json['class'])(json)
+        return get_loader(json['class'])(json=json)

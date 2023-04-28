@@ -139,7 +139,7 @@ class EquipmentController(LoadableMixin):
     SLOTS_KEY: str = "slots"
 
     @classmethod
-    @cached(LoadableMixin.LOADER_KEY, CLASS_KEY)
+    @cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
     def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
 
         # Type and field checking

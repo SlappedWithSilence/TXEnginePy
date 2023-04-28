@@ -329,7 +329,7 @@ class InventoryController(LoadableMixin):
     MANIFEST_KEY = "manifest"
 
     @classmethod
-    @cache.cached(LoadableMixin.LOADER_KEY, CLASS_KEY)
+    @cache.cached([LoadableMixin.LOADER_KEY, CLASS_KEY, LoadableMixin.ATTR_KEY])
     def from_json(cls, json: dict[str, any]) -> CLASS_KEY:
         """
         Instantiate an InventoryController object from a JSON blob.

@@ -60,8 +60,9 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         self.name: str = name
         self.id: int = entity_id
 
-    @cached(LoadableMixin.LOADER_KEY, "Entity")
-    def from_json(self, json: dict[str, any]) -> any:
+    @classmethod
+    @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
+    def from_json(cls, json: dict[str, any]) -> any:
         """
         Instantiate an Entity object from a JSON blob.
 
@@ -104,7 +105,7 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
 
 class Player(Entity):
 
-    @cached(LoadableMixin.LOADER_KEY, "Player")
+    @cached([LoadableMixin.LOADER_KEY, "Player", LoadableMixin.ATTR_KEY])
     def from_json(self, json: dict[str, any]) -> any:
         pass
 
