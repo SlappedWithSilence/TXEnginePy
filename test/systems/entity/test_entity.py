@@ -33,7 +33,7 @@ def test_load():
         "name": "Test",
         "id": 1,
         "attributes": {
-            "inventory_controller": [{
+            "inventory": [{
                 "class": "InventoryController",
                 "capacity": 16,
                 "manifest": [
