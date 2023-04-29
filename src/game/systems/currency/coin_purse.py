@@ -194,7 +194,7 @@ class CoinPurse(LoadableMixin):
         currencies_key = "currencies"
 
         # Type and field checking
-        required_fields = [class_key, currencies_key]
+        required_fields = [currencies_key]
         for field in required_fields:
             if field not in json:
                 raise ValueError(f"Required field {field} not in JSON!")
