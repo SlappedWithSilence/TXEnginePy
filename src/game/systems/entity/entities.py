@@ -7,6 +7,8 @@ from game.cache import cached
 from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.systems.inventory import EquipmentController
 
+from loguru import logger
+
 
 class InventoryMixin:
     """
@@ -18,6 +20,11 @@ class InventoryMixin:
         """
         An InventoryController's content may be provided via instance, by tuple, or both.
         """
+        if inventory is None:
+            logger.debug("Using default inventory")
+        else:
+            logger.debug("Valid inventory found!")
+            logger.debug(str(inventory.items))
         self.inventory = inventory or inv.InventoryController()
 
 
@@ -91,7 +98,7 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         for attr in json['attributes']:
             kw[attr] = LoadableFactory.get(json['attributes'][attr][0])
 
-        e = Entity(json['name'], json['id'], kwargs=kw)
+        e = Entity(json['name'], json['id'], **kw)
 
         # Post-init fixing
         # Note: since the equipment_controller only gets assigned an owner assigned AFTER init, it cannot check equip
