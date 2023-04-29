@@ -356,3 +356,26 @@ def test_insert_item_overflow():
     assert iv.insert_item(-110, 1) == 1
     assert iv.size == 2
     assert iv.total_quantity(-110) == 0
+
+
+def test_from_json():
+    import json
+
+    j = """
+    {
+        "class": "InventoryController",
+        "capacity": 15,
+        "manifest": [
+            [-110, 1],
+            [-111, 2]
+        ]
+    }
+    """
+
+    json_data = json.loads(j)
+
+    iv = InventoryController.from_json(json_data)
+    assert iv
+    assert iv.total_quantity(-110) == 1
+    assert iv.total_quantity(-111) == 2
+    assert len(iv) == 2
