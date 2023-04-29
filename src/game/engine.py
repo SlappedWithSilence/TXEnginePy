@@ -4,7 +4,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 import game.systems.room.action.shop_action
-from .cache import get_config, set_config, get_cache
+from .cache import get_config, set_config, get_cache, from_cache
 from .formatting import register_arguments, register_style
 from .systems import currency, room, item
 from .systems.entity.entities import Player
@@ -25,6 +25,79 @@ class Engine:
     """
     A high-level manager that coordinates disk-io, config manipulation, loading content, saving content, and more
     """
+
+    # An explicit order for order-dependant managers. Any managers not listed will be loaded in random order after the
+    # lowest priority (the largest int).
+    manager_load_priority = {
+        0: ["CurrencyManager", "ResourceManager", "FlagManager"],
+        1: ["ItemManager"],
+        2: ["EquipmentManager"],
+        3: ["EntityManager"],
+        4: ["RoomManager"]
+    }
+
+    @classmethod
+    def get_manager_priority(cls, manager_cls: str | type) -> int | None:
+        """
+        Retrieve the priority of a manager class
+
+        args:
+            manager_cls : The name of the class of the manager, or the class of the manager
+
+        returns: The priority of the manager class if it has been set, otherwise None
+        """
+
+        if type(manager_cls) == str:
+            true_cls = manager_cls
+        elif type(manager_cls) == type:
+            true_cls = manager_cls.__name__
+        else:
+            raise TypeError(f"Expect str or type for manager_cls. Got type {type(manager_cls)} instead!")
+
+        for priority in cls.manager_load_priority:
+            if true_cls in cls.manager_load_priority[priority]:
+                return priority
+
+        return None
+
+    @classmethod
+    def set_manager_priority(cls, manager_cls: str | type, priority: int) -> None:
+        """
+        Set a manager's loading priority.
+
+        Priorities with lower numerical values are loaded sooner.
+
+        Args:
+            manager_cls: The name of the class of the manager
+            priority: The priority of the loading.
+
+        Returns: None
+        """
+
+        # Type checking
+        if type(priority) != int:
+            raise TypeError(f"Cannot set priority to type {type(priority)}. Priority must be an int!")
+        if priority < 0:
+            raise ValueError(f"Invalid priority: {priority}. Priority must be positive or zero!")
+
+        if type(manager_cls) == str:
+            true_cls = manager_cls
+        elif type(manager_cls) == type:
+            true_cls = manager_cls.__name__
+        else:
+            raise TypeError(f"Expect str or type for manager_cls. Got type {type(manager_cls)} instead!")
+
+        # Check if the manager has already been assigned a priority. If so, remove it from the extant list
+        extant_priority = cls.get_manager_priority(true_cls)
+        if extant_priority is not None:
+            cls.manager_load_priority[extant_priority].remove(true_cls)
+
+        # Check if the that priority already has a mapped list. If not, make one.
+        if priority not in cls.manager_load_priority:
+            cls.manager_load_priority[priority] = []
+
+        # Assign priority in map
+        cls.manager_load_priority[priority].append(true_cls)
 
     def _debug_init_early(self) -> None:
         """
@@ -90,6 +163,33 @@ class Engine:
         room.room_manager.register_room(r_0)
         room.room_manager.register_room(r_1)
 
+    def _load_assets(self) -> None:
+        """
+        A startup phase method that loads JSON assets from disk
+        """
+
+        # Get a list of all managers
+        manager_keys: list[str] = list(from_cache('managers').keys())
+
+        # Get an ordered list of available priorities in ascending order
+        ordered_priorities = list(self.manager_load_priority)
+        ordered_priorities.sort()
+
+        # Starting from lowest, for each priority load the managers at that level
+        for priority_level in ordered_priorities:
+            logger.debug(f"Loading managers at [Priority {priority_level}]")
+            for manager_key in self.manager_load_priority[priority_level]:
+                logger.debug(f"[{manager_key}] Loading assets")
+                from_cache(['managers', manager_key]).load()  # Fetch manager from cache and load
+                manager_keys.remove(manager_key)  # Remove it from the list of remaining managers
+
+        # For each manager that has no priority, load it
+        if len(manager_keys) > 0:
+            logger.debug("Loading un-prioritized Managers")
+        for leftover_key in manager_keys:
+            logger.debug(f"[{leftover_key}] Loading assets")
+            from_cache(['managers', leftover_key]).load()  # Fetch from cache and load manager
+
     def _startup(self):
         """
         Perform required startup logic
@@ -122,9 +222,7 @@ class Engine:
 
         get_cache()["player_location"] = get_config()["room"]["default_id"]
 
-        # Load assets from disk
-        for manager in get_cache()['managers']:
-            get_cache()['managers'][manager].load()
+        self._load_assets()
 
         logger.info("Engine::startup.done")
         self._debug_init_late()
