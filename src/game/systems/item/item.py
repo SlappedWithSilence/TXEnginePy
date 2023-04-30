@@ -1,8 +1,12 @@
+import copy
+
+import game
 import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
 from game.cache import get_cache, cached
 from game.structures.loadable import LoadableMixin
+from game.systems.event.events import Event
 from game.systems.inventory import equipment_manager
 
 
@@ -55,15 +59,15 @@ class Item(LoadableMixin):
 
 class Usable(Item, req.RequirementsMixin):
     """
-    A consumable item. When consumed, this item's stack quantity decreases by 1 and the effects in 'effects' are
+    A consumable item. When consumed, this item's stack quantity decreases by 1 and the Events in 'use_events' are
     triggered in sequence.
     """
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
-                 effects: list[effect.Effect] = None, consumable: bool = False, *args, **kwargs):
+                 on_use_events: list[Event] = None, consumable: bool = False, *args, **kwargs):
         super().__init__(name, iid, value, description, max_quantity, *args, **kwargs)
 
-        self.effects: list[effect.Effect] = effects or []  # List of effects that trigger when item is used
+        self.on_use_events: list[Event] = on_use_events or []  # List of Events that trigger when item is used
         self.consumable: bool = consumable  # Determines if the item should decrement quantity after each use.
 
     def use(self, target) -> None:
@@ -72,8 +76,10 @@ class Usable(Item, req.RequirementsMixin):
         if not isinstance(target, Entity):
             raise TypeError("Usable target must be an instance of Entity!")
 
-        for e in self.effects:
-            e.perform(target)
+        for e in self.on_use_events:
+            if not isinstance(e, Event):
+                raise TypeError(f"Invalid use_event object type! Got type {type(e)}. Expected type Event!")
+            game.state_device_controller.add_state_device(copy.deepcopy(e))
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Usable", LoadableMixin.ATTR_KEY])
@@ -94,13 +100,13 @@ class Usable(Item, req.RequirementsMixin):
 
         Optional JSON fields:
         - max_quantity: int (default value 10)
-        - effects: [Effect]
+        - on_use_events: [Event]
         - consumable: bool
         - requirements: [Requirement]
         """
 
         effects = [
-            get_cache()['loader'][effect_json['class']](effect_json) for effect_json in json['effects']
+            get_cache()['loader'][effect_json['class']](effect_json) for effect_json in json['on_use_events']
         ] if 'effects' in json else []
 
         requirements = [
@@ -122,10 +128,10 @@ class Equipment(Item, req.RequirementsMixin):
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str,
                  equipment_slot: str, requirements: list[req.Requirement] = None,
-                 start_of_combat_effects: list[effect.Effect] = None, *args, **kwargs):
+                 start_of_combat_effects: list[effect.CombatEffect] = None, *args, **kwargs):
         super().__init__(name, iid, value, description, requirements=requirements, *args, **kwargs)
         self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
-        self.start_of_combat_effects: list[effect.Effect] = start_of_combat_effects or []
+        self.start_of_combat_effects: list[effect.CombatEffect] = start_of_combat_effects or []
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
@@ -147,7 +153,7 @@ class Equipment(Item, req.RequirementsMixin):
 
        Optional JSON fields:
        - max_quantity: int (default value 10)
-       - start_of_combat_effects: [Effect]
+       - start_of_combat_effects: [CombatEffect]
        - requirements: [Requirement]
        """
 
