@@ -114,11 +114,11 @@ class CurrencyEvent(Event):
         self._quantity = quantity
         self._cur = currency.currency_manager.to_currency(currency_id, quantity)
         self._gain_message: list[StringContent] = [
-            StringContent(value="You gained "),
+            "You gained ",
             StringContent(value=str(self._cur))
         ]
         self._loss_message: list[StringContent] = [
-            StringContent(value="You lost "),
+            "You lost ",
             StringContent(value=str(self._cur))
         ]
 
