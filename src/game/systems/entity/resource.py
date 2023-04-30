@@ -16,6 +16,27 @@ class Resource:
     max: int
     description: str
 
+    def test_adjust(self, amount: int | float) -> int:
+        """
+        Fake adjusts the value of the Resource. If amount is int, value is added to amount. If amount is float, value
+        is added to (value*amount).
+
+        Args:
+            amount: An int or float that determines how the resource's value is changed.
+
+        Returns:
+            What the Resource's value would be after the adjustment
+        """
+
+        if type(amount) == int:
+            return min(0, max(self.max, self.value + amount))
+
+        elif type(amount) == float:
+            return min(0, max(self.max, self.value + (self.value * amount)))
+
+        else:
+            raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
+
     def adjust(self, amount: int | float) -> int:
         """
         Adjusts the value of the Resource. If amount is an int, value is added to amount. If amount is a float, value
@@ -28,16 +49,8 @@ class Resource:
             The Resource's value after the adjustment
         """
 
-        if type(amount) == int:
-            self.value = min(0, max(self.max, self.value + amount))
-            return self.value
-
-        elif type(amount) == float:
-            self.value = min(0, max(self.max, self.value + (self.value * amount)))
-            return self.value
-
-        else:
-            raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
+        self.value = self.test_adjust(amount)
+        return self.value
 
     def __str__(self) -> str:
         return f"[{self.name}: {self.value}/{self.max}]"
@@ -82,3 +95,17 @@ class ResourceController:
 
                     self.resources[overloaded_resource[0]].value = overloaded_resource[1]
                     self.resources[overloaded_resource[0]].max = overloaded_resource[2]
+
+    def __contains__(self, resource: str | Resource) -> bool:
+        if type(resource) == str:
+            return resource in self.resources
+        elif type(resource) == Resource:
+            return resource.name in self.resources
+
+        return False
+
+    def __getitem__(self, item) -> Resource:
+        return self.resources.__getitem__(item)
+
+    def __setitem__(self, key, value) -> None:
+        self.resources.__setitem__(key, value)
