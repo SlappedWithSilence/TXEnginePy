@@ -22,3 +22,21 @@ class InputType(enum.Enum):
     ANY = "any"  # Get any key value as a response. Useful to simply prompt the user to continue
 
 
+class CombatPhase(enum.Enum):
+    START_PHASE = 0
+    PRE_ACTION_PHASE = 1
+    ACTION_PHASE = 2
+    POST_ACTION_PHASE = 3
+    END_PHASE = 4
+
+
+class TargetMode(enum.Enum):
+    ALL = 0
+    SINGLE = 1
+    SINGLE_ALLY = 2
+    SINGLE_ENEMY = 3
+    ALL_ALLY = 4
+    ALL_ENEMY = 5
+    NOT_SELF = 6
+
+
