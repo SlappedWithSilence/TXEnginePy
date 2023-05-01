@@ -110,6 +110,32 @@ class Entity(EquipmentMixin, ResourceMixin, CurrencyMixin, InventoryMixin, Loada
         return e
 
 
+class AbilityMixin:
+    """
+    A Mixin that grants an Entity the capacity to learn Abilities
+    """
+
+    def __init__(self, abilities: list[str] = None, ability_controller = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ability_controller = ability_controller or "REPLACE WITH ACTUAL ABILITY CONTROLLER"
+        if abilities is not None:
+            for ability in abilities:
+                self.ability_controller.learn(ability)
+
+
+class CombatEntity(Entity):
+
+    def __init__(self, name: str, entity_id: int,
+                 xp_yield: int = 1,
+                 abilities: list[str] = None,
+                 ability_controller=None,
+                 turn_speed: int = 1,
+                 *args, **kwargs):
+        super().__init__(name, entity_id, abilities=abilities, ability_controller=ability_controller, *args, **kwargs)
+        self.xp_yield: int = xp_yield
+        self.turn_speed = turn_speed
+
+
 class Player(Entity):
 
     @staticmethod
