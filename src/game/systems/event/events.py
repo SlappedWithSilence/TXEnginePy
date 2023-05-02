@@ -9,7 +9,6 @@ import game.systems.currency as currency
 import game.systems.flag as flag
 import game.util.input_utils
 from game.structures.messages import StringContent, ComponentFactory
-import game.systems.entity.entities as entities
 from game.systems.entity.resource import ResourceController
 
 
@@ -55,9 +54,14 @@ class AbilityEvent(Event):
         NOT_ALREADY_LEARNED = 2
         TERMINATE = 3
 
-    def __init__(self, ability: int):
+    def __init__(self, ability_name: str, entity):
         super().__init__(InputType.SILENT, AbilityEvent.States, self.States.DEFAULT)
-        self.target_ability: int = ability
+        self.target_ability: str = ability_name
+
+        from game.systems.entity.entities import CombatEntity
+
+        if not isinstance(entity, CombatEntity):
+            raise TypeError("entity must be of type CombatEntity!")
 
         @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
         def content() -> dict:
@@ -65,8 +69,8 @@ class AbilityEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            check_for_learned = False  # TODO: Implement
-            if check_for_learned:
+
+            if entity.ability_controller.is_learned(ability_name):
                 self.set_state(self.States.ALREADY_LEARNED)
             else:
                 self.set_state(self.States.NOT_ALREADY_LEARNED)
@@ -126,7 +130,7 @@ class CurrencyEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
         def logic(_: any) -> None:
-            player_ref: entities.Player = get_cache()['player']
+            player_ref = get_cache()['player']
             player_ref.coin_purse.adjust(self._currency_id, self._quantity)
             self.set_state(self.States.TERMINATE)
 
