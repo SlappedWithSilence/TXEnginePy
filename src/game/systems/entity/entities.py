@@ -123,7 +123,7 @@ class AbilityMixin:
                 self.ability_controller.learn(ability)
 
 
-class CombatEntity(Entity):
+class CombatEntity(AbilityMixin, Entity):
 
     def __init__(self, name: str, entity_id: int,
                  xp_yield: int = 1,
