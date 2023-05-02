@@ -2,7 +2,7 @@ import weakref
 from abc import ABC
 from enum import Enum
 
-from game.cache import get_cache
+from game.cache import get_cache, from_cache
 from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
 import game.systems.currency as currency
@@ -52,7 +52,9 @@ class AbilityEvent(Event):
         DEFAULT = 0
         ALREADY_LEARNED = 1
         NOT_ALREADY_LEARNED = 2
-        TERMINATE = 3
+        REQUIREMENTS_NOT_MET = 3
+        REQUIREMENTS_MET = 4
+        TERMINATE = -1
 
     def __init__(self, ability_name: str, entity):
         super().__init__(InputType.SILENT, AbilityEvent.States, self.States.DEFAULT)
@@ -75,31 +77,55 @@ class AbilityEvent(Event):
             else:
                 self.set_state(self.States.NOT_ALREADY_LEARNED)
 
-        @FiniteStateDevice.state_content(self, self.States.NOT_ALREADY_LEARNED)
-        def content() -> dict:
-            learn_message = [StringContent(value="You learned a new ability!"),
-                             StringContent(value="LOOK UP ABILITY NAME",
-                                           formatting="ability_name")]
-            return ComponentFactory.get(learn_message)
-
-        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.SILENT)
         def logic(_: any) -> None:
-            # TODO: Implement ability learning method
-            print("LEARN AN ABILITY")
+            if entity.ability_controller.is_learnable(ability_name):
+                self.set_state(self.States.REQUIREMENTS_MET)
 
+            else:
+                self.set_state(self.States.REQUIREMENTS_NOT_MET)
+
+        @FiniteStateDevice.state_content(self, self.States.NOT_ALREADY_LEARNED)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.ANY)
+        def logic(_: any):
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.ALREADY_LEARNED)
         def content() -> dict:
             already_learned_message = [StringContent(value="You already learned "),
-                                       StringContent(value="LOOK UP ABILITY NAME",
+                                       StringContent(value=ability_name,
                                                      formatting="ability_name")
                                        ]
             return ComponentFactory.get(already_learned_message)
 
-        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.ANY)
-        def logic(_: any):
+        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_MET, InputType.ANY)
+        def logic(_: any) -> None:
+            entity.ability_controller.learn(ability_name)
             self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_MET)
+        def content() -> dict:
+            learn_message = [StringContent(value="You learned a new ability!\n"),
+                             StringContent(value=ability_name,
+                                           formatting="ability_name")]
+            return ComponentFactory.get(learn_message)
+
+        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_NOT_MET)
+        def content():
+            return ComponentFactory.get(
+                ["You do not meet the requirements for learning ",
+                 StringContent(value=ability_name, formatting="ability_name"),
+                 "."],
+                # Retrieve the requirements for this ability and pass them through the options argument
+                from_cache("managers.AbilityManager").get_ability(ability_name).get_requirements_as_options()
+            )
 
         @FiniteStateDevice.state_content(self, self.States.TERMINATE)
         def content() -> dict:
