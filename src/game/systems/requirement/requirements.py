@@ -1,12 +1,11 @@
 from abc import ABC
 
-import game.cache
-from game.structures.messages import StringContent
-import game.systems.entity.entities as entities
-import game.systems.item as item
-from game.systems.event.consume_item_event import ConsumeItemEvent
-
 from loguru import logger
+
+import game.cache
+import game.systems.item as item
+from game.structures.messages import StringContent
+from game.systems.event.consume_item_event import ConsumeItemEvent
 
 
 class Requirement(ABC):
@@ -15,8 +14,7 @@ class Requirement(ABC):
     and allow other objects to compose them to enforce a wide variety of gameplay mechanics.
     """
 
-    @property
-    def fulfilled(self, entity=None) -> bool:
+    def fulfilled(self, entity) -> bool:
         """
         Computes whether the requirement is fulfilled by the owner
         Returns: True if the requirement is fulfilled, False otherwise
@@ -65,7 +63,7 @@ class RequirementsMixin:
 
         """
 
-        return all([req.fulfilled for req in self.requirements])
+        return all([req.fulfilled(self) for req in self.requirements])
 
     def get_requirements_as_str(self) -> list[str]:
         """Get a list of strings that represent the conditions for the requirements associated with this object"""
@@ -84,12 +82,10 @@ class ItemRequirement(Requirement):
     def __init__(self, item_id: int, item_quantity: int):
         self.item_id: int = item_id
         self.item_quantity: int = item_quantity
-        self.player_ref: entities.Player = game.cache.get_cache()['player']  # Ref to Player obj to check inv for items
 
-    @property
-    def fulfilled(self, entity=None) -> bool:
-        logger.warning(f"Checking for {self.item_quantity} of {self.item_id}... Found {self.player_ref.inventory.total_quantity(self.item_id)}x")
-        return self.player_ref.inventory.total_quantity(self.item_id) >= self.item_quantity
+    def fulfilled(self, entity) -> bool:
+        logger.warning(f"Checking for {self.item_quantity} of {self.item_id}... Found {entity.inventory.total_quantity(self.item_id)}x")
+        return entity.inventory.total_quantity(self.item_id) >= self.item_quantity
 
     @property
     def description(self) -> list[str | StringContent]:
@@ -116,9 +112,8 @@ class ConsumeItemRequirement(ItemRequirement):
         logger.warning(f"set_passed: {passed}")
         self.passed_event = passed
 
-    @property
-    def fulfilled(self, entity=None) -> bool:
-        if self.player_ref.inventory.total_quantity(self.item_id) < self.item_quantity:
+    def fulfilled(self, entity) -> bool:
+        if entity.inventory.total_quantity(self.item_id) < self.item_quantity:
             return False
 
         e = ConsumeItemEvent(self.item_id, self.item_quantity, self.set_passed)
