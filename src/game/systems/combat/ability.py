@@ -68,3 +68,11 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
 
             for raw_effect in json['effects'][phase]:
                 effects[CombatPhase(phase)].append(from_cache('loader.ability.from_json')(raw_effect))
+
+        return Ability(
+            name=json['name'],
+            descritpion=json['description'],
+            on_use=json['on_use'],
+            damage=json['damage'],
+            effects=effects
+        )
