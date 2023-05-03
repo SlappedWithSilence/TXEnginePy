@@ -1,14 +1,22 @@
 from abc import ABC
 
-from game.cache import cached, from_cache
-from game.structures.enums import CombatPhase
-from game.structures.loadable import LoadableMixin
+from game.cache import cached, from_cache, get_loader
+from game.structures.enums import CombatPhase, TargetMode
+from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.systems.combat.effect import CombatEffect
-from game.systems.requirement.requirements import RequirementsMixin
+from game.systems.requirement.requirements import RequirementsMixin, Requirement
 
 
 class AbilityBase(ABC):
+    """
+    The functional base class of Ability.
+
+    This class is required in order to make proper use of the cooperative inheritance constructors specified in
+    LoadableMixin and RequirementsMixin.
+    """
+
     def __init__(self, name: str, description: str, on_use: str,
+                 target_mode: TargetMode,
                  effects: dict[CombatPhase, list[CombatEffect]] = None,
                  damage: int = 1,
                  *args, **kwargs):
@@ -17,10 +25,17 @@ class AbilityBase(ABC):
         self.description: str = description
         self.on_use: str = on_use
         self.effects: dict[CombatPhase, list[CombatEffect]] = effects or {}
+        self.target_mode = target_mode
         self.damage: int = damage
 
 
 class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
+    """
+    Ability objects represent 'moves' that can be used by CombatEntity's during Combat.
+
+    Abilities are one of the two ways that a CombatEntity may be assigned a CombatEffect.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -38,11 +53,11 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         - damage (int)
 
         Optional JSON fields:
-        - None
+        - requirements
         """
 
         required_fields: list[tuple[str, type]] = [
-            ("name", str), ("description", str), ("on_use", str), ("class", str),
+            ("name", str), ("description", str), ("on_use", str), ("class", str), ("target_mode", str),
             ("damage", int),
             ("effects", dict)
         ]
@@ -69,10 +84,15 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
             for raw_effect in json['effects'][phase]:
                 effects[CombatPhase(phase)].append(from_cache('loader.ability.from_json')(raw_effect))
 
+        # Pre-parse requirements
+        requirements = RequirementsMixin.get_requirements_from_json(json)
+
         return Ability(
             name=json['name'],
             descritpion=json['description'],
             on_use=json['on_use'],
             damage=json['damage'],
-            effects=effects
+            effects=effects,
+            target_mode=TargetMode(json['target_mode']),
+            requirements=requirements
         )
