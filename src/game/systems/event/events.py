@@ -137,27 +137,29 @@ class AbilityEvent(Event):
 
 
 class CurrencyEvent(Event):
+    """
+    A currency event changes an Entity's balance for a specific currency.
+    """
 
-    def __init__(self, currency_id: int | str, quantity: int):
+    def __init__(self, currency_id: int | str, quantity: int, entity, silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self._currency_id = currency_id
         self._quantity = quantity
         self._cur = currency.currency_manager.to_currency(currency_id, quantity)
         self._gain_message: list[StringContent] = [
-            "You gained ",
+            f"{entity.name} gained ",
             StringContent(value=str(self._cur))
         ]
         self._loss_message: list[StringContent] = [
-            "You lost ",
+            f"{entity.name} lost ",
             StringContent(value=str(self._cur))
         ]
 
         self._message = self._gain_message if quantity >= 0 else self._loss_message
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY if not silent else InputType.SILENT)
         def logic(_: any) -> None:
-            player_ref = get_cache()['player']
-            player_ref.coin_purse.adjust(self._currency_id, self._quantity)
+            entity.coin_purse.adjust(self._currency_id, self._quantity)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
@@ -166,6 +168,9 @@ class CurrencyEvent(Event):
 
 
 class RecipeEvent(Event):
+    """
+    A RecipieEvent unlocks a specified recipe for the Player.
+    """
     class States(Enum):
         DEFAULT = 0
 
@@ -183,6 +188,9 @@ class RecipeEvent(Event):
 
 
 class ReputationEvent(Event):
+    """
+    A ReputationEvent modifies the Player's reputation with a specified Faction
+    """
 
     def __init__(self, faction_id: int, reputation_change: int, silent: bool = False):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
@@ -197,6 +205,9 @@ class ReputationEvent(Event):
 
 
 class ResourceEvent(Event):
+    """
+    A ResourceEvent modifies the specified Resource for a given Entity.
+    """
     class States(Enum):
         DEFAULT = 0
         APPLY = 1
