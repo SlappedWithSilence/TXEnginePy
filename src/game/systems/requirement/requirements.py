@@ -4,6 +4,7 @@ from loguru import logger
 
 import game.cache
 import game.systems.item as item
+from game.structures.loadable import LoadableFactory
 from game.structures.messages import StringContent
 from game.systems.event.consume_item_event import ConsumeItemEvent
 
@@ -72,6 +73,25 @@ class RequirementsMixin:
     def get_requirements_as_options(self) -> list[list[str | StringContent]]:
         """Get a list of lists that contain styling data that can be used by Frame objects"""
         return [r.description for r in self.requirements]
+
+    @classmethod
+    def get_requirements_from_json(cls, json) -> list[Requirement]:
+        requirements = []
+        if 'requirements' in json:
+            if type(json['requirements']) != list:
+                raise TypeError("requirements field must be a list!")
+
+            for raw_requirement in json['requirements']:
+                if 'class' not in raw_requirement:
+                    raise ValueError('Bad or missing class field!')
+
+                r = LoadableFactory.get(raw_requirement)  # Instantiate the Requirement via factory
+                if not isinstance(r, Requirement):  # Typecheck it
+                    raise TypeError(f'Unsupported class {type(r)} found in requirements field!')
+
+                requirements.append(r)
+
+        return requirements
 
 
 class ItemRequirement(Requirement):
