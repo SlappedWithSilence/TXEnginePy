@@ -8,14 +8,31 @@ from game.systems.requirement.requirements import RequirementsMixin
 class RecipeBase(ABC):
     """Base class for Recipe objects that defines class-specific properties"""
 
-    def __init__(self, recipe_id: int, items_in: list[tuple[int, int]], items_out: list[tuple[int, int]]):
-        self.id = recipe_id
+    def __init__(self, recipe_id: int,
+                 items_in: list[tuple[int, int]],
+                 items_out: list[tuple[int, int]],
+                 name: str = None):
+        self.id: int = recipe_id  # Unique identifier for recipe
         self.items_in: list[tuple[int, int]] = items_in  # Items that are consumed to perform the recipe
         self.items_out: list[tuple[int, int]] = items_out  # Items returned to the user after performing the recipe
+        self.name: str = name  # Name of the ingredient
+
+        # If a name is not provided, supply a default name in the format of "ingredients -> products"
+        if name is None:
+            from game.systems.item import item_manager
+            ingredients = [item_manager.get_name(id) for id, _ in self.items_in]
+            products = [item_manager.get_name(id) for id, _ in self.items_out]
+
+            self.name = ", ".join(ingredients) + " -> "[:-2] + ", ".join(products)[:-2]  # Skip trailing ', '
 
 
 class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
-    """Proper class for Recipe objects. Inherits from multiple mixins."""
+    """Proper class for Recipe objects. Inherits from multiple mixins.
+
+        A Recipe defines a required list of ingredients and a list of products. When successfully executed, a Recipe
+        consumes the ingredients from the Entity's inventory and returns the products to the Entity's inventory.
+        A recipe may only be learned by an Entity that meets all of its Requirements.
+    """
 
     def __init__(self, id: int, items_in: list[tuple[int, int]], items_out: list[tuple[int, int]], **kwargs):
         super().__init__(recipe_id=id, items_in=items_in, items_out=items_out, **kwargs)
