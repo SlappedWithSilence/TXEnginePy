@@ -88,11 +88,3 @@ class UseItemEvent(Event):
                     "."
                 ]
             )
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get()
