@@ -414,3 +414,22 @@ class ConsumeItemEvent(Event):
                 StringContent(value=f"{item.item_manager.get_name(self.item_id)}", formatting="item_name"),
                 "."
             ])
+
+
+class CraftingEvent(Event):
+    """
+    Provide a standardized flow for guiding the Player through the process of crafting items via Recipes.
+    """
+
+    class States(Enum):
+        DEFAULT = 0  # Pre-logic
+        WHAT_DO_NOW = 1  # Select crafting activity
+        DISPLAY_RECIPES = 2  # Choose a recipe
+        CONFIRM_RECIPE = 3  # Confirm usage
+        RECIPE_UNAVAILABLE = 4  # Missing items
+        TERMINATE = -1
+
+    def __init__(self):
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+
+        # TODO: Implement
