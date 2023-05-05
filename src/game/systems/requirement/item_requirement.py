@@ -1,5 +1,5 @@
 from loguru import logger
-
+import game
 from game.structures.messages import StringContent
 from game.systems import item as item
 from game.systems.event.events import ConsumeItemEvent
