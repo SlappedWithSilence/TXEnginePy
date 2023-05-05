@@ -21,7 +21,7 @@ class Requirement(ABC):
         Returns: True if the requirement is fulfilled, False otherwise
 
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def description(self) -> list[str | StringContent]:
@@ -31,9 +31,9 @@ class Requirement(ABC):
             A list of strings and StringContents that provides the reader with a textual representation of the
             conditions that are specified for this Requirement to be 'fulfilled' such that self. Fulfilled==True
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def visit(self) -> None:
+    def visit(self, entity) -> None:
         """
         Requirement::visit is an optionally-implement function that performs pre-check logic and spawns any pre-check
         StateDevice objects.
@@ -42,6 +42,7 @@ class Requirement(ABC):
         Returns: None
         """
         logger.warning(f"{self.__class__.__name__} has not implemented a visit function!")
+        raise RuntimeError()
 
     def __str__(self):
         """Return a conjoined string that strings self. Description of styling data"""
@@ -57,14 +58,14 @@ class RequirementsMixin:
         super().__init__(*args, **kwargs)
         self.requirements: list[Requirement] = requirements or None
 
-    def is_requirements_fulfilled(self) -> bool:
+    def is_requirements_fulfilled(self, entity) -> bool:
         """
         Calculates if all the requirements are fulfilled
         Returns: True if all requirements are fulfilled, False otherwise
 
         """
 
-        return all([req.fulfilled(self) for req in self.requirements])
+        return all([req.fulfilled(entity) for req in self.requirements])
 
     def get_requirements_as_str(self) -> list[str]:
         """Get a list of strings that represent the conditions for the requirements associated with this object"""
