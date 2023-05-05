@@ -46,7 +46,7 @@ class AbilityController:
         """
         Adds the given ability to the learned abilities set. This does not check if requirements are met!
 
-        In order to add flow to check for requirements, use an AbilityEvent!
+        In order to add flow to check for requirements, use an LearnAbilityEvent!
 
         args:
             ability_name: The name of the Ability to learn
