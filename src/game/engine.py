@@ -9,8 +9,8 @@ from .formatting import register_arguments, register_style
 from .systems import currency, room, item
 from .systems.entity.entities import Player
 from .systems.event.add_item_event import AddItemEvent
-from .systems.event.consume_item_event import ConsumeItemEvent
-from .systems.requirement.requirements import ConsumeItemRequirement
+from .systems.event.events import ConsumeItemEvent
+from .systems.requirement.item_requirement import ConsumeItemRequirement
 from .systems.room.action import actions
 from .systems.room.action.actions import ViewInventoryAction
 
