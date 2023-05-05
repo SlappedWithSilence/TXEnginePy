@@ -10,7 +10,7 @@ class LoadableMixin:
     CACHE_PATH: list[str] = [LOADER_KEY, CLASS_KEY, ATTR_KEY]
 
     def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     @cached(CACHE_PATH)

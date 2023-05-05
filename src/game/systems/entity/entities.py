@@ -11,6 +11,20 @@ from game.systems.inventory import EquipmentController
 from loguru import logger
 
 
+class EntityBase(ABC):
+
+    def __init__(self, id: int, name: str):
+        logger.debug("EntityBase.init")
+        if type(id) != int:
+            raise TypeError(f"Expected id to be of type int, got {type(id)} instead.")
+
+        if type(name) != str:
+            raise TypeError(f"Expected name to be of type str, got {type(name)} instead.")
+
+        self.id: int = id
+        self.name: str = name
+
+
 class InventoryMixin:
     """
     A mixin for Entity objects that provides Inventory functionality.
@@ -39,34 +53,11 @@ class CurrencyMixin:
         self.coin_purse = coin_purse or game.systems.currency.coin_purse.CoinPurse()
 
 
-class ResourceMixin:
-    """
-    A mixin for Entity objects that provides ResourceController functionality
-    """
-
-    def __init__(self, resource_controller: resource.ResourceController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
-
-
-class EquipmentMixin:
-    """
-    A mixin for Entity objects that provides EquipmentController functionality
-    """
-
-    def __init__(self, equipment_controller: EquipmentController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.equipment_controller = equipment_controller or EquipmentController()
-        self.equipment_controller.owner = self
-
-
-class Entity(CurrencyMixin, InventoryMixin, LoadableMixin):
+class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, EntityBase):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
-    def __init__(self, name: str, entity_id: int, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name: str = name
-        self.id: int = entity_id
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
@@ -97,9 +88,30 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin):
         for attr in json['attributes']:
             kw[attr] = LoadableFactory.get(json['attributes'][attr][0])
 
-        e = Entity(json['name'], json['id'], **kw)
+        e = Entity(name=json['name'], id=json['id'], **kw)
 
         return e
+
+
+class ResourceMixin:
+    """
+    A mixin for Entity objects that provides ResourceController functionality
+    """
+
+    def __init__(self, resource_controller: resource.ResourceController = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
+
+
+class EquipmentMixin:
+    """
+    A mixin for Entity objects that provides EquipmentController functionality
+    """
+
+    def __init__(self, equipment_controller: EquipmentController = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.equipment_controller = equipment_controller or EquipmentController()
+        self.equipment_controller.owner = self
 
 
 class AbilityMixin:

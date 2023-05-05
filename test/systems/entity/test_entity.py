@@ -1,12 +1,14 @@
 import pytest
 
 from game.systems.entity import Entity
+from game.systems.entity.entities import EntityBase
 from game.systems.inventory import InventoryController
 
 
 def test_init_trivial():
-    e = Entity("Test", -1)
+    e = Entity(name="Test", id=-1)
     assert e
+    assert isinstance(e, EntityBase)
     assert e.name == "Test"
     assert e.id == -1
     assert e.inventory is not None
@@ -20,7 +22,7 @@ init_kwargs_cases = [
 
 @pytest.mark.parametrize("kwargs", init_kwargs_cases)
 def test_init_kwargs(kwargs):
-    e = Entity("Test", 1, **kwargs)
+    e = Entity(name="Test", id=1, **kwargs)
     assert e
 
 
