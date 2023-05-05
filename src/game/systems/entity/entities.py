@@ -53,7 +53,17 @@ class CurrencyMixin:
         self.coin_purse = coin_purse or game.systems.currency.coin_purse.CoinPurse()
 
 
-class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, EntityBase):
+class ResourceMixin:
+    """
+    A mixin for Entity objects that provides ResourceController functionality
+    """
+
+    def __init__(self, resource_controller: resource.ResourceController = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
+
+
+class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
     def __init__(self, *args, **kwargs):
@@ -93,16 +103,6 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, EntityBase):
         return e
 
 
-class ResourceMixin:
-    """
-    A mixin for Entity objects that provides ResourceController functionality
-    """
-
-    def __init__(self, resource_controller: resource.ResourceController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
-
-
 class EquipmentMixin:
     """
     A mixin for Entity objects that provides EquipmentController functionality
@@ -127,7 +127,7 @@ class AbilityMixin:
                 self.ability_controller.learn(ability)
 
 
-class CombatEntity(AbilityMixin, EquipmentMixin, ResourceMixin, Entity):
+class CombatEntity(AbilityMixin, EquipmentMixin, Entity):
 
     def __init__(self,
                  xp_yield: int = 1,
