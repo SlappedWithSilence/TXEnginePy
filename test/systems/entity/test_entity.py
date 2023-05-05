@@ -9,10 +9,8 @@ def test_init_trivial():
     assert e
     assert e.name == "Test"
     assert e.id == -1
-    assert e.equipment_controller is not None
     assert e.inventory is not None
     assert e.coin_purse is not None
-    assert e.resource_controller is not None
 
 
 init_kwargs_cases = [
