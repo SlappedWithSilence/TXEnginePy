@@ -1,4 +1,4 @@
-from game.systems.entity.entities import CombatEntity
+from game.systems.entity.entities import CombatEntity, AbilityMixin, EquipmentMixin, Entity
 
 import pytest
 
@@ -6,15 +6,19 @@ import pytest
 def test_init_trivial():
     ce = CombatEntity(name="CombatEntity", id=-1)
 
+    required_types = [AbilityMixin, EquipmentMixin, Entity]
+    for cls in required_types:
+        assert isinstance(ce, cls)
+
 
 init_kwargs_cases = [
     {"name": "Proto Combat Entity",
      "id": 9999,
      },
-    {"name" : "TCE",
-     "id" : 1,
-     "xp_yield" : 10,
-     "turn_speed" : 2,
+    {"name": "TCE",
+     "id": 1,
+     "xp_yield": 10,
+     "turn_speed": 2,
      }
 ]
 
