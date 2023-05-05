@@ -5,6 +5,7 @@ import weakref
 from enum import Enum
 
 import game
+from game.cache import from_cache
 from game.structures.enums import InputType
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
@@ -57,7 +58,7 @@ class Room(FiniteStateDevice):
         def logic(user_input: int) -> None:
             self._action_index = user_input
 
-            if not self.visible_actions[user_input].is_requirements_fulfilled():
+            if not self.visible_actions[user_input].is_requirements_fulfilled(from_cache('player')):
                 logger.warning("Requirements not met!")
                 self.set_state(self.States.REQ_NOT_MET)
                 return
