@@ -1,8 +1,9 @@
 from loguru import logger
 
+from game.systems.crafting.recpie import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.item import Item, item_manager
-
+from game.systems.crafting import recipe_manager
 
 def pre_collect_setup():
     """
@@ -32,9 +33,11 @@ def pre_collect_setup():
     item_manager.register_item(te2)
     item_manager.register_item(te3)
 
-    logger.info(f"Inserted test item: {str(item_manager.get_ref(-110))}")
-    logger.info(f"Inserted test item: {str(item_manager.get_ref(-111))}")
-    logger.info(f"Inserted test item: {str(item_manager.get_ref(-112))}")
+    logger.info("Setting up test recipes...")
+    tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
+    tr2 = Recipe(-111, [(-111, 1)], [(-110, 1)])
 
+    recipe_manager.register_recipe(-110, tr1)
+    recipe_manager.register_recipe(-111, tr2)
 
 pre_collect_setup()
