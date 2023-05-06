@@ -15,13 +15,13 @@ class CraftingController:
     @owner.setter
     def owner(self, entity) -> None:
         from game.systems.entity.entities import Entity
-        if not isinstance(entity, Entity):
+        if entity is not None and not isinstance(entity, Entity):
             raise TypeError(f"Cannot assign object of type {type(entity)} as owner!")
         self._owner = entity
 
     def __init__(self, recipe_manifest: list[int] = None, owner=None):
         from game.systems.entity.entities import Entity
-        self.learned_recipes: set[int] = set(recipe_manifest)
+        self.learned_recipes: set[int] = set(recipe_manifest) if recipe_manifest is not None else set()
         self._owner: Entity = None
         self.owner: Entity = owner
 
