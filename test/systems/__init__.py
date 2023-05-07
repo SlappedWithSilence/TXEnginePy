@@ -36,8 +36,15 @@ def pre_collect_setup():
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
     tr2 = Recipe(-111, [(-111, 1)], [(-110, 1)])
+    tr3 = Recipe(-112, [(-110, 2)], [(-111, 1)])  # Even input, single
+    tr4 = Recipe(-113, [(-111, 3)], [(-112, 1)])  # Odd input, single
+    tr5 = Recipe(-114, [(-110, 2), (-111, 3)], [(-112, 1)])  # Mixed input, multi
 
     recipe_manager.register_recipe(-110, tr1)
     recipe_manager.register_recipe(-111, tr2)
+    recipe_manager.register_recipe(-112, tr3)
+    recipe_manager.register_recipe(-113, tr4)
+    recipe_manager.register_recipe(-114, tr5)
+
 
 pre_collect_setup()
