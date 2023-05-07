@@ -133,7 +133,7 @@ class Engine:
         shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
                                                                wares=shop_w)
 
-        get_cache()["player"] = Player(id=0)
+        get_cache()["player"] = Player(id=0, name="Player")
         p: Player = get_cache()["player"]
         p.coin_purse.adjust(0, 100)
         p.inventory.new_stack(1, 1)

@@ -6,6 +6,7 @@ import game.systems.inventory.inventory_controller as inv
 from game.cache import cached
 from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
+from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
 
 from loguru import logger
@@ -184,7 +185,14 @@ class CombatEntity(AbilityMixin, EquipmentMixin, Entity):
         return ce
 
 
-class Player(CombatEntity):
+class CraftingMixin:
+
+    def __init__(self, recipes: list[int] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
+
+
+class Player(CraftingMixin, CombatEntity):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Player", LoadableMixin.ATTR_KEY])
@@ -192,4 +200,4 @@ class Player(CombatEntity):
         pass
 
     def __init__(self, *args, **kwargs):
-        super().__init__(name="Player", *args, **kwargs)
+        super().__init__(*args, **kwargs)
