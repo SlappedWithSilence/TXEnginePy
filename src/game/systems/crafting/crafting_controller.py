@@ -67,3 +67,19 @@ class CraftingController:
         Check if the owning Entity has sufficient quantity of ingredients to execute the recipe
         """
         return len(self.get_missing_ingredients(recipe_id)) < 1
+
+    def get_max_crafts(self, recipe_id) -> int:
+        """
+        Get the maximum number of times that this recipe can be crafted.
+
+        The maximum number of crafts is determined by the limiting ingredient, aka whichever ingredient of the recipe
+        has the lowest quantity_in_inventory / quantity_demand_from_recipe.
+        """
+
+        min_crafts = 9999999
+        for ingredient_id, ingredient_quantity in recipe_manager[recipe_id].items_in:
+            in_inv = self.owner.inventory.total_quantity(ingredient_id)
+            max_crafts = in_inv / ingredient_quantity
+            min_crafts = int(max_crafts if max_crafts < min_crafts else min_crafts)
+
+        return min_crafts
