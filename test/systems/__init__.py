@@ -28,23 +28,25 @@ def pre_collect_setup():
     te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)
     te2 = Item("Test Item 2", -111, {-110: 2, -111: 3}, "A simple test item", 3)
     te3 = Item("Test Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
+    te4 = Item("Test Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
     item_manager.register_item(te1)
     item_manager.register_item(te2)
     item_manager.register_item(te3)
+    item_manager.register_item(te4)
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
     tr2 = Recipe(-111, [(-111, 1)], [(-110, 1)])
     tr3 = Recipe(-112, [(-110, 2)], [(-111, 1)])  # Even input, single
     tr4 = Recipe(-113, [(-111, 3)], [(-112, 1)])  # Odd input, single
-    tr5 = Recipe(-114, [(-110, 2), (-111, 3)], [(-112, 1)])  # Mixed input, multi
+    tr5 = Recipe(-114, [(-110, 2), (-111, 3), (-112, 1)], [(-113, 2)])  # Mixed input, multi
 
-    recipe_manager.register_recipe(-110, tr1)
-    recipe_manager.register_recipe(-111, tr2)
-    recipe_manager.register_recipe(-112, tr3)
-    recipe_manager.register_recipe(-113, tr4)
-    recipe_manager.register_recipe(-114, tr5)
+    recipe_manager.register_recipe(tr1)
+    recipe_manager.register_recipe(tr2)
+    recipe_manager.register_recipe(tr3)
+    recipe_manager.register_recipe(tr4)
+    recipe_manager.register_recipe(tr5)
 
 
 pre_collect_setup()

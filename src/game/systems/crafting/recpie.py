@@ -13,8 +13,8 @@ class RecipeBase(ABC):
                  items_out: list[tuple[int, int]],
                  name: str = None):
         self.id: int = recipe_id  # Unique identifier for recipe
-        self.items_in: list[tuple[int, int]] = items_in  # Items that are consumed to perform the recipe
-        self.items_out: list[tuple[int, int]] = items_out  # Items returned to the user after performing the recipe
+        self.items_in: tuple[tuple[int, int]] = tuple(items_in or [])  # Items that are consumed
+        self.items_out: tuple[tuple[int, int]] = tuple(items_out or [])  # Items returned to the crafter
         self.name: str = name  # Name of the ingredient
 
         # If a name is not provided, supply a default name in the format of "ingredients -> products"
@@ -24,6 +24,21 @@ class RecipeBase(ABC):
             products = [item_manager.get_name(id) for id, _ in self.items_out]
 
             self.name = ", ".join(ingredients) + " -> "[:-2] + ", ".join(products)[:-2]  # Skip trailing ', '
+
+        # Detect and throw duplicate item ids in ingredients and products
+        observed_item_ids = set()
+        for item_id, _ in self.items_in:
+            if item_id not in observed_item_ids:
+                observed_item_ids.add(item_id)
+            else:
+                raise ValueError(f"Duplicate ingredient ID detected! {item_id}! All ingredient entries must be unique")
+
+        observed_item_ids = set()
+        for item_id, _ in self.items_out:
+            if item_id not in observed_item_ids:
+                observed_item_ids.add(item_id)
+            else:
+                raise ValueError(f"Duplicate product ID detected! {item_id}! All products entries must be unique")
 
 
 class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):

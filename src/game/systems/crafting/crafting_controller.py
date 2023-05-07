@@ -21,6 +21,13 @@ class CraftingController:
 
     def __init__(self, recipe_manifest: list[int] = None, owner=None):
         from game.systems.entity.entities import Entity
+
+        # Detect any non-existent recipe ids in the manifest
+        if recipe_manifest is not None:
+            for recipe in recipe_manifest:
+                if recipe not in recipe_manager:
+                    raise ValueError(f"Unknown recipe id! {str(recipe)}")
+
         self.learned_recipes: set[int] = set(recipe_manifest) if recipe_manifest is not None else set()
         self._owner: Entity = None
         self.owner: Entity = owner
@@ -76,10 +83,14 @@ class CraftingController:
         has the lowest quantity_in_inventory / quantity_demand_from_recipe.
         """
 
-        min_crafts = 9999999
+        logger.debug(f"Inventory: {str(self.owner.inventory.items)}")
+        logger.debug(f"Recipe: {recipe_manager[recipe_id].name}")
+        min_crafts: int = 9999999
         for ingredient_id, ingredient_quantity in recipe_manager[recipe_id].items_in:
-            in_inv = self.owner.inventory.total_quantity(ingredient_id)
-            max_crafts = in_inv / ingredient_quantity
-            min_crafts = int(max_crafts if max_crafts < min_crafts else min_crafts)
+            in_inv: int = self.owner.inventory.total_quantity(ingredient_id)
+            max_crafts: int = int(in_inv / ingredient_quantity)
+            min_crafts = max_crafts if max_crafts < min_crafts else min_crafts
+            logger.debug(f"{ingredient_id} x{in_inv} / {ingredient_quantity} == {max_crafts}")
+            logger.debug(f"Min crafts: {min_crafts}")
 
         return min_crafts

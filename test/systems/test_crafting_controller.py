@@ -12,13 +12,13 @@ def test_init_trivial():
 
 manifest_cases = [
     [],
-    [1],
-    [0, 1, 2, 3, 4]
+    [-110],
+    [-110, -111, -112, -113, -114]
 ]
 
 
 @pytest.mark.parametrize("manifest", manifest_cases)
-def test_manifest(manifest: list[int]):
+def test_init_manifest(manifest: list[int]):
     cc = CraftingController(manifest)
 
     for recipe in manifest:
@@ -60,7 +60,16 @@ max_crafts_cases = [
     [-112, [(-110, 2)], 1],  # Exact
     [-112, [(-110, 3)], 1],  # Odd offset
     [-112, [], 0],  # Missing
-    [-112, [(-110, 1)], 0]  # Insufficient
+    [-112, [(-110, 1)], 0],  # Insufficient
+    [-113, [(-111, 3)], 1],
+    [-113, [(-111, 2)], 0],
+    [-113, [(-111, 4)], 1],
+    [-114, [(-110, 2), (-111, 3), (-112, 1)], 1],  # Exact
+    [-114, [(-110, 2), (-111, 3), (-112, 2)], 1],  # Exact 2, offset 1
+    [-114, [(-110, 2), (-111, 6), (-112, 1)], 1],  # Exact 2, double 1
+    [-114, [(-110, 11), (-111, 3), (-112, 1)], 1],  # Exact 2, huge offset 1
+    [-114, [(-110, 2), (-111, 3)], 0],  # Exact 2, missing 1
+    [-114, [(-110, 7), (-111, 9), (-112, 3)], 3],  # Triple 2, triple offset 1
 ]
 
 
