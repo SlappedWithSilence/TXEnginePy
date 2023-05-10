@@ -2,8 +2,10 @@ from loguru import logger
 
 from game.systems.crafting.recpie import Recipe
 from game.systems.currency import currency_manager, Currency
+from game.systems.entity import Resource
 from game.systems.item import Item, item_manager
 from game.systems.crafting import recipe_manager
+
 
 def pre_collect_setup():
     """
@@ -47,6 +49,22 @@ def pre_collect_setup():
     recipe_manager.register_recipe(tr3)
     recipe_manager.register_recipe(tr4)
     recipe_manager.register_recipe(tr5)
+
+    logger.info("Setting up resources...")
+    from game.systems.entity import resource_manager
+    tr_health = Resource('tr_health', 20, 20, 'Needed to live')
+    tr_sta = Resource('tr_stamina', 35, 35, 'Tired without it')
+    tr_mana = Resource('tr_mana', 50, 50, 'Magic-dependant')
+
+    resource_manager.register_resource(tr_sta)
+    resource_manager.register_resource(tr_mana)
+    resource_manager.register_resource(tr_health)
+
+    logger.info("Setting up test abilities...")
+    # Set some abilities
+
+    logger.info("Setting up test entities...")
+    # Set some entities
 
 
 pre_collect_setup()
