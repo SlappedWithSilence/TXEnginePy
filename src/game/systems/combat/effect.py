@@ -8,6 +8,7 @@ from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 
+from loguru import logger
 
 class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     """
@@ -32,9 +33,7 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
                  source_entity: entities.Entity = None,
                  duration: int | None = 1,
                  *args, **kwargs):
-        super().__init__(input_type=InputType.ANY,
-                         name=self.__class__.__name__,
-                         *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._setup_states()
         self._target_entity: entities.Entity = target_entity  # The entity the effect is assigned
         self._source_entity: entities.Entity = source_entity  # The entity that spawned the Effect
@@ -87,7 +86,7 @@ class ResourceEffect(CombatEffect):
     """
 
     def __init__(self, resource_name: str, adjust_quantity: int | float, trigger_message: str = None):
-        super().__init__()
+        super().__init__(default_input_type=InputType.ANY, states=self.States)
 
         if type(resource_name) != str:
             raise TypeError("resource_name must be of type str!")
@@ -103,6 +102,7 @@ class ResourceEffect(CombatEffect):
         if self._resource_name not in target.resource_controller:
             raise ValueError(f"Cannot locate resource {self._resource_name} in entity {target.name}!")
 
+        logger.debug(f"Adjusting {self._resource_name} by {self._adjust_quantity}")
         target.resource_controller[self._resource_name].adjust(self._adjust_quantity)
 
     def _get_change_message(self) -> list[StringContent | str]:
