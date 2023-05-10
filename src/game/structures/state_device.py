@@ -237,7 +237,6 @@ class FiniteStateDevice(StateDevice, ABC):
         "content": None
     }
 
-    @staticmethod
     class States(enum.Enum):
         """
         The default inner-class for States.
@@ -253,7 +252,7 @@ class FiniteStateDevice(StateDevice, ABC):
         DEFAULT = 0
         TERMINATE = -1
 
-    def __init__(self, default_input_type: InputType, states: type[enum.Enum], default_state):
+    def __init__(self, default_input_type: InputType, states: type[enum.Enum], default_state=States.DEFAULT):
         super().__init__(default_input_type)
 
         self.states: type[enum.Enum] = states
