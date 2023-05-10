@@ -86,11 +86,10 @@ class CraftingController:
         logger.debug(f"Inventory: {str(self.owner.inventory.items)}")
         logger.debug(f"Recipe: {recipe_manager[recipe_id].name}")
         min_crafts: int = 9999999
-        for ingredient_id, ingredient_quantity in recipe_manager[recipe_id].items_in:
-            in_inv: int = self.owner.inventory.total_quantity(ingredient_id)
-            max_crafts: int = int(in_inv / ingredient_quantity)
-            min_crafts = max_crafts if max_crafts < min_crafts else min_crafts
-            logger.debug(f"{ingredient_id} x{in_inv} / {ingredient_quantity} == {max_crafts}")
-            logger.debug(f"Min crafts: {min_crafts}")
+        for ingredient_id, ingredient_quantity in recipe_manager[recipe_id].items_in:  # For each ingredient bundle
+            in_inv: int = self.owner.inventory.total_quantity(ingredient_id)  # Check amount the user has
+            max_crafts: int = int(in_inv / ingredient_quantity)  # Calculate how many bundles are available from the inv
+            min_crafts = max_crafts if max_crafts < min_crafts else min_crafts  # Update minimum bundle quantity
 
+        # The maximum number of crafts for the recipe is determined by the ingredient with the lowest relative quantity
         return min_crafts
