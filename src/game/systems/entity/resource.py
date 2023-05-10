@@ -5,6 +5,7 @@ import game.systems.entity as entity
 
 import dataclasses
 
+from loguru import logger
 
 @dataclasses.dataclass
 class Resource:
@@ -29,10 +30,10 @@ class Resource:
         """
 
         if type(amount) == int:
-            return min(0, max(self.max, self.value + amount))
+            return max(0, min(self.max, self.value + amount))
 
         elif type(amount) == float:
-            return min(0, max(self.max, self.value + (self.value * amount)))
+            return max(0, min(self.max, self.value + (self.value * amount)))
 
         else:
             raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
@@ -50,6 +51,7 @@ class Resource:
         """
 
         self.value = self.test_adjust(amount)
+        logger.debug(f"Setting value to {self.test_adjust(amount)}")
         return self.value
 
     def __str__(self) -> str:
@@ -74,7 +76,7 @@ class ResourceController:
 
     def __init__(self, resources: list[tuple[str, int, int] | Resource] = None):
 
-        self.resources: dict[str, Resource] = {r.name: r for (r, r.name) in entity.resource_manager.all_resources}
+        self.resources: dict[str, Resource] = {r.name: r for r in entity.resource_manager.all_resources}
 
         if resources:
             if type(resources) != list:
