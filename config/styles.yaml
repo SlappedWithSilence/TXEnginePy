@@ -9,3 +9,6 @@ styles:
   ability_name : ["orange", "bold"]
   ability_desc : ["italic"]
   room_name : ["bold"]
+  resource_name: ["orange"]
+  resource_value : ["white"]
+  resource_max : ["green", "bold"]
