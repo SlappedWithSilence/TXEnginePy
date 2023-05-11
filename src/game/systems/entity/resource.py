@@ -57,7 +57,7 @@ class Resource:
     def __str__(self) -> str:
         return f"[{self.name}: {self.value}/{self.max}]"
 
-    def __repr__(self) -> list[StringContent]:
+    def __txengine__repr__(self) -> list[StringContent]:
         return [
             StringContent(value="["),
             StringContent(value=self.name, formatting="resource_name"),
@@ -67,6 +67,9 @@ class Resource:
             StringContent(value=str(self.max), formatting="resource_max"),
             StringContent(value="]")
         ]
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class ResourceController:
