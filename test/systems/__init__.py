@@ -52,7 +52,7 @@ def pre_collect_setup():
 
     logger.info("Setting up resources...")
     from game.systems.entity import resource_manager
-    tr_health = Resource('tr_health', 20, 20, 'Needed to live')
+    tr_health = Resource('tr_health', 40, 40, 'Needed to live')
     tr_sta = Resource('tr_stamina', 35, 35, 'Tired without it')
     tr_mana = Resource('tr_mana', 50, 50, 'Magic-dependant')
 
