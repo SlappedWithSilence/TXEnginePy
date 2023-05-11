@@ -102,7 +102,7 @@ perform_cases_single_float = [
     ResourceEffect("tr_stamina", -0.33),  # -33%
     ResourceEffect("tr_stamina", 0.3),  # +30%
     ResourceEffect("tr_mana", -1.0),  # -100%  # Tests min enforcement
-    ResourceEffect("tr_mana", 6),  # + 100% : Tests max enforcement
+    ResourceEffect("tr_mana", 1.0),  # + 100% : Tests max enforcement
 ]
 
 
@@ -121,7 +121,13 @@ def test_perform_single_float(resource_effect: ResourceEffect):
     resource_effect.perform()
 
     assert target_tce.resource_controller[resource_effect._resource_name].value == \
-           RES_START_VALUE + resource_effect._adjust_quantity
+           min(
+               max(
+                   0,
+                   RES_START_VALUE + (RES_START_VALUE * resource_effect._adjust_quantity)
+               ),
+               target_tce.resource_controller[res_name].max
+           )
 
 
 perform_cases_multiple_float = [
