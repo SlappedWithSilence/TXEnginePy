@@ -98,6 +98,12 @@ class ResourceEffect(CombatEffect):
         self._adjust_quantity = adjust_quantity
         self.trigger_message = trigger_message
 
+    def __str__(self):
+        return f"{self.name}: ({self._resource_name}: {self._adjust_quantity})"
+
+    def __repr__(self):
+        return self.__str__()
+
     def _perform(self, target: entities.Entity):
         if self._resource_name not in target.resource_controller:
             raise ValueError(f"Cannot locate resource {self._resource_name} in entity {target.name}!")
