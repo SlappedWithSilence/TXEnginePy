@@ -1,21 +1,25 @@
 from abc import ABC
 
 import game
+from game.structures.loadable import LoadableMixin
 from game.systems.event.events import Event
 
 
 class SkillBase(ABC):
 
-    def __init__(self, name: str, level: int = 1, xp: int = 0, initial_level_up_limit: int = 5,
+    def __init__(self, name: str, id: int, level: int = 1, xp: int = 0, initial_level_up_limit: int = 5,
                  next_level_ratio: float = 1.3, level_up_events: dict[int, list[Event]] = None):
         self.name: str = name  # Skill name
-        self.level: int = level  # Skill's current level
-        self.xp: int = xp  # Skill's current xp quantity
+        self.id = id  # Unique id associate with this skill
+
         self.initial_level_up_limit = initial_level_up_limit  # How much XP is required to go from lvl 1 to lvl 2
         self.next_level_ratio = next_level_ratio  # Additional XP required to go from lvl 2 to lvl3, lvl3 to lvl4, etc
+
+        self.level: int = level  # Skill's current level
+        self.xp: int = xp  # Skill's current xp quantity
         self.level_up_limit = self._xp_ceiling(self.level)  # Current limit to level up against
 
-        self.level_up_events: dict[int, list[Event]] = level_up_events or {}  # Events that are triggered when a level is achieved
+        self.level_up_events: dict[int, list[Event]] = level_up_events or {}  # Events that are triggered on level up
 
         # Detect xp-level mismatches
         if self.xp >= self.level_up_limit:
@@ -28,7 +32,7 @@ class SkillBase(ABC):
         Calculate the level_up value for a given level
         """
         _sum = self.initial_level_up_limit
-        for i in range(level):
+        for i in range(level - 1):
             _sum = round(_sum * self.next_level_ratio)
 
         return _sum
@@ -61,3 +65,17 @@ class SkillBase(ABC):
         """
         self.xp += xp
         self._level_up()
+
+    @property
+    def remaining_xp(self) -> int:
+        return self.level_up_limit - self.xp
+
+
+class Skill(LoadableMixin, SkillBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def from_json(json: dict[str, any]) -> any:
+        pass
