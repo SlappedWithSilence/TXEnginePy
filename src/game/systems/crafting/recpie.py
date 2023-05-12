@@ -76,7 +76,7 @@ class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
         """
 
         required_fields = [("id", int), ("items_in", list), ("items_out", list)]
-        LoadableFactory.validate_required_fields(required_fields, json)
+        LoadableFactory.validate_fields(required_fields, json)
 
         requirements: list = RequirementsMixin.get_requirements_from_json(json) if 'requirements' in json else []
 
