@@ -21,20 +21,20 @@ class LoadableMixin:
 class LoadableFactory:
 
     @classmethod
-    def validate_required_fields(cls, required_fields: list[tuple[str, type]], json: dict) -> bool:
+    def validate_fields(cls, fields: list[tuple[str, type]], json: dict, required=True) -> bool:
         """
         Verify that the expected json fields are present and correctly typed
         """
-        for field_name, field_type in required_fields:
+        for field_name, field_type in fields:
 
             # Verify field presence
-            if field_name not in json:
-                raise ValueError(f"Required field {field_type} not found!")
+            if field_name not in json and required:
+                raise ValueError(f"Field {field_type} not found!")
 
             # Verify field types
-            if type(json[field_name]) != field_type:
+            elif field_name in json and type(json[field_name]) != field_type:
                 raise TypeError(
-                    f"Required field {field_type} wrong type! Expected type {field_type.__name__}, "
+                    f"Field {field_type} wrong type! Expected type {field_type.__name__}, "
                     f"got type {type(json[field_name])} instead!"
                 )
 
