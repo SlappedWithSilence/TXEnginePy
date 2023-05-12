@@ -124,23 +124,23 @@ def test_perform_single_float(resource_effect: ResourceEffect):
            min(
                max(
                    0,
-                   RES_START_VALUE + (RES_START_VALUE * resource_effect._adjust_quantity)
+                   round(RES_START_VALUE + (RES_START_VALUE * resource_effect._adjust_quantity))
                ),
                target_tce.resource_controller[res_name].max
            )
 
 
 perform_cases_multiple_float = [
-    [[ResourceEffect("tr_health", -2), ResourceEffect("tr_health", 3)],
+    [[ResourceEffect("tr_health", 0.33), ResourceEffect("tr_health", -0.2)],
      {"tr_health": 1}],
-    [[ResourceEffect("tr_stamina", -11), ResourceEffect("tr_stamina", 4)],
-     {"tr_stamina": -7}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_mana", 6)],
-     {"tr_mana": 2}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_health", 6)],
-     {"tr_mana": -4, "tr_health": 6}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_mana", 6), ResourceEffect("tr_stamina", 3)],
-     {"tr_mana": 2, "tr_stamina": 3}]
+    [[ResourceEffect("tr_stamina", -0.33), ResourceEffect("tr_stamina", 0.5)],
+     {"tr_stamina": 0}],
+    [[ResourceEffect("tr_mana", -1.0), ResourceEffect("tr_mana", 1.0)],
+     {"tr_mana": -15}],
+    [[ResourceEffect("tr_mana", -0.5), ResourceEffect("tr_health", .2)],
+     {"tr_mana": -7, "tr_health": 3}],
+    [[ResourceEffect("tr_mana", -0.33), ResourceEffect("tr_mana", 0.2), ResourceEffect("tr_stamina", 0.33)],
+     {"tr_mana": -3, "tr_stamina": 5}]
 ]
 
 
@@ -164,11 +164,13 @@ def test_perform_multiple_float(resource_effects: list[ResourceEffect], net_res_
         starting_res_value = target_tce.resource_controller[res_name].value  # Value before execution
         effect.assign(source_tce, target_tce)
         effect.perform()  # Execution
-        assert target_tce.resource_controller[res_name].value == starting_res_value + effect._adjust_quantity  # Verify
+        assert target_tce.resource_controller[res_name].value == round(
+            starting_res_value + (starting_res_value * effect._adjust_quantity)
+        )  # Verify
 
     # For each resource modified, ensure that its final value conforms with the predicted differences
     for res in net_res_changes:
-        assert target_tce.resource_controller[res].value - RESOURCE_BASE_VALUE == net_res_changes[res]
+        assert round(target_tce.resource_controller[res].value - RESOURCE_BASE_VALUE) == net_res_changes[res]
 
 
 fsm_int_cases = [
