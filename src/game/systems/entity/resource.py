@@ -33,7 +33,7 @@ class Resource:
             return max(0, min(self.max, self.value + amount))
 
         elif type(amount) == float:
-            return max(0, min(self.max, self.value + (self.value * amount)))
+            return round(max(0, min(self.max, self.value + (self.value * amount))))
 
         else:
             raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
