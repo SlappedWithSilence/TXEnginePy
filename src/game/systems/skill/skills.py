@@ -1,7 +1,8 @@
 from abc import ABC
 
 import game
-from game.structures.loadable import LoadableMixin
+from game.cache import cached
+from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.systems.event.events import Event
 
 
@@ -77,5 +78,64 @@ class Skill(LoadableMixin, SkillBase):
         super().__init__(*args, **kwargs)
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "Skill", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Instantiate a Skill object from a JSON blob.
+
+        Args:
+            json: a dict-form representation of a json object
+
+        Returns: a Skill instance with the properties defined in the JSON
+
+        Required JSON fields:
+        - name: str
+        - id: int
+        - level_up_events: {int, Event}
+
+        Optional JSON fields:
+        - level: int
+        - xp: int
+        - initial_level_up_limit: int
+        - next_level_ratio: int
+        """
+
+        # Validate required fields exist
+        required_fields = [("class", str), ("name", str), ("id", int), ("level_up_events", any)]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        level_up_events: dict[int, list[Event]] = {}
+
+        for str_level in json['level_up_events']:
+            try:
+                true_level = int(str_level)
+            except TypeError:
+                raise TypeError(f"Cannot convert level {str_level} to int!")
+
+            if true_level in level_up_events:
+                raise ValueError(f"Duplicate entries for level {true_level}!")
+
+            level_up_events[true_level] = []
+            for raw_event in json['level_up_events'][str_level]:
+                obj = LoadableFactory.get(raw_event)
+                if not isinstance(obj, Event):
+                    raise TypeError(f"Cannot add object of type {type(obj)} to level_up_event list!")
+                level_up_events[true_level].append(obj)
+
+        # Verify that the optional fields are typed correctly if they're present
+        optional_fields = [('level', int), ('xp', int), ('initial_level_up_limit', int), ('next_level_ratio', float)]
+        LoadableFactory.validate_fields(optional_fields, json, required=False)
+        optional_kwargs = {}
+
+        # Collect the optional field values
+        for field, _ in optional_fields:
+            if field in json:
+                optional_kwargs[field] = json[field]
+
+        return Skill(
+            name=json['name'],
+            id=json['id'],
+            level_up_events=level_up_events,
+            **optional_kwargs
+        )
