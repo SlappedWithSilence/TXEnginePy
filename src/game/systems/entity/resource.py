@@ -7,6 +7,7 @@ import dataclasses
 
 from loguru import logger
 
+
 @dataclasses.dataclass
 class Resource:
     """
@@ -16,6 +17,13 @@ class Resource:
     value: int
     max: int
     description: str
+
+    @property
+    def percent_remaining(self) -> float:
+        """
+        Calculates what percentage of the resource is remaining.
+        """
+        return float(self.value) / float(self.max)
 
     def test_adjust(self, amount: int | float) -> int:
         """
