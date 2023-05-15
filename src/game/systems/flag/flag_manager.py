@@ -20,8 +20,8 @@ class FlagManager(Manager):
         """
         Gets the value of the flag associated with key.
 
-        If the flag does not exist, but COULD exist (IE wouldn't cause a collision), return False. If the flag would
-        cause a collision, throw an error instead.
+        If the flag does not exist, but COULD exist (IE wouldn't cause a collision), return False. If setting the flag
+        would cause a collision, throw an error instead.
 
         TXEngine Flags are slightly different from exact str-bool mappings. A Flag may define itself to be a part of a
         flag "subgroup" using dot-notation.
