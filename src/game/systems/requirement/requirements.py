@@ -131,12 +131,37 @@ class ConsumeResourceRequirement(Requirement):
     """
     Fulfilled when the specified quantity of a resource is successfully consumed.
     """
+
+    def __init__(self, resource_name: str, adjust_quantity: int | float, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resource_name: str = resource_name
+        self.adjust_quantity: int | float = adjust_quantity
+
     def fulfilled(self, entity) -> bool:
-        pass
+        if type(self.adjust_quantity) == int:  # Resource must be gte adjustment quantity
+            if entity.resource_controller[self.resource_name].value < self.adjust_quantity:
+                return False
+
+        elif type(self.adjust_quantity) == float:
+            _resource = entity.resource_controller[self.resource_name]
+            if _resource.remaining_percentage >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
+                return False
+
+        else:
+            raise TypeError("Adjustment must be of type int or float!")
+
+        entity.resource_controller[self.resource_name].adjust(self.adjust_quantity)
+        return True
 
     @property
     def description(self) -> list[str | StringContent]:
-        pass
+        sss = f"{self.adjust_quantity}" if type(self.adjust_quantity) == int else f"{self.adjust_quantity * 100}%"
+        return [
+            "Consumes ",
+            StringContent(value=sss, formatting="resource_quantity"),
+            " of ",
+            StringContent(value=self.resource_name, formatting="resource_name")
+        ]
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
@@ -148,9 +173,10 @@ class FlagRequirement(Requirement):
     Fulfilled when the designated flag is set to True.
     """
 
-    def __init__(self, flag_name: str, *args, **kwargs):
+    def __init__(self, flag_name: str, description: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.flag = flag_name
+        self._description = [description]
 
     def fulfilled(self, entity) -> bool:
         fm = from_cache("managers.FlagManager")
@@ -158,7 +184,7 @@ class FlagRequirement(Requirement):
 
     @property
     def description(self) -> list[str | StringContent]:
-        pass
+        return self._description
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
