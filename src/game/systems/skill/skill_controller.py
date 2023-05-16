@@ -1,4 +1,5 @@
 from game.systems.skill import skill_manager
+from game.systems.skill.skills import Skill
 
 
 class SkillController:
@@ -28,6 +29,12 @@ class SkillController:
         elif skill_ids is not None:
             for skill_id in skill_ids:
                 self.skills[skill_id] = skill_manager.get_skill(skill_id)
+
+    def __contains__(self, item: int) -> bool:
+        return self.skills.__contains__(item)
+
+    def __getitem__(self, item: int) -> Skill:
+        return self.skills.__getitem__(item)
 
     def get_level(self, skill_id: int) -> int:
         """
