@@ -11,6 +11,8 @@ from game.systems.inventory import EquipmentController
 
 from loguru import logger
 
+from game.systems.skill.skill_controller import SkillController
+
 
 class EntityBase(ABC):
 
@@ -190,6 +192,32 @@ class CraftingMixin:
     def __init__(self, recipes: list[int] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
+
+
+class SkillMixin:
+
+    def __init__(self, skill_manifest: dict[str, dict[str, int]]):
+        """
+        Expects a dict-form manifest formatted like so:
+        {
+            "skill_id" : {
+                "level" : 1
+                "xp" : 1
+            }
+        }
+        """
+
+        self.skill_controller = SkillController(obtain_all=True)
+        for skill_name in skill_manifest:
+            if skill_name not in self.skill_controller:
+                raise ValueError(f"No skill with name {skill_name}!")
+
+            for term in ["level", "xp"]:
+                if term not in skill_manifest[skill_name]:
+                    raise ValueError(f"Missing field {term} in skill definition for skill {skill_name}")
+
+            self.skill_controller[skill_name].level = skill_manifest[skill_name]['level']
+            self.skill_controller[skill_name].xp = skill_manifest[skill_name]['xp']
 
 
 class Player(CraftingMixin, CombatEntity):
