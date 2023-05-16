@@ -5,6 +5,8 @@ from loguru import logger
 from game.cache import from_cache
 from game.structures.loadable import LoadableFactory, LoadableMixin
 from game.structures.messages import StringContent
+from game.systems.entity.entities import SkillMixin
+from game.systems.skill import skill_manager
 
 
 class Requirement(LoadableMixin, ABC):
@@ -98,12 +100,25 @@ class SkillRequirement(Requirement):
     Fulfilled when the target has a skill level >= the specified level.
     """
 
+    def __init__(self, skill_id: int, level: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.skill_id: int = skill_id
+        self.level: int = level
+
     def fulfilled(self, entity) -> bool:
-        pass
+        if isinstance(entity, SkillMixin):
+            return self.skill_id in entity.skill_controller and \
+                entity.skill_controller[self.skill_id].level >= self.level
+        else:
+            return True
 
     @property
     def description(self) -> list[str | StringContent]:
-        pass
+        return [
+            "Requires ",
+            StringContent(value=skill_manager.get_skill(self.skill_id).name),
+            f" level {self.level}"
+        ]
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
@@ -115,12 +130,35 @@ class ResourceRequirement(Requirement):
     Fulfilled when the target entity has >= the specified quantity of a given resource
     """
 
+    def __init__(self, resource_name: str, adjust_quantity: int | float, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resource_name: str = resource_name
+        self.adjust_quantity: int | float = adjust_quantity
+
     def fulfilled(self, entity) -> bool:
-        pass
+        if type(self.adjust_quantity) == int:  # Resource must be gte adjustment quantity
+            if entity.resource_controller[self.resource_name].value < self.adjust_quantity:
+                return False
+
+        elif type(self.adjust_quantity) == float:
+            _resource = entity.resource_controller[self.resource_name]
+            if _resource.remaining_percentage >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
+                return False
+
+        else:
+            raise TypeError("Adjustment must be of type int or float!")
+
+        return True
 
     @property
     def description(self) -> list[str | StringContent]:
-        pass
+        sss = f"{self.adjust_quantity}" if type(self.adjust_quantity) == int else f"{self.adjust_quantity * 100}%"
+        return [
+            "Requires ",
+            StringContent(value=sss, formatting="resource_quantity"),
+            " of ",
+            StringContent(value=self.resource_name, formatting="resource_name")
+        ]
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
