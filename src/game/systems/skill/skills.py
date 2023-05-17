@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import copy
 from abc import ABC
 
 import game
 from game.cache import cached
 from game.structures.loadable import LoadableMixin, LoadableFactory
-from game.systems.event.events import Event
+import game.systems.event.events as events
 
 
 class SkillBase(ABC):
 
     def __init__(self, name: str, id: int, level: int = 1, xp: int = 0, initial_level_up_limit: int = 5,
-                 next_level_ratio: float = 1.3, level_up_events: dict[int, list[Event]] = None):
+                 next_level_ratio: float = 1.3, level_up_events: dict[int, list[events.Event]] = None):
         self.name: str = name  # Skill name
         self.id = id  # Unique id associate with this skill
 
@@ -21,7 +23,7 @@ class SkillBase(ABC):
         self.xp: int = xp  # Skill's current xp quantity
         self.level_up_limit = self._xp_ceiling(self.level)  # Current limit to level up against
 
-        self.level_up_events: dict[int, list[Event]] = level_up_events or {}  # Events that are triggered on level up
+        self.level_up_events: dict[int, list[events.Event]] = level_up_events or {}  # events.Events that are triggered on level up
 
         # Detect xp-level mismatches
         if self.xp >= self.level_up_limit:
@@ -112,7 +114,7 @@ class Skill(LoadableMixin, SkillBase):
         Required JSON fields:
         - name: str
         - id: int
-        - level_up_events: {int, Event}
+        - level_up_events: {int, events.Event}
 
         Optional JSON fields:
         - level: int
@@ -122,11 +124,11 @@ class Skill(LoadableMixin, SkillBase):
         """
 
         # Validate required fields exist
-        required_fields = [("class", str), ("name", str), ("id", int), ("level_up_events", any)]
+        required_fields = [("name", str), ("id", int), ("level_up_events", any)]
 
         LoadableFactory.validate_fields(required_fields, json)
 
-        level_up_events: dict[int, list[Event]] = {}
+        level_up_events: dict[int, list[events.Event]] = {}
 
         for str_level in json['level_up_events']:
             try:
@@ -140,7 +142,7 @@ class Skill(LoadableMixin, SkillBase):
             level_up_events[true_level] = []
             for raw_event in json['level_up_events'][str_level]:
                 obj = LoadableFactory.get(raw_event)
-                if not isinstance(obj, Event):
+                if not isinstance(obj, events.Event):
                     raise TypeError(f"Cannot add object of type {type(obj)} to level_up_event list!")
                 level_up_events[true_level].append(obj)
 
