@@ -1,11 +1,11 @@
 from abc import ABC
+from typing import Union
 
 from loguru import logger
 
-from game.cache import from_cache
+from game.cache import from_cache, cached
 from game.structures.loadable import LoadableFactory, LoadableMixin
 from game.structures.messages import StringContent
-from game.systems.entity.entities import SkillMixin
 from game.systems.skill import skill_manager
 
 
@@ -32,17 +32,6 @@ class Requirement(LoadableMixin, ABC):
             conditions that are specified for this Requirement to be 'fulfilled' such that self. Fulfilled==True
         """
         raise NotImplementedError()
-
-    def visit(self, entity) -> None:
-        """
-        Requirement::visit is an optionally-implement function that performs pre-check logic and spawns any pre-check
-        StateDevice objects.
-
-        Args:
-        Returns: None
-        """
-        logger.warning(f"{self.__class__.__name__} has not implemented a visit function!")
-        raise RuntimeError()
 
     def __str__(self):
         """Return a conjoined string that strings self. Description of styling data"""
@@ -106,9 +95,13 @@ class SkillRequirement(Requirement):
         self.level: int = level
 
     def fulfilled(self, entity) -> bool:
+        from game.systems.entity.entities import SkillMixin
+
         if isinstance(entity, SkillMixin):
             return self.skill_id in entity.skill_controller and \
                 entity.skill_controller[self.skill_id].level >= self.level
+
+        # If the target entity does not have support for skills (IE, NPC CombatEntities) simply return True
         else:
             return True
 
@@ -121,8 +114,23 @@ class SkillRequirement(Requirement):
         ]
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, 'SkillRequirement', LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+                Loads a SkillRequirement object from a JSON blob.
+
+                Required JSON fields:
+                - skill_id (int)
+                - level (int)
+                """
+
+        required_fields = [
+            ("skill_id", int), ("level", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        return SkillRequirement(json['skill_id'], json['level'])
 
 
 class ResourceRequirement(Requirement):
@@ -161,8 +169,24 @@ class ResourceRequirement(Requirement):
         ]
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ResourceRequirement", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a ResourceRequirement object from a JSON blob.
+
+        Required JSON fields:
+        - resource_name (str)
+        - adjust_quantity (float | int)
+        """
+
+        required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "ResourceRequirement":
+            raise ValueError(f"Invalid class field for ResourceRequirement! Got {json['class']} "
+                             f"instead of ResourceRequirement!")
+
+        return ResourceRequirement(json['resource_name'], json['adjust_quantity'])
 
 
 class ConsumeResourceRequirement(Requirement):
@@ -202,8 +226,24 @@ class ConsumeResourceRequirement(Requirement):
         ]
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ConsumeResourceRequirement", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a ConsumeResourceRequirement object from a JSON blob.
+
+        Required JSON fields:
+        - resource_name (str)
+        - adjust_quantity (float | int)
+        """
+
+        required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "ConsumeResourceRequirement":
+            raise ValueError(f"Invalid class field for ConsumeResourceRequirement! Got {json['class']} "
+                             f"instead of ConsumeResourceRequirement!")
+
+        return ConsumeResourceRequirement(json['resource_name'], json['adjust_quantity'])
 
 
 class FlagRequirement(Requirement):
@@ -211,9 +251,10 @@ class FlagRequirement(Requirement):
     Fulfilled when the designated flag is set to True.
     """
 
-    def __init__(self, flag_name: str, description: str, *args, **kwargs):
+    def __init__(self, flag_name: str, flag_value: bool, description: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.flag = flag_name
+        self.flag_value = flag_value
         self._description = [description]
 
     def fulfilled(self, entity) -> bool:
@@ -226,4 +267,23 @@ class FlagRequirement(Requirement):
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a FlagRequirement object from a JSON blob.
+
+        Required JSON fields:
+        - flag_name (str)
+        - flag_value (bool)
+        - description (str)
+        """
+
+        required_fields = [
+            ('flag_name', str),
+            ('flag_value', bool),
+            ('description', str)
+        ]
+
+        LoadableFactory.validate_fields(required_fields)
+
+        return FlagRequirement(json['flag_name'], json['flag_value'], json['description'])
+
+
