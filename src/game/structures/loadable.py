@@ -21,11 +21,21 @@ class LoadableMixin:
 class LoadableFactory:
 
     @classmethod
-    def validate_fields(cls, fields: list[tuple[str, type]], json: dict, required=True) -> bool:
+    def validate_fields(cls, fields: list[tuple[str, type]], json: dict, required=True, implicit_fields=True) -> bool:
         """
-        Verify that the expected json fields are present and correctly typed
+        Verify that the expected json fields are present and correctly typed.
+
+        args:
+            fields: A list of tuples mapping each field to a type
+            json: A dict-form representation of a json object
+            required: If True, treat each field as if it is required and throw an error if it is missing
+            implicit_fields: If True, add in a set of pre-defined common fields in the background.
+
+        returns: True if all the fields are present and correctly typed.
         """
-        for field_name, field_type in fields:
+        base_fields = [('class', str)]
+
+        for field_name, field_type in fields + (base_fields if implicit_fields else []):
 
             # Verify field presence
             if field_name not in json and required:

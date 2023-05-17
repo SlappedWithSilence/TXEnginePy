@@ -1,14 +1,16 @@
 import weakref
 from abc import ABC
+from typing import Union
 
 import game.systems.entity.entities as entities
 from game.cache import cached
 from game.structures.enums import InputType
-from game.structures.loadable import LoadableMixin
+from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 
 from loguru import logger
+
 
 class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     """
@@ -115,7 +117,8 @@ class ResourceEffect(CombatEffect):
         """
         The message to be printed when the Effect is viewed.
         """
-        post_change: int = self._target_entity.resource_controller[self._resource_name].test_adjust(self._adjust_quantity)
+        post_change: int = self._target_entity.resource_controller[self._resource_name].test_adjust(
+            self._adjust_quantity)
         net: int = post_change - self._target_entity.resource_controller[self._resource_name].value > -1
         term = "gained" if net else "lost"
 
@@ -162,17 +165,12 @@ class ResourceEffect(CombatEffect):
 
         # Validate that required fields are present and correctly-typed
         required_fields = [
-            ("class", [str]),
-            ("resource_name", [str]),
-            ("adjust_quantity", [int, float]),
-            ("trigger_message", [str])
+            ("resource_name", str),
+            ("adjust_quantity", Union[int, float]),
+            ("trigger_message", str)
         ]
-        for field in required_fields:
-            if field[0] not in json:
-                raise ValueError(f"Missing required field '{field} in JSON!")
-            if type(json[field[0]]) not in field[1]:
-                key: str = field[0]
-                raise TypeError(f"Expected type {str(field[1])} for field {key}, got type {type(json[key])} instead!")
+
+        LoadableFactory.validate_fields(required_fields)
 
         # Type and value validation
         if json["class"] != "ResourceEffect":

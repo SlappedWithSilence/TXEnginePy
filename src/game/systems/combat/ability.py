@@ -57,7 +57,7 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         """
 
         required_fields: list[tuple[str, type]] = [
-            ("name", str), ("description", str), ("on_use", str), ("class", str), ("target_mode", str),
+            ("name", str), ("description", str), ("on_use", str), ("target_mode", str),
             ("damage", int),
             ("effects", dict)
         ]
