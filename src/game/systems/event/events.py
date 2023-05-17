@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import weakref
 from abc import ABC
 from enum import Enum
@@ -8,6 +10,7 @@ import game.systems.flag as flag
 import game.util.input_utils
 from game.cache import from_cache
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems import item as item
@@ -16,7 +19,7 @@ from game.systems.entity.resource import ResourceController
 from game.systems.crafting import recipe_manager
 
 
-class Event(FiniteStateDevice, ABC):
+class Event(FiniteStateDevice, LoadableMixin, ABC):
 
     def __init__(self, default_input_type: InputType, states: Enum, default_state):
         super().__init__(default_input_type, states, default_state)
