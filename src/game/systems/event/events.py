@@ -10,7 +10,7 @@ import game.systems.flag as flag
 import game.util.input_utils
 from game.cache import from_cache
 from game.structures.enums import InputType
-from game.structures.loadable import LoadableMixin
+from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems import item as item
@@ -51,6 +51,35 @@ class FlagEvent(Event):
         def content() -> dict:
             return ComponentFactory.get()
 
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "FlagEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+       Loads a FlagEvent object from a JSON blob.
+
+       Required JSON fields:
+       - flags[[str, bool]]
+       """
+
+        required_fields = [
+            ('flags', list[list[str | bool]])
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        _flags = []
+
+        for flag_bundle in json['flags']:
+            if len(flag_bundle) != 2:
+                raise ValueError(f"Flag data should be of length 2! Got length {len(flag_bundle)} instead.")
+
+            assert type(flag_bundle[0]) == str, "Flag data must have a str at pos 0!"
+            assert type(flag_bundle[1]) == bool, "Flag data must have a bool at ps 1!"
+
+            _flags.append((flag_bundle[0], flag_bundle[1]))
+
+        return FlagEvent(_flags)
+
 
 class LearnAbilityEvent(Event):
     """Causes the player to learn a given ability"""
@@ -63,14 +92,10 @@ class LearnAbilityEvent(Event):
         REQUIREMENTS_MET = 4
         TERMINATE = -1
 
-    def __init__(self, ability_name: str, entity):
+    def __init__(self, ability_name: str):
         super().__init__(InputType.SILENT, LearnAbilityEvent.States, self.States.DEFAULT)
         self.target_ability: str = ability_name
-
-        from game.systems.entity.entities import CombatEntity
-
-        if not isinstance(entity, CombatEntity):
-            raise TypeError("entity must be of type CombatEntity!")
+        self.player_ref = from_cache("player")
 
         @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
         def content() -> dict:
@@ -79,14 +104,14 @@ class LearnAbilityEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
-            if entity.ability_controller.is_learned(ability_name):
+            if self.player_ref.ability_controller.is_learned(ability_name):
                 self.set_state(self.States.ALREADY_LEARNED)
             else:
                 self.set_state(self.States.NOT_ALREADY_LEARNED)
 
         @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.SILENT)
         def logic(_: any) -> None:
-            if entity.ability_controller.is_learnable(ability_name):
+            if self.player_ref.ability_controller.is_learnable(ability_name):
                 self.set_state(self.States.REQUIREMENTS_MET)
 
             else:
@@ -110,7 +135,7 @@ class LearnAbilityEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_MET, InputType.ANY)
         def logic(_: any) -> None:
-            entity.ability_controller.learn(ability_name)
+            self.player_ref.ability_controller.learn(ability_name)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_MET)
@@ -142,23 +167,45 @@ class LearnAbilityEvent(Event):
         def logic(_: any) -> None:
             game.state_device_controller.set_dead()
 
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a LearnAbilityEvent object from a JSON blob.
+
+        Required JSON fields:
+        - ability_name (str)
+        """
+
+        required_fields = [
+            ("ability_name", str)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "LearnAbilityEvent":
+            raise ValueError()
+
+        return LearnAbilityEvent(json['ability_name'])
+
 
 class CurrencyEvent(Event):
     """
-    A currency event changes an Entity's balance for a specific currency.
+    A currency event changes the player's balance for a specific currency.
     """
 
-    def __init__(self, currency_id: int | str, quantity: int, entity, silent: bool = False):
+    def __init__(self, currency_id: int | str, quantity: int, silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self._currency_id = currency_id
         self._quantity = quantity
         self._cur = currency.currency_manager.to_currency(currency_id, quantity)
+        self._player_ref = from_cache("player")
         self._gain_message: list[StringContent] = [
-            f"{entity.name} gained ",
+            f"{self._player_ref.name} gained ",
             StringContent(value=str(self._cur))
         ]
         self._loss_message: list[StringContent] = [
-            f"{entity.name} lost ",
+            f"{self._player_ref.name} lost ",
             StringContent(value=str(self._cur))
         ]
 
@@ -166,12 +213,46 @@ class CurrencyEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY if not silent else InputType.SILENT)
         def logic(_: any) -> None:
-            entity.coin_purse.adjust(self._currency_id, self._quantity)
+            self._player_ref.coin_purse.adjust(self._currency_id, self._quantity)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content():
             return ComponentFactory.get(self._message)
+
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "CurrencyEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a CurrencyEvent object from a JSON blob.
+
+        Required JSON fields:
+        - currency_id: int
+        - quantity: int
+
+        Optional JSON fields:
+        - silent: bool
+        """
+
+        required_fields = [
+            ('currency_id', int),
+            ('quantity', int),
+        ]
+
+        optional_fields = [
+            ('silent', bool)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json, required=True)
+        LoadableFactory.validate_fields(optional_fields, json, required=False, implicit_fields=False)
+
+        if json['class'] != "CurrencyEvent":
+            raise ValueError()
+
+        if 'silent' in json:
+            return CurrencyEvent(json['currency_id'], json['quantity'], json['silent'])
+
+        return CurrencyEvent(json['currency_id'], json['quantity'])
 
 
 class LearnRecipeEvent(Event):
@@ -185,14 +266,14 @@ class LearnRecipeEvent(Event):
         CANNOT_LEARN = 2
         TERMINATE = -1
 
-    def __init__(self, recipe_id: int, target):
+    def __init__(self, recipe_id: int):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.recipe_id = recipe_id
-        self.target = target
+        self._player_ref = from_cache('player')
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any):
-            if target.crafting_controller.can_learn_recipe(self.recipe_id):
+            if self._player_ref.crafting_controller.can_learn_recipe(self.recipe_id):
                 self.set_state(self.States.CAN_LEARN)
             else:
                 self.set_state(self.States.CANNOT_LEARN)
@@ -203,13 +284,13 @@ class LearnRecipeEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.CAN_LEARN, InputType.ANY)
         def logic(_: any) -> None:
-            self.target.crafting_controller.learn_recipe(recipe_id)
+            self._player_ref.crafting_controller.learn_recipe(recipe_id)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.CAN_LEARN)
         def content():
             return ComponentFactory.get(
-                [f"{self.target.name} learned a recipe!\n{recipe_manager[recipe_id].name}"]
+                [f"{self._player_ref.name} learned a recipe!\n{recipe_manager[recipe_id].name}"]
             )
 
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_LEARN, InputType.ANY)
@@ -219,9 +300,30 @@ class LearnRecipeEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.CANNOT_LEARN)
         def content():
             return ComponentFactory.get(
-                [f"{self.target.name} cannot learn {recipe_manager[recipe_id].name}!"],
+                [f"{self._player_ref.name} cannot learn {recipe_manager[recipe_id].name}!"],
                 recipe_manager[recipe_id].get_requirements_as_options()
             )
+
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a LearnRecipeEvent object from a JSON blob.
+
+        Required JSON fields:
+        - recipe_id (int)
+        """
+
+        required_fields = [
+            ('recipe_id', int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "LearnRecipeEvent":
+            raise ValueError()
+
+        return LearnRecipeEvent(json['recipe_id'])
 
 
 class ReputationEvent(Event):
@@ -239,6 +341,40 @@ class ReputationEvent(Event):
                         StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
                         StringContent(value=f" by {reputation_change}")
                         ]
+
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a ReputationEvent object from a JSON blob.
+
+        Required JSON fields:
+        - faction_id (int)
+        - reputation_change (int)
+
+        Optional JSON fields:
+        - silent (bool)
+        """
+
+        required_fields = [
+            ('faction_id', int),
+            ('reputation_change', int)
+        ]
+
+        optional_fields = [
+            ('silent', bool)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, required=False, implicit_fields=False)
+
+        if json['class'] != "ReputationEvent":
+            raise ValueError()
+
+        if 'silent' in json:
+            return ReputationEvent(json['faction_id'], json['reputation_change'], json['silent'])
+
+        return ReputationEvent(json['faction_id'], json['reputation_change'])
 
 
 class ResourceEvent(Event):
