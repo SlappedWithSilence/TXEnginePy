@@ -287,3 +287,47 @@ class FlagRequirement(Requirement):
         return FlagRequirement(json['flag_name'], json['flag_value'], json['description'])
 
 
+class FactionRequirement(Requirement):
+
+    def __init__(self, faction_id: int, required_affinity: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.faction_id: int = faction_id
+        self.required_affinity: int = required_affinity
+
+    def fulfilled(self, entity) -> bool:
+        faction_manager = from_cache("managers.FactionManager")
+        return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+
+    @property
+    def description(self) -> list[str | StringContent]:
+        faction_manager = from_cache("managers.FactionManager")
+
+        return [
+            f"Must have an affinity of at least {self.required_affinity} with the ",
+            StringContent(value=faction_manager[self.faction_id].name, formatting="faction_name"),
+            "."
+        ]
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "FactionRequirement", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a FactionRequirement from a JSON blob.
+
+        Required JSON fields:
+        faction_id: (int)
+        required_affinity: (int)
+        """
+
+        required_fields = [
+            ("faction_id", int),
+            ("required_affinity", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        if json['class'] != "FactionRequirement":
+            raise ValueError()
+
+        return FactionRequirement(json['faction_id'], json['required_affinity'])
+
