@@ -4,11 +4,10 @@ import weakref
 from abc import ABC
 from enum import Enum
 
-import game.cache
 import game.systems.currency as currency
 import game.systems.flag as flag
 import game.util.input_utils
-from game.cache import from_cache
+from game.cache import from_cache, cached
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
@@ -17,6 +16,7 @@ from game.systems import item as item
 from game.systems.entity import entities as entities
 from game.systems.entity.resource import ResourceController
 from game.systems.crafting import recipe_manager
+from game.systems.faction import faction_manager
 
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
@@ -444,6 +444,11 @@ class ResourceEvent(Event):
         def content():
             return ComponentFactory.get()
 
+    @staticmethod
+    @game.cache.cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        pass
+
 
 class ConsumeItemEvent(Event):
     """Provides a standardized flow for prompting the user to optionally consume 'n' of a given item from his/her
@@ -554,6 +559,11 @@ class ConsumeItemEvent(Event):
                 "."
             ])
 
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ConsumeItemEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        pass
+
 
 class CraftingEvent(Event):
     """
@@ -572,3 +582,19 @@ class CraftingEvent(Event):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
         # TODO: Implement
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "CraftingEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        pass
+
+
+class FactionAffinityEvent(Event):
+
+    def __init__(self, default_input_type: InputType, states: Enum, default_state):
+        super().__init__(default_input_type, states, default_state)
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "FactionAffinityEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        pass
