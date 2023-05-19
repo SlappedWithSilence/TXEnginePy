@@ -3,6 +3,7 @@ from __future__ import annotations
 import weakref
 from abc import ABC
 from enum import Enum
+from typing import Union
 
 import game.systems.currency as currency
 import game.systems.flag as flag
@@ -52,7 +53,7 @@ class FlagEvent(Event):
             return ComponentFactory.get()
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "FlagEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "FlagEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
        Loads a FlagEvent object from a JSON blob.
@@ -168,7 +169,7 @@ class LearnAbilityEvent(Event):
             game.state_device_controller.set_dead()
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a LearnAbilityEvent object from a JSON blob.
@@ -221,7 +222,7 @@ class CurrencyEvent(Event):
             return ComponentFactory.get(self._message)
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "CurrencyEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "CurrencyEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a CurrencyEvent object from a JSON blob.
@@ -249,10 +250,9 @@ class CurrencyEvent(Event):
         if json['class'] != "CurrencyEvent":
             raise ValueError()
 
-        if 'silent' in json:
-            return CurrencyEvent(json['currency_id'], json['quantity'], json['silent'])
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        return CurrencyEvent(json['currency_id'], json['quantity'])
+        return CurrencyEvent(json['currency_id'], json['quantity'], **kwargs)
 
 
 class LearnRecipeEvent(Event):
@@ -305,7 +305,7 @@ class LearnRecipeEvent(Event):
             )
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a LearnRecipeEvent object from a JSON blob.
@@ -343,7 +343,7 @@ class ReputationEvent(Event):
                         ]
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a ReputationEvent object from a JSON blob.
@@ -371,10 +371,9 @@ class ReputationEvent(Event):
         if json['class'] != "ReputationEvent":
             raise ValueError()
 
-        if 'silent' in json:
-            return ReputationEvent(json['faction_id'], json['reputation_change'], json['silent'])
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        return ReputationEvent(json['faction_id'], json['reputation_change'])
+        return ReputationEvent(json['faction_id'], json['reputation_change'], **kwargs)
 
 
 class ResourceEvent(Event):
@@ -396,10 +395,10 @@ class ResourceEvent(Event):
             StringContent(value=f"{self.stat_name}.", formatting="resource_name")
         ]
 
-    def __init__(self, stat_name: str, stat_change: int | float, target, silent: bool = False):
+    def __init__(self, resource_name: str, quantity: int | float, target, silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
-        self.stat_name: str = stat_name
-        self.amount: int | float = stat_change
+        self.stat_name: str = resource_name
+        self.amount: int | float = quantity
         self.target = weakref.proxy(target)  # Weakref to an Entity object
         self._summary: list[str | StringContent] = None
         self._silent = silent
@@ -445,9 +444,37 @@ class ResourceEvent(Event):
             return ComponentFactory.get()
 
     @staticmethod
-    @game.cache.cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+       Loads a ResourceEvent object from a JSON blob.
+
+       Required JSON fields:
+       - resource_name (str)
+       - quantity: (int | float)
+
+       Optional JSON fields:
+       - silent (bool)
+       """
+
+        required_fields = [
+            ("resource_name", str),
+            ("quantity", Union[int, float])
+        ]
+
+        optional_fields = [
+            ("silent", bool)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        if json["class"] != "ResourceEvent":
+            raise ValueError()
+
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        return ResourceEvent(json['resource_name'], json['quantity'], None, **kwargs)
 
 
 class ConsumeItemEvent(Event):

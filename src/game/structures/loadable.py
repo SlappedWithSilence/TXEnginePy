@@ -21,6 +21,16 @@ class LoadableMixin:
 class LoadableFactory:
 
     @classmethod
+    def collect_optional_fields(cls, fields: list[tuple[str, type]], json: dict) -> dict:
+        kw = {}
+
+        for field in fields:
+            if field in json:
+                kw[field] = json[field]
+
+        return kw
+
+    @classmethod
     def validate_fields(cls, fields: list[tuple[str, type]], json: dict, required=True, implicit_fields=True) -> bool:
         """
         Verify that the expected json fields are present and correctly typed.
