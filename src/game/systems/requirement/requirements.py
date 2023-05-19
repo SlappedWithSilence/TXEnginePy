@@ -1,4 +1,5 @@
 from abc import ABC
+from enum import Enum
 from typing import Union
 
 from loguru import logger
@@ -288,16 +289,32 @@ class FlagRequirement(Requirement):
 
 
 class FactionRequirement(Requirement):
+    class Mode(Enum):
+        GREATER_THAN_EQUAL_TO = "gte"
+        LESS_THAN_EQUAL_TO = "lte"
+        EQUAL_TO = "eq"
 
-    def __init__(self, faction_id: int, required_affinity: int, *args, **kwargs):
+    def __init__(self, faction_id: int, required_affinity: int, mode: str = "gte", *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.faction_id: int = faction_id
         self.required_affinity: int = required_affinity
+        self.mode: FactionRequirement.Mode = FactionRequirement.Mode(mode)
 
     def fulfilled(self, entity) -> bool:
         faction_manager = from_cache("managers.FactionManager")
-        return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+
+        if self.mode == self.Mode.GREATER_THAN_EQUAL_TO:
+            return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+
+        elif self.mode == self.Mode.LESS_THAN_EQUAL_TO:
+            return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+
+        elif self.mode == self.Mode.EQUAL_TO:
+            return faction_manager.get_affinity(self.faction_id) == self.required_affinity
+
+        else:
+            raise ValueError(f"Unknown mode {self.mode}")
 
     @property
     def description(self) -> list[str | StringContent]:
@@ -318,6 +335,9 @@ class FactionRequirement(Requirement):
         Required JSON fields:
         faction_id: (int)
         required_affinity: (int)
+
+        Optional JSON fields:
+        mode: (str)
         """
 
         required_fields = [
@@ -325,9 +345,17 @@ class FactionRequirement(Requirement):
             ("required_affinity", int)
         ]
 
+        optional_fields = [
+            ("mode", str)
+        ]
+
         LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json)
         if json['class'] != "FactionRequirement":
             raise ValueError()
 
-        return FactionRequirement(json['faction_id'], json['required_affinity'])
+        kwargs = {}
+        if 'mode' in json:
+            kwargs['mode'] = json['mode']
 
+        return FactionRequirement(json['faction_id'], json['required_affinity'], **kwargs)
