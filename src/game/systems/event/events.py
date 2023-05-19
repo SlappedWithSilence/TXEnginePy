@@ -335,6 +335,7 @@ class ReputationEvent(Event):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
+        self._silent = silent
         self.message = [StringContent(value="Your reputation with "),
                         StringContent(value=f"faction::{faction_id}",
                                       formatting="faction_name"),
@@ -630,16 +631,5 @@ class CraftingEvent(Event):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CraftingEvent", LoadableMixin.ATTR_KEY])
-    def from_json(json: dict[str, any]) -> any:
-        pass
-
-
-class FactionAffinityEvent(Event):
-
-    def __init__(self, default_input_type: InputType, states: Enum, default_state):
-        super().__init__(default_input_type, states, default_state)
-
-    @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "FactionAffinityEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         pass
