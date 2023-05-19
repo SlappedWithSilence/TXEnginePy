@@ -589,7 +589,25 @@ class ConsumeItemEvent(Event):
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ConsumeItemEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a ConsumeItemEvent object from a JSON blob.
+
+        Required JSON fields:
+        - item_id (int)
+        - item_quantity (int)
+        """
+
+        required_fields = [
+            ("item_id", int),
+            ("item_quantity", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "ConsumeItemEvent":
+            raise ValueError()
+
+        return ConsumeItemEvent(json['item_id'], json['item_quantity'])
 
 
 class CraftingEvent(Event):
