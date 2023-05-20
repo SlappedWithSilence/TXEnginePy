@@ -122,7 +122,7 @@ def get_loader(cls: type | str) -> Callable:
         )
 
 
-def cached(path: list[str]) -> Callable:
+def cached(path: list[str] | str) -> Callable:
     """
     A parameterized decorator that caches a given function under the key 'root_key' and sub-key 'attr_key'.
 
