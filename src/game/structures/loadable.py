@@ -1,4 +1,5 @@
 from game.cache import cached, get_cache, get_loader
+from game.systems.requirement.requirements import Requirement
 
 
 class LoadableMixin:
@@ -21,7 +22,34 @@ class LoadableMixin:
 class LoadableFactory:
 
     @classmethod
+    def collect_requirements(cls, json: dict, field='requirements') -> list[Requirement]:
+        """
+        Interrogate a JSON blob and parse out any requirements it has stored inside.
+
+        Notably, this method expects the JSON blob to store its requirements at a top-level under the
+        field 'requirements'.
+        """
+
+        if field not in json:
+            return []
+
+        reqs = []
+
+        for requirement_json in json[field]:
+            req = LoadableFactory.get(requirement_json)
+            if not isinstance(req, Requirement):
+                raise TypeError(f"Expected requirement of type Requirement, got {type(req)} instead!")
+
+            reqs.append(req)
+
+        return reqs
+
+    @classmethod
     def collect_optional_fields(cls, fields: list[tuple[str, type]], json: dict) -> dict:
+        """
+        Search for optional fields within a JSON blob and bundle them into a dict. Any fields not found will simply not
+        be included.
+        """
         kw = {}
 
         for field in fields:
