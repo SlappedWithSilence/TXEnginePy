@@ -5,7 +5,7 @@ import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
 from game.cache import get_cache, cached
-from game.structures.loadable import LoadableMixin
+from game.structures.loadable import LoadableMixin, LoadableFactory
 from game.systems.event.events import Event
 from game.systems.inventory import equipment_manager
 
@@ -127,11 +127,15 @@ class Usable(Item, req.RequirementsMixin):
 class Equipment(Item, req.RequirementsMixin):
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str,
-                 equipment_slot: str, requirements: list[req.Requirement] = None,
+                 equipment_slot: str, damage_buff: int, damage_resist: int,
+                 requirements: list[req.Requirement] = None,
                  start_of_combat_effects: list[effect.CombatEffect] = None, *args, **kwargs):
         super().__init__(name, iid, value, description, requirements=requirements, *args, **kwargs)
         self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
         self.start_of_combat_effects: list[effect.CombatEffect] = start_of_combat_effects or []
+
+        self.damage_buff: int = damage_buff
+        self.damage_resist: int = damage_resist
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
@@ -150,6 +154,8 @@ class Equipment(Item, req.RequirementsMixin):
        - value: {int, int}
        - description: str
        - equipment_slot: str
+       - damage_buff: int
+       - damage_resist: int
 
        Optional JSON fields:
        - max_quantity: int (default value 10)
@@ -157,19 +163,35 @@ class Equipment(Item, req.RequirementsMixin):
        - requirements: [Requirement]
        """
 
-        start_of_combat_effects = [
-            get_cache()['loader'][effect_json['class']](effect_json) for effect_json in json['start_of_combat_effects']
-        ] if 'start_of_combat_effects' in json else []
+        required_fields = [
+            ("name", str), ("id", int), ("value", dict[str, int]), ("description", str),
+            ("equipment_slot", str), ("damage_buff", int), ("damage_resist", int)
+        ]
+        optional_fields = [
+            ("max_quantity", int), ("start_of_combat_effects", list[dict]), ("requirements", list[dict]),
+        ]
 
-        requirements = [
-            get_cache()['loader'][req_json['class']](req_json) for req_json in json['requirements']
-        ] if 'requirements' in json else []
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        start_of_combat_effects = []
+        if 'start_of_combat_effects' in json:
+            for effect_json in json['start_of_combat_effects']:
+                ef = LoadableFactory.get(effect_json)
+                if not isinstance(ef, effect.CombatEffect):
+                    raise TypeError(f"Expected effect of type CombatEffect, got {type(ef)} instead!")
+
+                start_of_combat_effects.append(ef)
+
+        requirements = LoadableFactory.collect_requirements(json)
 
         return Equipment(json['name'],
                          json['id'],
                          json['value'],
                          json['description'],
                          json['slot'],
+                         json['damage_buff'],
+                         json['damage_resist'],
                          requirements,
                          start_of_combat_effects,
                          max_quantity=json['max_quantity'] if 'max_quantity' in json else 10
