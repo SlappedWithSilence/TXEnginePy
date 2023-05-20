@@ -208,16 +208,21 @@ class SkillMixin:
         """
 
         self.skill_controller = SkillController(obtain_all=True)
-        for skill_name in skill_manifest:
-            if skill_name not in self.skill_controller:
-                raise ValueError(f"No skill with name {skill_name}!")
+        for skill_id in skill_manifest:
+            if skill_id not in self.skill_controller:
+                raise ValueError(f"No skill with id {skill_id}!")
 
             for term in ["level", "xp"]:
-                if term not in skill_manifest[skill_name]:
-                    raise ValueError(f"Missing field {term} in skill definition for skill {skill_name}")
+                if term not in skill_manifest[skill_id]:
+                    raise ValueError(f"Missing field {term} in skill definition for skill {skill_id}")
 
-            self.skill_controller[skill_name].level = skill_manifest[skill_name]['level']
-            self.skill_controller[skill_name].xp = skill_manifest[skill_name]['xp']
+            try:
+                true_id = int(skill_id)
+            except ValueError:
+                raise ValueError(f"ID of {skill_id} cannot be converted to int!")
+
+            self.skill_controller[true_id].level = skill_manifest[skill_id]['level']
+            self.skill_controller[true_id].xp = skill_manifest[skill_id]['xp']
 
 
 class Player(CraftingMixin, CombatEntity):
