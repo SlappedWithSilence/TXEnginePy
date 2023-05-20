@@ -5,7 +5,8 @@ from abc import ABC
 
 import game
 from game.cache import cached
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 import game.systems.event.events as events
 
 

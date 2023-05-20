@@ -1,7 +1,8 @@
 from loguru import logger
 import game
 from game.cache import cached
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
 from game.systems import item as item
 from game.systems.event.events import ConsumeItemEvent

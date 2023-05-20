@@ -5,7 +5,8 @@ import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
 from game.cache import get_cache, cached
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.event.events import Event
 from game.systems.inventory import equipment_manager
 
@@ -138,7 +139,7 @@ class Equipment(Item, req.RequirementsMixin):
         self.damage_resist: int = damage_resist
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.CACHE_PATH.format("Equipment")])
     def from_json(json: dict[str, any]) -> "Equipment":
         """
        Instantiate an Equipment object from a JSON blob.

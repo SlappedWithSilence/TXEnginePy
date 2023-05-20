@@ -1,7 +1,8 @@
 from abc import ABC
 
 from game.cache import cached
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.requirement.requirements import RequirementsMixin
 
 

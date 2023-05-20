@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 from abc import ABC
 from enum import Enum
 from typing import Union
 
 from loguru import logger
 
+import game.structures.loadable_factory
 from game.cache import from_cache, cached
-from game.structures.loadable import LoadableFactory, LoadableMixin
+from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent
-from game.systems.skill import skill_manager
 
 
 class Requirement(LoadableMixin, ABC):
@@ -76,7 +78,7 @@ class RequirementsMixin:
                 if 'class' not in raw_requirement:
                     raise ValueError('Bad or missing class field!')
 
-                r = LoadableFactory.get(raw_requirement)  # Instantiate the Requirement via factory
+                r = game.structures.loadable_factory.LoadableFactory.get(raw_requirement)  # Instantiate the Requirement via factory
                 if not isinstance(r, Requirement):  # Typecheck it
                     raise TypeError(f'Unsupported class {type(r)} found in requirements field!')
 
@@ -95,6 +97,9 @@ class SkillRequirement(Requirement):
         self.skill_id: int = skill_id
         self.level: int = level
 
+        from game.systems.skill import skill_manager
+        self._skill_name = skill_manager.get_skill(self.skill_id).name
+
     def fulfilled(self, entity) -> bool:
         from game.systems.entity.entities import SkillMixin
 
@@ -110,7 +115,7 @@ class SkillRequirement(Requirement):
     def description(self) -> list[str | StringContent]:
         return [
             "Requires ",
-            StringContent(value=skill_manager.get_skill(self.skill_id).name),
+            StringContent(value=self._skill_name),
             f" level {self.level}"
         ]
 
@@ -129,7 +134,7 @@ class SkillRequirement(Requirement):
             ("skill_id", int), ("level", int)
         ]
 
-        LoadableFactory.validate_fields(required_fields, json)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
 
         return SkillRequirement(json['skill_id'], json['level'])
 
@@ -181,7 +186,7 @@ class ResourceRequirement(Requirement):
         """
 
         required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
-        LoadableFactory.validate_fields(required_fields, json)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ResourceRequirement":
             raise ValueError(f"Invalid class field for ResourceRequirement! Got {json['class']} "
@@ -238,7 +243,7 @@ class ConsumeResourceRequirement(Requirement):
         """
 
         required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
-        LoadableFactory.validate_fields(required_fields, json)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ConsumeResourceRequirement":
             raise ValueError(f"Invalid class field for ConsumeResourceRequirement! Got {json['class']} "
@@ -283,7 +288,7 @@ class FlagRequirement(Requirement):
             ('description', str)
         ]
 
-        LoadableFactory.validate_fields(required_fields)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields)
 
         return FlagRequirement(json['flag_name'], json['flag_value'], json['description'])
 
@@ -349,8 +354,8 @@ class FactionRequirement(Requirement):
             ("mode", str)
         ]
 
-        LoadableFactory.validate_fields(required_fields, json)
-        LoadableFactory.validate_fields(optional_fields, json)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
+        game.structures.loadable_factory.LoadableFactory.validate_fields(optional_fields, json)
         if json['class'] != "FactionRequirement":
             raise ValueError()
 

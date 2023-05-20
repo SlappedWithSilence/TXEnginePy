@@ -4,7 +4,8 @@ import game.systems.currency.coin_purse
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
 from game.cache import cached
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController

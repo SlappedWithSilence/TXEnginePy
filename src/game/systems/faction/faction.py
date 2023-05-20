@@ -1,6 +1,7 @@
 from abc import ABC
 
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 
 
 class FactionBase(ABC):

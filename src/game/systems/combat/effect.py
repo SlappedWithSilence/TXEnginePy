@@ -5,7 +5,8 @@ from typing import Union
 import game.systems.entity.entities as entities
 from game.cache import cached
 from game.structures.enums import InputType
-from game.structures.loadable import LoadableMixin, LoadableFactory
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 
