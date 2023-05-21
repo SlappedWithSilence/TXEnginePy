@@ -35,9 +35,15 @@ class LoadableFactory:
         """
         kw = {}
 
-        for field in fields:
-            if field in json:
-                kw[field] = json[field]
+        for field_name, field_type in fields:
+
+            if field_name in json:  # If the JSON blob contains a matching field
+                if field_type == dict:  # If it is a dict and can possibly be a dict-form of a supported class
+                    if 'class' in json[field_name]:  # Search for class field
+                        kw[field_name] = LoadableFactory.get(json[field_name])  # Instantiate the object from dict
+                        continue
+
+                kw[field_name] = json[field_name]  # Fall back and store the original dict
 
         return kw
 
