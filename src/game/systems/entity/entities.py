@@ -1,12 +1,16 @@
+from __future__ import annotations
 from abc import ABC
 
 import game.systems.currency.coin_purse
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
 from game.cache import cached
+from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
+from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin
+import game.systems.combat.effect as effects
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
 
@@ -131,7 +135,10 @@ class AbilityMixin:
                 self.ability_controller.learn(ability)
 
 
-class CombatEntity(AbilityMixin, EquipmentMixin, Entity):
+class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
+    """
+    A subclass of Entity that contains all the necessary components to participate in Combat.
+    """
 
     def __init__(self,
                  xp_yield: int = 1,
@@ -140,6 +147,31 @@ class CombatEntity(AbilityMixin, EquipmentMixin, Entity):
         super().__init__(*args, **kwargs)
         self.xp_yield: int = xp_yield
         self.turn_speed = turn_speed
+        self.active_effects: dict[CombatPhase, list[effects.CombatEffect]] = {phase: [] for phase in CombatPhase}
+
+    def make_choice(self) -> str | int | None:
+        """
+        Compute the next action that should be taken during combat.
+        """
+        pass
+
+    def clear_effects(self) -> None:
+        """
+        Remove all Effects from the Entity.
+        """
+        for phase in self.active_effects:
+            self.active_effects[phase] = []
+
+    def _prune_effects(self) -> None:
+        """
+        Remove all dead Effects from the Entity.
+
+        An Effect is considered dead when its duration has decremented to zero.
+        """
+        for phase in self.active_effects:
+            for i in range(len(self.active_effects[phase])):
+                if self.active_effects[phase][i].duration == 0:
+                    del self.active_effects[phase][i]
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
@@ -157,26 +189,31 @@ class CombatEntity(AbilityMixin, EquipmentMixin, Entity):
         - id: int
         - xp_yield: int
         - turn_speed: int
-        - attributes: [any]
 
-        Optional attribute fields:
+        Optional JSON fields:
+        - combat_provider (str)
         - inventory_controller: InventoryController
         - resource_controller: ResourceController
         - equipment_controller: EquipmentController
         - coin_purse: CoinPurse
         - abilities: [str]
-
-        Optional JSON fields:
-        - None
         """
 
-        # Turn the attributes JSON fields into key-word arguments to be passed to Entity's subclasses
-        kw = {}
-        for attr in json['attributes']:
-            kw[attr] = LoadableFactory.get(json['attributes'][attr][0])
+        required_fields = [
+            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int)
+        ]
 
-        ce = CombatEntity(json['name'], json['id'], json['xp_yield'], json['abilities'], turn_speed=json['turn_speed'],
-                          **kw)
+        optional_fields = [
+            ("combat_provider", str), ("inventory_controller", dict), ("resource_controller", dict),
+            ("equipment_controller", dict), ("coin_purse", dict), ("abilities", list)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+        kw = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        ce = CombatEntity(json['xp_yield'], json['turn_speed'], name=json['name'], id=json['id'],
+                          abilities=json['abilities'], **kw)
 
         # Post-init fixing
         # Note: since the equipment_controller only gets assigned an owner assigned AFTER init, it cannot check equip
