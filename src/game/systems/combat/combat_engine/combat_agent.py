@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import weakref
 from abc import ABC
 
@@ -8,6 +10,7 @@ class CombatAgentMixin(ABC):
     """
     A mixin that allows for CombatEngine integration.
     """
+    name = "abstract_agent"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,3 +49,35 @@ class CombatAgentMixin(ABC):
         """
 
         raise NotImplementedError()
+
+
+class NaiveAgentMixin(CombatAgentMixin):
+    name = "naive_agent"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def make_choice(self) -> str | int | None:
+        pass
+
+
+class IntelligentAgentMixin(CombatAgentMixin):
+    name = "intelligent_agent"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def make_choice(self) -> str | int | None:
+        pass
+
+
+class MultiAgentMixin(CombatAgentMixin):
+    AVAILABLE_AGENTS = [NaiveAgentMixin, IntelligentAgentMixin]
+    AGENT_MAP = {agent.name: agent for agent in AVAILABLE_AGENTS}
+
+    def __init__(self, combat_provider: str = "naive_agent", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.choice_provider: CombatAgentMixin = MultiAgentMixin.AGENT_MAP[combat_provider]()
+
+    def make_choice(self) -> str | int | None:
+        return self.choice_provider.make_choice()
