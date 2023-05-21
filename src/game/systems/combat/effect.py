@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import weakref
 from abc import ABC
 from typing import Union
