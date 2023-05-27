@@ -155,6 +155,13 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         """
         pass
 
+    def acquire_effect(self, effect: effects.CombatEffect, phase: CombatPhase) -> None:
+        """
+        Ingest an effect and store it in a phase's list.
+        """
+
+        self.active_effects[phase].append(effect)
+
     def clear_effects(self) -> None:
         """
         Remove all Effects from the Entity.
@@ -272,3 +279,9 @@ class Player(CraftingMixin, CombatEntity):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def make_choice(self) -> str | int | None:
+        """
+        Build a PlayerCombatChoiceEvent and place it onto the DeviceStack.
+        """
+        pass
