@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import weakref
 from abc import ABC
 from typing import Union
@@ -31,28 +29,38 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     CombatEffect with a duration of None will never be removed from its target unless explicitly removed. An entity
     may alter the way that it executes the logic of the Effect based on the relationship of the tags possessed by the
     CombatEffect and the target Entity.
+
+    An Effect does NOT determine what phase it is assigned to. Whatever spawned the Effect must also assign it to a
+    CombatPhase explicitly.
     """
 
     def __init__(self,
-                 target_entity: entities.Entity = None,
-                 source_entity: entities.Entity = None,
+                 target_entity: entities.CombatEntity = None,
+                 source_entity: entities.CombatEntity = None,
                  duration: int | None = 1,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_states()
-        self._target_entity: entities.Entity = target_entity  # The entity the effect is assigned
-        self._source_entity: entities.Entity = source_entity  # The entity that spawned the Effect
+        self._target_entity: entities.CombatEntity = target_entity  # The entity the effect is assigned
+        self._source_entity: entities.CombatEntity = source_entity  # The entity that spawned the Effect
         self.duration: int | None = duration  # Number of remaining turns before Effect is removed
         self.tags: list[str] = []
 
-    def assign(self, source_entity: entities.Entity, target_entity: entities.Entity) -> None:
+    def is_assigned(self) -> bool:
+        """
+        Check if assign has already been called.
+        """
+
+        return self._source_entity is not None and self._target_entity is not None
+
+    def assign(self, source_entity: entities.CombatEntity, target_entity: entities.CombatEntity) -> None:
         """
         Assign a source and target to the Effect. This option should be exercised by the CombatEngine
         """
 
-        if not isinstance(source_entity, entities.Entity):
+        if not isinstance(source_entity, entities.CombatEntity):
             raise TypeError()
-        if not isinstance(target_entity, entities.Entity):
+        if not isinstance(target_entity, entities.CombatEntity):
             raise TypeError()
 
         self._target_entity = weakref.proxy(target_entity)
@@ -135,7 +143,7 @@ class ResourceEffect(CombatEffect):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
         def logic(_: any) -> None:
-            self._perform(self._target_entity)
+            self.perform()
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
