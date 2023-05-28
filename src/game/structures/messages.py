@@ -2,7 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from game.systems.entity.entities import CombatEntity
 from .enums import InputType
 from game.formatting import get_style
 
@@ -69,8 +68,8 @@ class ComponentFactory:
     def get(cls,
             content: list[str | StringContent] | None = None,
             options: list[list[str | StringContent]] | None = None,
-            allies: list[CombatEntity] | None = None,
-            enemies: list[CombatEntity] | None = None) -> dict[str, list]:
+            allies: list | None = None,
+            enemies: list | None = None) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
@@ -86,7 +85,9 @@ class ComponentFactory:
             Return a dict of all necessary info about the entity.
             """
 
-            if type(entity) != CombatEntity:
+            import game.systems.entity.entities as entities
+
+            if type(entity) != entities.CombatEntity:
                 raise TypeError(f"scrape_entity expected object of type CombatEntity! Got {type(entity)} instead!")
 
             return {
