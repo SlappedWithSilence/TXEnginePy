@@ -4,7 +4,7 @@ import weakref
 from enum import Enum
 
 import game.systems.entity.entities as entities
-from game.cache import from_cache
+from game.cache import from_cache, cache_element
 from game.structures.enums import CombatPhase, InputType
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
@@ -56,6 +56,11 @@ class CombatEngine(FiniteStateDevice):
         self.current_phase: CombatPhase = CombatPhase.START_PHASE
 
         self._build_states()
+
+        # Cache a global weak reference to this instance for later use by CombatSummary state devices.
+        if from_cache("combat") is not None:
+            raise RuntimeError("An active combat is already cached!")
+        cache_element("combat", weakref.proxy(self))
 
     def _handle_phase(self) -> None:
         """
