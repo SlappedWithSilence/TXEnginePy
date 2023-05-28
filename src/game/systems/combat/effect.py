@@ -32,6 +32,9 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
 
     An Effect does NOT determine what phase it is assigned to. Whatever spawned the Effect must also assign it to a
     CombatPhase explicitly.
+
+    Note that each CombatEffect is responsible for correctly spawning a CombatSummary state device to update the user
+    with
     """
 
     def __init__(self,
