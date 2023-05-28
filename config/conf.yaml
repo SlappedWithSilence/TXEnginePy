@@ -5,3 +5,5 @@ inventory:
   default_capacity: 10
 room:
   default_id: 0
+resources:
+  primary_resource: Health
