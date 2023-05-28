@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from game.systems.entity.entities import CombatEntity
 from .enums import InputType
 from game.formatting import get_style
 
@@ -63,10 +64,13 @@ class ComponentFactory:
     A factory class that generates a specially-structured dicts. These dicts are intended to be embedded within the
     'components' field of Frame and StateDevice objects.
     """
+
     @classmethod
     def get(cls,
             content: list[str | StringContent] | None = None,
-            options: list[list[str | StringContent]] | None = None) -> dict[str, list]:
+            options: list[list[str | StringContent]] | None = None,
+            allies: list[CombatEntity] | None = None,
+            enemies: list[CombatEntity] | None = None) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
@@ -77,15 +81,38 @@ class ComponentFactory:
         Returns: A structured dict containing all the passed fields.
         """
 
+        def scrape_entity(entity) -> dict[str, any]:
+            """
+            Return a dict of all necessary info about the entity.
+            """
+
+            if type(entity) != CombatEntity:
+                raise TypeError(f"scrape_entity expected object of type CombatEntity! Got {type(entity)} instead!")
+
+            return {
+                "name": entity.name,
+                "id": entity.id,
+                "primary_resource_val": entity.resource_controller.primary_resource.value,
+                "primary_resource_max": entity.resource_controller.primary_resource.max
+            }
+
         if content and type(content) != list:
             raise TypeError(f"components.content must be of type list! Got {type(content)} instead.")
 
         if options and type(options) != list:
             raise TypeError(f"components.options must be of type list! Got {type(options)} instead.")
 
+        if allies and type(allies) != list:
+            raise TypeError(f"components.allies must be of type list! Got {type(allies)} instead.")
+
+        if enemies and type(enemies) != list:
+            raise TypeError(f"components.enemies must be of type list! Got {type(enemies)} instead.")
+
         return {
             "content": content,
-            "options": options
+            "options": options,
+            "allies": [scrape_entity(e) for e in allies] if allies else [],
+            "enemies": [scrape_entity(e) for e in enemies] if enemies else []
         }
 
 
