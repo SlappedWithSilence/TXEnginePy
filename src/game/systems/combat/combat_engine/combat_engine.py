@@ -105,12 +105,27 @@ class CombatEngine(FiniteStateDevice):
         pass
 
     @property
-    def active_entity(self) -> entities.Entity:
+    def active_entity(self) -> entities.CombatEntity:
         """
         Return a weakref to the active entity.
         """
 
         return self._turn_order[self.current_turn]
+
+    @property
+    def next_entity(self) -> entities.CombatEntity | None:
+        """
+        Return a weakref to next active Entity.
+        """
+        return self.current_turn + 1 if self.current_turn < len(self._turn_order) - 1 else None
+
+    @property
+    def enemies(self) -> list[entities.CombatEntity]:
+        return self._enemies
+
+    @property
+    def allies(self) -> list[entities.CombatEntity]:
+        return self._allies
 
     def handle_turn_action(self, choice: int | str | None) -> None:
         """
@@ -144,6 +159,16 @@ class CombatEngine(FiniteStateDevice):
             for handler_cls in self.PHASE_HANDLERS[self.current_phase]:
                 handler_cls().handle_phase(self)
 
+            self.set_state(self.States.DETECT_COMBAT_TERMINATION)
+
         @FiniteStateDevice.state_content(self, self.States.HANDLE_PHASE)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.DETECT_COMBAT_TERMINATION, InputType.SILENT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.DETECT_COMBAT_TERMINATION)
         def content():
             return ComponentFactory.get()
