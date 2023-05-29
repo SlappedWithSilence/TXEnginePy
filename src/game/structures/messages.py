@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from .enums import InputType
 from game.formatting import get_style
+from ..cache import from_cache
 
 
 def _to_style_args(form: list[str] | str) -> list[str]:
@@ -68,14 +69,15 @@ class ComponentFactory:
     def get(cls,
             content: list[str | StringContent] | None = None,
             options: list[list[str | StringContent]] | None = None,
-            allies: list | None = None,
-            enemies: list | None = None) -> dict[str, list]:
+            is_combat_frame: bool = False) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
-        Args: content: A list of str or str-like objects. This is the main text the user sees.
-        options: A list of lists of str or str-like objects. If there are options for the user to choose from within a
-        given frame, they are embedded inside 'options'.
+        Args:
+            content: A list of str or str-like objects. This is the main text the user sees.
+            options: A list of lists of str or str-like objects. If there are options for the user to choose from within
+                     a given frame, they are embedded inside 'options'.
+            is_combat_frame: If true, auto-include data from the active combat.
 
         Returns: A structured dict containing all the passed fields.
         """
@@ -103,24 +105,13 @@ class ComponentFactory:
         if options and type(options) != list:
             raise TypeError(f"components.options must be of type list! Got {type(options)} instead.")
 
-        if allies and type(allies) != list:
-            raise TypeError(f"components.allies must be of type list! Got {type(allies)} instead.")
-
-        if enemies and type(enemies) != list:
-            raise TypeError(f"components.enemies must be of type list! Got {type(enemies)} instead.")
-
-        return {
+        data = {
             "content": content,
             "options": options,
-            "allies": [scrape_entity(e) for e in allies] if allies else [],
-            "enemies": [scrape_entity(e) for e in enemies] if enemies else []
         }
 
+        if is_combat_frame:
+            data["allies"] = [scrape_entity(e) for e in from_cache("combat").allies],
+            data["enemies"] = [scrape_entity(e) for e in from_cache("combat").enemies]
 
-if __name__ == "__main__":
-    f = Frame(components={}, input_type=InputType.AFFIRMATIVE, input_range={})
-    print(f.schema())
-    print(f.json())
-
-    s = StringContent(value="This is a StringContent", formatting=["bold", "blue"])
-    print(s.json())
+        return data
