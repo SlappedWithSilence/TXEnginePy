@@ -21,7 +21,8 @@ class PhaseHandler(ABC):
         """
 
         if combat_engine.active_entity is None or not isinstance(combat_engine.active_entity, entities.CombatEntity):
-            raise TypeError(f"Active entity must be instance of CombatEntity! Got {type(combat_engine.active_entity)} instead!")
+            raise TypeError(
+                f"Active entity must be instance of CombatEntity! Got {type(combat_engine.active_entity)} instead!")
 
         self._phase_logic(combat_engine)
 
@@ -52,3 +53,21 @@ class ChoiceActivator(PhaseHandler):
         """
 
         combat_engine.handle_turn_action(combat_engine.active_entity.make_choice())
+
+
+class LossDetector(PhaseHandler):
+    """
+    Detect if the conditions for a loss have been met and inform the CombatEngine.
+    """
+
+    def _phase_logic(self, combat_engine) -> None:
+        pass
+
+
+class VictoryDetector(PhaseHandler):
+    """
+    Detect if the conditions for a win have been met and inform the CombatEngine.
+    """
+
+    def _phase_logic(self, combat_engine) -> None:
+        pass
