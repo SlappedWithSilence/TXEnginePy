@@ -6,4 +6,4 @@ mypy
 omegaconf
 uvicorn[standard]
 requests
-rich
+textual[dev]
