@@ -36,10 +36,11 @@ class EffectActivator(PhaseHandler):
     """
 
     def _phase_logic(self, combat_engine) -> None:
-        active_entity = combat_engine.active_entity
+        active_entity: entities.CombatEntity = combat_engine.active_entity
 
         for effect in reversed(active_entity.active_effects[combat_engine.current_phase]):
-            game.state_device_controller.add_state_device(effect)
+            effect.reset()  # Reset the Effect state device in case it was previously used
+            game.state_device_controller.add_state_device(effect)  # Add it to the stack
 
 
 class ChoiceActivator(PhaseHandler):
