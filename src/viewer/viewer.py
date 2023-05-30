@@ -45,7 +45,20 @@ class Viewer:
         Primitively print GET results
         """
 
+        def entity_to_str(entity_dict: dict[str, any]) -> str:
+            return f"{entity_dict['name']}\n{entity_dict['primary_resource_name']}: [{entity_dict['primary_resource_val']}/{entity_dict['primary_resource_max']}]"
+
         print(parse_content(value["components"]["content"]))
+
+        if "enemies" in value["components"]:
+            print("ENEMIES")
+            for enemy in value["components"]["enemies"]:
+                print(entity_to_str(enemy))
+
+        if "allies" in value["components"]:
+            print("ALLIES")
+            for ally in value["components"]["allies"]:
+                print(entity_to_str(ally))
 
         if "options" in value["components"] and type(value["components"]["options"]) == list:
             for idx, opt in enumerate(value["components"]["options"]):
@@ -85,10 +98,7 @@ class TextualViewer(App):
         self.dark = not self.dark
 
 
-
-
 if __name__ == "__main__":
-
     """
     viewer = Viewer()
 
