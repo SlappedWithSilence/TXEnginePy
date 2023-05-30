@@ -95,6 +95,7 @@ class ComponentFactory:
             return {
                 "name": entity.name,
                 "id": entity.id,
+                "primary_resource_name": entity.resource_controller.primary_resource.name,
                 "primary_resource_val": entity.resource_controller.primary_resource.value,
                 "primary_resource_max": entity.resource_controller.primary_resource.max
             }
