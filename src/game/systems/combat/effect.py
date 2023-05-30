@@ -33,8 +33,8 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     An Effect does NOT determine what phase it is assigned to. Whatever spawned the Effect must also assign it to a
     CombatPhase explicitly.
 
-    Note that each CombatEffect is responsible for correctly spawning a CombatSummary state device to update the user
-    with
+    Note that each Effect MUST implement a functional reset() method. A default method is provided, but can be
+    overridden if necessary. NEVER modify an Effect's duration via reset().
     """
 
     def __init__(self,
@@ -94,6 +94,14 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         Execute the logic of the Effect
         """
         raise NotImplementedError()
+
+    def reset(self) -> None:
+        """
+        Simply return the state device to the default state.
+
+        When overriding this method, do not include any logic that modifies duration.
+        """
+        self.set_state(self.States.DEFAULT)
 
 
 class ResourceEffect(CombatEffect):
