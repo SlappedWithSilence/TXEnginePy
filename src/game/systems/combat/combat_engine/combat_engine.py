@@ -45,6 +45,7 @@ class CombatEngine(FiniteStateDevice):
         self._enemies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
                                                       enemy_entity_ids]  # Master list of opposed _entity_manifest
         self._player_ref: entities.Player = from_cache('player')
+        self._allies.append(self._player_ref)
 
         # Master ordered lists
         self._turn_order: list[
