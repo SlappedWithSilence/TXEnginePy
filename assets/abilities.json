@@ -1,0 +1,12 @@
+{
+  "content" : [
+    {
+      "class" : "Ability",
+      "name" : "Proto Ability",
+      "description" : "The first ability ever created",
+      "on_use" : "Feelsbad",
+      "damage" : 1,
+      "target_mode": "SINGLE_ENEMY"
+    }
+  ]
+}

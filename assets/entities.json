@@ -1,0 +1,19 @@
+{
+  "entities" : [
+    {
+      "class" : "Entity",
+      "id" : -1,
+      "name" : "SomeEntity",
+      "attributes" : {
+        "inventory_controller" : {
+          "class" : "InventoryController",
+          "contents" : [
+            [0, 3],
+            [1, 2]
+          ]
+        }
+      }
+
+    }
+  ]
+}

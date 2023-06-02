@@ -31,12 +31,12 @@ class CombatPhase(enum.Enum):
 
 
 class TargetMode(enum.Enum):
-    ALL = 0
-    SINGLE = 1
-    SINGLE_ALLY = 2
-    SINGLE_ENEMY = 3
-    ALL_ALLY = 4
-    ALL_ENEMY = 5
-    NOT_SELF = 6
+    ALL = "ALL"
+    SINGLE = "SINGLE"
+    SINGLE_ALLY = "SINGLE_ALLY"
+    SINGLE_ENEMY = "SINGLE_ENEMY"
+    ALL_ALLY = "ALL_ALLY"
+    ALL_ENEMY = "ALL_ENEMY"
+    NOT_SELF = "NOT_SELF"
 
 

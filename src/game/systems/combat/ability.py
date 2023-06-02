@@ -3,6 +3,7 @@ from abc import ABC
 from game.cache import cached, from_cache
 from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.effect import CombatEffect
 from game.systems.requirement.requirements import RequirementsMixin
 
@@ -24,7 +25,7 @@ class AbilityBase(ABC):
         self.name: str = name
         self.description: str = description
         self.on_use: str = on_use
-        self.effects: dict[CombatPhase, list[CombatEffect]] = effects or {}
+        self.effects: dict[CombatPhase, list[CombatEffect]] = effects or {ev: [] for ev in CombatPhase}
         self.target_mode = target_mode
         self.damage: int = damage
 
@@ -49,50 +50,65 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         - name (str)
         - description (str)
         - on_use (str)
-        - effects {CombatPhase:CombatEffect}
+        - target_mode (str)
         - damage (int)
 
         Optional JSON fields:
+        - effects {CombatPhase:[CombatEffect]}
         - requirements
         """
 
         required_fields: list[tuple[str, type]] = [
             ("name", str), ("description", str), ("on_use", str), ("target_mode", str),
             ("damage", int),
-            ("effects", dict)
+
         ]
 
-        for field_name, field_type in required_fields:
-            if field_name not in json or type(json[field_name] != field_type):
-                raise ValueError(f"Missing or poorly-typed field: {field_type}:{str(field_type)}")
+        optional_fields = [
+            ("effects", dict), ("requirements", list)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
 
         if json['class'] != 'Ability':
             raise ValueError('Incorrect class designation!')
 
-        # Pre-parse the effects fields
-        effects = {}
-        for phase in json['effects']:
-            if phase not in CombatPhase:
-                raise ValueError(f"Unknown combat phase: {phase}")
+        # Build complex optional field collections
+        kwargs = {}
 
-            if type(json['effects'][phase]) != list:
-                raise TypeError(f"Expected phase {phase} to map to a list, got {type(json['effects'][phase])} instead!")
+        # Build, verify and store effects
+        if 'effects' in json:
+            effects = {}  # Pass to kwargs once filled
 
-            if CombatPhase(phase) not in effects:
-                effects[CombatPhase(phase)] = []
+            for phase in json['effects']:  # Effects are sorted into lists based on trigger phase; iterate through phase
+                if phase not in CombatPhase:  # Catch bad phase
+                    raise ValueError(f"Unknown combat phase: {phase}")
 
-            for raw_effect in json['effects'][phase]:
-                effects[CombatPhase(phase)].append(from_cache('loader.ability.from_json')(raw_effect))
+                # Catch broken formatting
+                if type(json['effects'][phase]) != list:
+                    raise TypeError(f"Expected phase {phase} to map to a list, got {type(json['effects'][phase])} instead!")
 
-        # Pre-parse requirements
-        requirements = RequirementsMixin.get_requirements_from_json(json)
+                # If the phase hasn't been observed yet, make a list for it
+                if CombatPhase(phase) not in effects:
+                    effects[CombatPhase(phase)] = []
+
+                # Load the effect via class-field (raw_effect['class'])
+                for raw_effect in json['effects'][phase]:
+                    effects[CombatPhase(phase)].append(LoadableFactory.get(raw_effect))
+
+            kwargs['effects'] = effects
+
+        # Build requirements via LoadableFactory.
+        if 'requirements' in json:
+            requirements = LoadableFactory.collect_requirements(json)
+            kwargs['requirements'] = requirements
 
         return Ability(
             name=json['name'],
-            descritpion=json['description'],
+            description=json['description'],
             on_use=json['on_use'],
             damage=json['damage'],
-            effects=effects,
             target_mode=TargetMode(json['target_mode']),
-            requirements=requirements
+            **kwargs  # Optional fields might not be present, so store and split via dict unpacking
         )
