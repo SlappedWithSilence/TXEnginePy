@@ -7,6 +7,17 @@
       "on_use" : "Feelsbad",
       "damage" : 1,
       "target_mode": "SINGLE_ENEMY"
+    },
+
+     {
+      "class" : "Ability",
+      "name" : "Getho Ability",
+      "description" : "The second ability ever created",
+      "on_use" : "Feelsok",
+      "damage" : 2,
+      "target_mode": "SINGLE_ALLY"
     }
+
+
   ]
 }
