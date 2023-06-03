@@ -12,22 +12,22 @@ class AbilityManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self._ability_manifest: dict[str, Ability] = {}
+        self._manifest: dict[str, Ability] = {}
 
     def register_ability(self, ability: Ability) -> None:
-        if ability.name in self._ability_manifest:
+        if ability.name in self._manifest:
             raise ValueError(f"Ability with name {ability.name} already exists!")
 
-        self._ability_manifest[ability.name] = ability
+        self._manifest[ability.name] = ability
 
     def is_ability(self, ability_name: str) -> bool:
-        return ability_name in self._ability_manifest
+        return ability_name in self._manifest
 
     def get_ability(self, ability_name) -> Ability:
-        if ability_name not in self._ability_manifest:
+        if ability_name not in self._manifest:
             raise ValueError(f"{ability_name} is not a valid ability!")
 
-        return copy.deepcopy(self._ability_manifest[ability_name])
+        return copy.deepcopy(self._manifest[ability_name])
 
     def load(self) -> None:
         """

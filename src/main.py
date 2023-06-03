@@ -47,6 +47,21 @@ def root(cache_path: str):
         return f"No value located at {cache_path}! Traveled to {'.'.join(cache_path.split('.')[:count])}"
 
 
+@tx_engine.get("/cli")
+def root(command: str):
+    parts = command.split(" ")
+
+    if len(parts) < 1:
+        return ""
+
+    from game.cache import from_cache
+
+    if parts[0] in from_cache("managers"):
+        return from_cache("managers")[parts[0]].handle_command(
+            " ".join(parts[1:])
+        )
+
+
 # Begin service logic
 if __name__ == "__main__":
     logger.info("Starting main...")

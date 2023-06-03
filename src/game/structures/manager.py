@@ -1,3 +1,5 @@
+import typing
+
 import game.cache as cache
 
 from abc import ABC
@@ -15,6 +17,7 @@ class Manager(ABC):
 
     def __init__(self):
         self.name = self.__class__.__name__
+        self._manifest: dict = {}
 
         if "managers" not in cache.get_cache():
             logger.debug("Creating managers cache...")
@@ -23,8 +26,56 @@ class Manager(ABC):
         logger.debug(f"[{self.name}] Registering manager with cache...")
         cache.get_cache()["managers"][self.name] = weakref.proxy(self)
 
+        self.command_handlers: dict[str, typing.Callable] = {
+            "list": self.c_list
+        }
+
     def load(self) -> None:
         raise NotImplementedError
 
     def save(self) -> None:
         raise NotImplementedError
+
+    def c_list(self, fields: str) -> str:
+        """
+        Return a concatonated string where each line corresponds to the selected fields of
+        a specific object in the manifest.
+
+        For example, 'list name id' would return
+            'element0.name element0.id
+             element1.name element1.id
+             ...
+             elementN.name elementN.id
+             '
+        """
+
+        parts = fields.split(" ")
+        buffer = ""
+
+        if len(parts) == 0:
+            return ""
+
+        for obj in self._manifest.values():
+            sub_buffer = ""
+
+            for field in parts:
+                if not hasattr(obj, field):
+                    raise AttributeError(f"Object of type {type(obj)} has no attribute {field}!")
+
+                sub_buffer += str(getattr(obj, field)) + " "
+
+            buffer += sub_buffer + "\n"
+
+        return buffer
+
+    def handle_command(self, command: str) -> str:
+        """
+        Dispatch the 1th-nth split element down to the appropriate command handler
+        """
+        parts = command.split(" ")
+
+        if parts[0] not in self.command_handlers:
+            return f"Unknown command: {parts[0]}"
+
+        return self.command_handlers[parts[0]](" ".join(parts[1:]))
+
