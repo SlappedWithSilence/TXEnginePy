@@ -94,22 +94,25 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, Entity
         - id: int
         - attributes: [any]
 
-        Optional attribute fields:
+        Optional JSON fields:
         - inventory_controller: InventoryController
         - coin_purse: CoinPurse
-
-        Optional JSON fields:
-        - None
         """
 
         # Turn the attributes JSON fields into key-word arguments to be passed to Entity's subclasses
-        kw = {}
-        for attr in json['attributes']:
-            kw[attr] = LoadableFactory.get(json['attributes'][attr][0])
+        required_fields = [
+            ("name", str), ("id", int)
+        ]
 
-        e = Entity(name=json['name'], id=json['id'], **kw)
+        optional_fields = [
+            ("inventory_controller", dict), ("coin_purse", dict)
+        ]
 
-        return e
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+        kw = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        return Entity(name=json['name'], id=json['id'], **kw)
 
 
 class EquipmentMixin:
@@ -182,7 +185,7 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
                     del self.active_effects[phase][i]
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "CombatEntity", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Instantiate an Entity object from a JSON blob.
