@@ -36,9 +36,9 @@ class Manager(ABC):
     def save(self) -> None:
         raise NotImplementedError
 
-    def c_list(self, fields: str) -> str:
+    def c_list(self, fields: str) -> list[str]:
         """
-        Return a concatonated string where each line corresponds to the selected fields of
+        Return a list of strings where each line corresponds to the selected fields of
         a specific object in the manifest.
 
         For example, 'list name id' would return
@@ -50,21 +50,22 @@ class Manager(ABC):
         """
 
         parts = fields.split(" ")
-        buffer = ""
+        buffer = []
 
         if len(parts) == 0:
-            return ""
+            return buffer
 
         for obj in self._manifest.values():
             sub_buffer = ""
 
             for field in parts:
+
                 if not hasattr(obj, field):
                     raise AttributeError(f"Object of type {type(obj)} has no attribute {field}!")
 
                 sub_buffer += str(getattr(obj, field)) + " "
 
-            buffer += sub_buffer + "\n"
+            buffer.append(sub_buffer)
 
         return buffer
 
