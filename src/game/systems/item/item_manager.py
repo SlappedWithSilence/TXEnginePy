@@ -1,12 +1,16 @@
 import copy
 import weakref
 
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems import currency as currency
 from game.systems.item import Item
+from game.util.asset_utils import get_asset
 
 
 class ItemManager(Manager):
+
+    ITEM_ASSET_PATH = "items"
 
     def __init__(self):
         super().__init__()
@@ -76,7 +80,13 @@ class ItemManager(Manager):
         return weakref.proxy(self._manifest[item_id])
 
     def load(self) -> None:
-        pass
+        raw_asset: dict[str, any] = get_asset(self.ITEM_ASSET_PATH)
+        for raw_item in raw_asset['content']:
+            item = LoadableFactory.get(raw_item)
+            if not isinstance(item, Item):
+                raise TypeError(f"Expected object of type Ability, got {type(ability)} instead!")
+
+            self.register_item(item)
 
     def save(self) -> None:
         pass

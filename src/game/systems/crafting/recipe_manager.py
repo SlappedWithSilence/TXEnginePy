@@ -1,8 +1,12 @@
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems.crafting.recpie import Recipe
+from game.util.asset_utils import get_asset
 
 
 class RecipeManager(Manager):
+
+    RECIPE_ASSET_PATH = "recipes"
 
     def __init__(self):
         super().__init__()
@@ -30,7 +34,14 @@ class RecipeManager(Manager):
         self._manifest[recipe.id] = recipe
 
     def load(self) -> None:
-        pass
+        raw_asset: dict[str, any] = get_asset(self.RECIPE_ASSET_PATH)
+        for raw_recipe in raw_asset['content']:
+            recipe = LoadableFactory.get(raw_recipe)
+
+            if not isinstance(recipe, Recipe):
+                raise TypeError(f"Expected object of type Recipe, got type {type(recipe)} instead!")
+
+            self.register_recipe(recipe)
 
     def save(self) -> None:
         pass

@@ -10,13 +10,13 @@ class RoomManager(manager.Manager):
     """
     A Manager class that hosts a master list of all Room object.
     """
+
     def __init__(self):
         super().__init__()
 
         self.rooms: dict[int, room.Room] = {}
         self.visited_rooms: set[int] = set()
         self._manifest = self.rooms
-
 
     def register_room(self, room_object: room.Room, room_id_override: int = None) -> None:
         """
