@@ -1,0 +1,26 @@
+{
+  "content": [
+    {
+      "class" : "Item",
+      "name" : "Generic Item",
+      "id" : 0,
+      "value" : {"0" : 10},
+      "description" : "A generic Item. It does nothing and is nothing."
+    },
+    {
+      "class" : "Item",
+      "name" : "Item Number Two",
+      "id" : 1,
+      "value" : {"0" : 15},
+      "description" : "The second Item ever created."
+    },
+    {
+      "class" : "Item",
+      "name" : "key",
+      "id" : 2,
+      "value" : {"0" :  1},
+      "description" : "A simple key.",
+      "max_quantity" : 1
+    }
+  ]
+}

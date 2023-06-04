@@ -1,19 +1,16 @@
 {
-  "entities" : [
+  "content" : [
     {
       "class" : "Entity",
       "id" : -1,
       "name" : "SomeEntity",
-      "attributes" : {
-        "inventory_controller" : {
+      "inventory" : {
           "class" : "InventoryController",
-          "contents" : [
+          "manifest" : [
             [0, 3],
             [1, 2]
           ]
         }
       }
-
-    }
   ]
 }
