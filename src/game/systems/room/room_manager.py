@@ -13,11 +13,10 @@ class RoomManager(manager.Manager):
     def __init__(self):
         super().__init__()
 
-        logger.info("RoomManager::init")
         self.rooms: dict[int, room.Room] = {}
         self.visited_rooms: set[int] = set()
-        self.load()
-        logger.info("RoomManager::init.done")
+        self._manifest = self.rooms
+
 
     def register_room(self, room_object: room.Room, room_id_override: int = None) -> None:
         """

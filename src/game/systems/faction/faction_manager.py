@@ -6,13 +6,13 @@ class FactionManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self._faction_manifest: dict[int, Faction] = {}
+        self._manifest: dict[int, Faction] = {}
 
     def __contains__(self, item) -> bool:
-        return self._faction_manifest.__contains__(item)
+        return self._manifest.__contains__(item)
 
     def __getitem__(self, item) -> Faction:
-        return self._faction_manifest.__getitem__(item)
+        return self._manifest.__getitem__(item)
 
     def get_affinity(self, faction_id: int) -> int:
         """
@@ -40,7 +40,7 @@ class FactionManager(Manager):
         if faction.id in self:
             raise ValueError(f"Cannot register faction {faction.name}! A faction with id {faction.id} already exists!")
 
-        self._faction_manifest[faction.id] = faction
+        self._manifest[faction.id] = faction
 
     def load(self) -> None:
         pass

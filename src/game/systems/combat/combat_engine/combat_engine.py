@@ -41,9 +41,9 @@ class CombatEngine(FiniteStateDevice):
         # Master collections
         entity_manager = from_cache("managers.EntityManager")
         self._allies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
-                                                     ally_entity_ids]  # Master list of allied _entity_manifest
+                                                     ally_entity_ids]  # Master list of allied entities
         self._enemies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
-                                                      enemy_entity_ids]  # Master list of opposed _entity_manifest
+                                                      enemy_entity_ids]  # Master list of opposed entities
         self._player_ref: entities.Player = from_cache('player')
         self._allies.append(self._player_ref)
 

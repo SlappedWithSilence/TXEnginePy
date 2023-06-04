@@ -12,7 +12,7 @@ class ResourceManager(Manager):
     def __init__(self):
         super().__init__()
 
-        self.master_resource_manifest: dict[str, Resource] = {}
+        self._manifest: dict[str, Resource] = {}
 
     @property
     def all_resources(self) -> list[Resource]:
@@ -22,7 +22,7 @@ class ResourceManager(Manager):
         Returns:
             A list of references to the Resources in the master list
         """
-        return [copy.deepcopy(r) for r in self.master_resource_manifest.values()]
+        return [copy.deepcopy(r) for r in self._manifest.values()]
 
     def get_resource(self, resource_name: str) -> Resource:
         """
@@ -33,7 +33,7 @@ class ResourceManager(Manager):
 
         Returns: A deep copy of the requested Resource
         """
-        return copy.deepcopy(self.master_resource_manifest[resource_name])
+        return copy.deepcopy(self._manifest[resource_name])
 
     def register_resource(self, resource_object: Resource) -> None:
         """
@@ -47,10 +47,10 @@ class ResourceManager(Manager):
         if not isinstance(resource_object, Resource):
             raise TypeError(f"Cannot register a non-resource object! Expected Resource, got {type(resource_object)}")
 
-        if resource_object.name in self.master_resource_manifest:
+        if resource_object.name in self._manifest:
             raise ValueError(f"Cannot register duplicate Resource of name {resource_object.name}")
 
-        self.master_resource_manifest[resource_object.name] = resource_object
+        self._manifest[resource_object.name] = resource_object
 
     def load(self) -> None:
         """

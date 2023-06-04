@@ -6,13 +6,13 @@ class RecipeManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self._recipe_manifest: dict[int, Recipe] = {}
+        self._manifest: dict[int, Recipe] = {}
 
     def __contains__(self, item) -> bool:
-        return self._recipe_manifest.__contains__(item)
+        return self._manifest.__contains__(item)
 
     def __getitem__(self, item) -> Recipe:
-        return self._recipe_manifest.__getitem__(item)
+        return self._manifest.__getitem__(item)
 
     def register_recipe(self, recipe: Recipe) -> None:
         """
@@ -24,10 +24,10 @@ class RecipeManager(Manager):
         if type(recipe) != Recipe:
             raise TypeError(f"recipe must be a Recipe! Got {type(recipe)} instead!")
 
-        if recipe.id in self._recipe_manifest:
+        if recipe.id in self._manifest:
             raise ValueError(f"Recipe with id {recipe.id} already exists!")
 
-        self._recipe_manifest[recipe.id] = recipe
+        self._manifest[recipe.id] = recipe
 
     def load(self) -> None:
         pass

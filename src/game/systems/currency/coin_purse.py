@@ -43,8 +43,8 @@ class CoinPurse(LoadableMixin):
     def __post_init__(self):
 
         # Initialize the currencies map.
-        for currency in currency_manager.currencies:
-            self.currencies[currency] = currency_manager.to_currency(currency, 0)
+        for currency in currency_manager:
+            self.currencies[currency.id] = currency_manager.to_currency(currency.id, 0)
 
     def balance(self, cur: Currency | int) -> int:
         """

@@ -5,7 +5,7 @@ class FlagManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self._flags: dict[str, any] = {}
+        self._manifest: dict[str, any] = {}
 
     def load(self) -> None:
         pass
@@ -14,7 +14,7 @@ class FlagManager(Manager):
         pass
 
     def clear(self) -> None:
-        self._flags = {}
+        self._manifest = {}
 
     def get_flag(self, key: str) -> bool:
         """
@@ -30,7 +30,7 @@ class FlagManager(Manager):
          - A flag with a key of this.is.a.deep.flag = False would be flags['this']['is']['a']['deep']['flag'] = False
         """
 
-        level: dict | bool = self._flags
+        level: dict | bool = self._manifest
         for part in key.split('.'):
             if part not in level:
                 return False
@@ -60,10 +60,10 @@ class FlagManager(Manager):
             raise TypeError(f"Cannot set flag {key} to value of type {type(value)}! Value must be of type bool.")
 
         if '.' not in key:
-            self._flags[key] = value
+            self._manifest[key] = value
 
         else:
-            level = self._flags  # Record only deepest dict visited so far, starting with the root of the flags dict
+            level = self._manifest  # Record only deepest dict visited so far, starting with the root of the flags dict
             parts = key.split('.')  # Split the key into sub-keys
 
             # For each sub-key except the last one, traverse through the flags dict, creating new dicts where needed

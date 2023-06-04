@@ -10,16 +10,16 @@ class ItemManager(Manager):
 
     def __init__(self):
         super().__init__()
-        self._master_item_manifest: dict[int, Item] = {}
+        self._manifest: dict[int, Item] = {}
 
     def register_item(self, item_object: Item):
-        self._master_item_manifest[item_object.id] = item_object
+        self._manifest[item_object.id] = item_object
 
     def get_name(self, item_id: int) -> str:
-        return self._master_item_manifest[item_id].name
+        return self._manifest[item_id].name
 
     def get_desc(self, item_id: int) -> str:
-        return self._master_item_manifest[item_id].description
+        return self._manifest[item_id].description
 
     def get_costs(self, item_id: int) -> dict[int, int]:
         """
@@ -31,7 +31,7 @@ class ItemManager(Manager):
         Returns: A dict that maps an items value in a specific currency to that currency's id
         """
 
-        return self._master_item_manifest[item_id].value
+        return self._manifest[item_id].value
 
     def get_cost(self, item_id: int, currency_id: int, as_currency: bool = False) -> int | currency.Currency:
         """
@@ -45,9 +45,9 @@ class ItemManager(Manager):
         Returns: An int value representing the item's cost in currency 'currency_id'
         """
         if not as_currency:
-            return self._master_item_manifest[item_id].value[currency_id]
+            return self._manifest[item_id].value[currency_id]
         else:
-            return self._master_item_manifest[item_id].get_currency_value(currency_id)
+            return self._manifest[item_id].get_currency_value(currency_id)
 
     def get_instance(self, item_id: int) -> Item:
         """
@@ -61,19 +61,19 @@ class ItemManager(Manager):
         if type(item_id) != int:
             raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
 
-        if item_id not in self._master_item_manifest:
+        if item_id not in self._manifest:
             raise ValueError(f"No such item with ID {item_id}!")
 
-        return copy.deepcopy(self._master_item_manifest[item_id])
+        return copy.deepcopy(self._manifest[item_id])
 
     def get_ref(self, item_id: int) -> Item:
         if type(item_id) != int:
             raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
 
-        if item_id not in self._master_item_manifest:
+        if item_id not in self._manifest:
             raise ValueError(f"No such item with ID {item_id}!")
 
-        return weakref.proxy(self._master_item_manifest[item_id])
+        return weakref.proxy(self._manifest[item_id])
 
     def load(self) -> None:
         pass
