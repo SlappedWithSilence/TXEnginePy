@@ -1,13 +1,17 @@
 import copy
 
 from game.structures import manager as manager
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.entity import entities as entities
+from game.util.asset_utils import get_asset
 
 
 class EntityManager(manager.Manager):
     """
     A class that specializes in handling entities.
     """
+
+    ENTITY_ASSET_PATH = "entities"
 
     def __init__(self):
         super().__init__()
@@ -44,7 +48,13 @@ class EntityManager(manager.Manager):
         return copy.deepcopy(self._manifest[entity_id])
 
     def load(self) -> None:
-        pass
+        raw_asset: dict[str, any] = get_asset(self.ENTITY_ASSET_PATH)
+        for raw_entity in raw_asset['content']:
+            entity = LoadableFactory.get(raw_entity)
+            if not isinstance(entity, entities.Entity):
+                raise TypeError(f"Expected object of type Entity, got {type(entity)} instead!")
+
+            self.register_entity(entity)
 
     def save(self) -> None:
         pass
