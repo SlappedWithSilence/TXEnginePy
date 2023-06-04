@@ -58,7 +58,8 @@ class CurrencyMixin:
 
     def __init__(self, coin_purse=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.coin_purse = coin_purse or game.systems.currency.coin_purse.CoinPurse()
+        from game.systems.currency.coin_purse import CoinPurse
+        self.coin_purse = coin_purse or CoinPurse()
 
 
 class ResourceMixin:
