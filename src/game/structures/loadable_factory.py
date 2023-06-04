@@ -66,7 +66,7 @@ class LoadableFactory:
 
             # Verify field presence
             if field_name not in json and required:
-                raise ValueError(f"Field {field_type} not found!")
+                raise ValueError(f"Field {field_name} not found!")
 
             # Verify field types
             elif field_name in json and type(json[field_name]) != field_type:
