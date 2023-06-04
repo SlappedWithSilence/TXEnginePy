@@ -121,14 +121,6 @@ class Engine:
                                                                         "gold": 1000000
                                                                     }))
 
-        i0 = item.Item("Generic Item", 0, {0: 10}, "A generic Item. It does nothing and is nothing.")
-        i1 = item.Item("Item Number Two", 1, {0: 15}, "The second Item every created.")
-        i2 = item.Item("Key", 2, {0: 1}, "A simple key.", max_quantity=1)
-
-        item.item_manager.register_item(i0)
-        item.item_manager.register_item(i1)
-        item.item_manager.register_item(i2)
-
         shop_w = [0]
         shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
                                                                wares=shop_w)
