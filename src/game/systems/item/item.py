@@ -43,18 +43,30 @@ class Item(LoadableMixin):
         Required JSON fields:
         - name: str
         - id: int
-        - value: {int, int}
+        - value: dict[str, int]
         - description: str
 
         Optional JSON fields:
         - max_quantity: int (default value 10)
         """
 
+        required_fields = [
+            ("name", str), ("id", int), ("value", dict), ("description", str)
+        ]
+
+        optional_fields = [
+            ("max_quantity", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
         return Item(json['name'],
                     json['id'],
                     json['value'],
                     json['description'],
-                    json['max_quantity'] if 'max_quantity' in json else 10
+                    **kwargs
                     )
 
 
