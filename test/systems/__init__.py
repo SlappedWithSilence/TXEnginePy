@@ -17,14 +17,14 @@ def pre_collect_setup():
     """
     logger.info("Setting up test currencies...")
 
-    currency_manager.currencies[-110] = Currency(-110, "USD", {"cents": 1, "dollars": 100})
+    currency_manager.register_currency(Currency(-110, "USD", {"cents": 1, "dollars": 100}))
 
-    currency_manager.currencies[-111] = Currency(-111, "Imperial",
+    currency_manager.register_currency(Currency(-111, "Imperial",
                                                  {
                                                      "bronze": 1,
                                                      "silver": 1000,
                                                      "gold": 1000000
-                                                 })
+                                                 }))
 
     logger.info("Setting up test items...")
     te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)

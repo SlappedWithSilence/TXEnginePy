@@ -19,15 +19,15 @@ def test_currency_acquisition():
     """
 
     cp = CoinPurse()
-    assert len(cp.currencies.keys()) == len(currency_manager.currencies.keys())
+    assert len(cp.currencies.keys()) == len(currency_manager._manifest.keys())
     assert len(cp.currencies) > 0
 
-    for key in currency_manager.currencies:
+    for key in currency_manager._manifest:
         assert key in cp.currencies
         assert cp.balance(key) == 0
 
 
-@pytest.mark.parametrize("cur", currency_manager.currencies.keys())
+@pytest.mark.parametrize("cur", currency_manager._manifest.values())
 def test_contains(cur: int | Currency):
     """
     Test that CoinPurse correctly detects the requested currency
@@ -52,7 +52,7 @@ def test_contains_bad(cur):
         assert cur not in cp
 
 
-@pytest.mark.parametrize("cur", currency_manager.currencies.keys())
+@pytest.mark.parametrize("cur", currency_manager._manifest.keys())
 def test_getitem(cur: int | Currency):
     cp = CoinPurse()
 
@@ -85,7 +85,7 @@ def test_iter_next():
     """
 
     cp = CoinPurse()
-    target_iter_len = len(currency_manager.currencies.keys())
+    target_iter_len = len(currency_manager._manifest.keys())
 
     # Iterate upon the same CoinPurse instance twice
     for i in range(2):
