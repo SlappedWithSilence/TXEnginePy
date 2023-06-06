@@ -84,7 +84,7 @@ class ItemManager(Manager):
         for raw_item in raw_asset['content']:
             item = LoadableFactory.get(raw_item)
             if not isinstance(item, Item):
-                raise TypeError(f"Expected object of type Ability, got {type(ability)} instead!")
+                raise TypeError(f"Expected object of type Ability, got {type(item)} instead!")
 
             self.register_item(item)
 

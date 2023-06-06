@@ -5,8 +5,10 @@ import weakref
 from enum import Enum
 
 import game
-from game.cache import from_cache
+from game.cache import from_cache, cached
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 
@@ -16,7 +18,7 @@ import game.systems.room.action.actions as actions
 from loguru import logger
 
 
-class Room(FiniteStateDevice):
+class Room(LoadableMixin, FiniteStateDevice):
     """
     A StateDevice that simulates a user being inside a "scene" or "room". Rooms act as a container for Actions, of which
     a Room may have many.
@@ -104,7 +106,6 @@ class Room(FiniteStateDevice):
         def content():
             return ComponentFactory.get([f"You leave {self.name}"])
 
-
     @property
     def visible_actions(self) -> list[actions.Action]:
         """Returns a list containing only the actions that are visible in the room"""
@@ -114,3 +115,47 @@ class Room(FiniteStateDevice):
     def options(self) -> list[list[str | StringContent]]:
         """Returns a formatted string containing a numbered menu of actions"""
         return [[opt.menu_name] for opt in self.visible_actions]
+
+    @staticmethod
+    @cached(LoadableMixin.CACHE_PATH.format("Room"))
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Loads a Room object from a JSON blob.
+
+        Required JSON fields:
+        - name: str
+        - id: int
+        - enter_text: str
+        - first_enter_text: str
+        - actions: list[Action]
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields: list[tuple[str, type]] = [
+            ("name", str), ("id", int), ("enter_text", str), ("first_enter_text", str),
+            ("actions", list),
+
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json["class"] != "Room":
+            raise ValueError(f"Room loader expected class field value of 'Room', got {json['class']} instead!")
+
+        _actions = []
+        for raw_action in json['actions']:
+            action = LoadableFactory.get(raw_action)
+            if not isinstance(action, actions.Action):
+                raise TypeError(f"Expected object of type Action, got {type(action)} instead!")
+
+            _actions.append(action)
+
+        return Room(
+            json['id'],
+            _actions,
+            json['enter_text'],
+            json['first_enter_text'],
+            json['name']
+        )

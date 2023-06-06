@@ -1,8 +1,12 @@
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems.faction.faction import Faction
+from game.util.asset_utils import get_asset
 
 
 class FactionManager(Manager):
+
+    FACTION_ASSET_PATH = "factions"
 
     def __init__(self):
         super().__init__()
@@ -43,7 +47,13 @@ class FactionManager(Manager):
         self._manifest[faction.id] = faction
 
     def load(self) -> None:
-        pass
+        raw_asset: dict[str, any] = get_asset(self.FACTION_ASSET_PATH)
+        for raw_faction in raw_asset['content']:
+            faction = LoadableFactory.get(raw_faction)
+            if not isinstance(faction, Faction):
+                raise TypeError(f"Expected object of type Faction, got {type(faction)} instead!")
+
+            self.register_faction(faction)
 
     def save(self) -> None:
         pass

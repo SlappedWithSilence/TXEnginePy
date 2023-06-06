@@ -1,4 +1,5 @@
 from game.cache import get_cache, get_loader
+from game.structures.loadable import LoadableMixin
 from game.systems.requirement import requirements as requirements
 
 
@@ -94,7 +95,7 @@ class LoadableFactory:
         if "class" not in json:
             raise ValueError("Cannot load a JSON blob without a class field!")
 
-        if json["class"] not in get_cache()['loader']:
+        if json["class"] not in get_cache()[LoadableMixin.LOADER_KEY]:
             raise ValueError(f"No loader for class {json['class']} has been registered!")
 
         return get_loader(json['class'])(json=json)

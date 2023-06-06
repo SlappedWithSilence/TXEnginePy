@@ -3,13 +3,17 @@ import weakref
 from loguru import logger
 
 from game.structures import manager as manager
+from game.structures.loadable_factory import LoadableFactory
 from game.systems.room import room as room
+from game.util.asset_utils import get_asset
 
 
 class RoomManager(manager.Manager):
     """
     A Manager class that hosts a master list of all Room object.
     """
+
+    ROOM_ASSET_PATH = "rooms"
 
     def __init__(self):
         super().__init__()
@@ -72,18 +76,6 @@ class RoomManager(manager.Manager):
 
         return room_id in self.visited_rooms
 
-    def load(self) -> None:
-        """
-        Load rooms from disk
-        """
-        # TODO: Implement
-
-    def save(self) -> None:
-        """
-        Save room metadata to disk
-        """
-        pass
-
     def get_name(self, room_id: int) -> str:
         """
         Retrieve the name of the Room with id == room_id
@@ -101,3 +93,23 @@ class RoomManager(manager.Manager):
             raise ValueError(f"No such room with room_id:{room_id}!")
 
         return self.rooms[room_id].name
+
+    def load(self) -> None:
+        """
+        Load rooms from disk
+        """
+
+        raw_asset: dict[str, any] = get_asset(self.ROOM_ASSET_PATH)
+        for raw_room in raw_asset['content']:
+            room = LoadableFactory.get(raw_room)
+
+            if not isinstance(room, room.Room):
+                raise TypeError(f"Expected object of type Recipe, got type {type(room)} instead!")
+
+            self.register_room(room)
+
+    def save(self) -> None:
+        """
+        Save room metadata to disk
+        """
+        pass
