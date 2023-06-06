@@ -99,7 +99,7 @@ class TextualViewer(App):
 
 
 if __name__ == "__main__":
-    """
+
     viewer = Viewer()
 
     while True:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         user_input = input()
 
         r = requests.put(viewer.ip, params={"user_input": user_input}, verify=False)
-    """
 
-    viewer = TextualViewer()
-    viewer.run()
+
+    #viewer = TextualViewer()
+    #viewer.run()
