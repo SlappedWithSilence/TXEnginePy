@@ -32,14 +32,14 @@ class Room(LoadableMixin, FiniteStateDevice):
         LEAVE_ROOM = 4
         TERMINATE = -1
 
-    def __init__(self, rid: int, action_list: list[actions.Action], enter_text: str, first_enter_text: str = "",
+    def __init__(self, id: int, action_list: list[actions.Action], enter_text: str, first_enter_text: str = "",
                  name: str = "Room"):
         super().__init__(InputType.INT, self.States, self.States.DEFAULT)
 
         self.actions: list[actions.Action] = action_list
         self.enter_text: str = enter_text  # Text that is printed each time room is entered
         self.first_enter_text: str = first_enter_text  # Text only printed the first time the user enters the room
-        self.id: int = rid
+        self.id: int = id
         self._action_index: int = None
         self.name = name
 
@@ -117,7 +117,7 @@ class Room(LoadableMixin, FiniteStateDevice):
         return [[opt.menu_name] for opt in self.visible_actions]
 
     @staticmethod
-    @cached(LoadableMixin.CACHE_PATH.format("Room"))
+    @cached([LoadableMixin.LOADER_KEY, "Room", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a Room object from a JSON blob.
@@ -126,20 +126,25 @@ class Room(LoadableMixin, FiniteStateDevice):
         - name: str
         - id: int
         - enter_text: str
-        - first_enter_text: str
         - actions: list[Action]
 
         Optional JSON fields:
-        - None
+        - first_enter_text: str
         """
 
         required_fields: list[tuple[str, type]] = [
-            ("name", str), ("id", int), ("enter_text", str), ("first_enter_text", str),
+            ("name", str), ("id", int), ("enter_text", str),
             ("actions", list),
+        ]
 
+        optional_fields: list = [
+            ("first_enter_text", str),
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
         if json["class"] != "Room":
             raise ValueError(f"Room loader expected class field value of 'Room', got {json['class']} instead!")
@@ -156,6 +161,6 @@ class Room(LoadableMixin, FiniteStateDevice):
             json['id'],
             _actions,
             json['enter_text'],
-            json['first_enter_text'],
-            json['name']
+            json['name'],
+            **kwargs
         )

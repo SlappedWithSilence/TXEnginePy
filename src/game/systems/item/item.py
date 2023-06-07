@@ -151,7 +151,7 @@ class Equipment(Item, req.RequirementsMixin):
         self.damage_resist: int = damage_resist
 
     @staticmethod
-    @cached([LoadableMixin.CACHE_PATH.format("Equipment")])
+    @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> "Equipment":
         """
        Instantiate an Equipment object from a JSON blob.
