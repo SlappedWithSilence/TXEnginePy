@@ -92,10 +92,9 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, Entity
         Required JSON fields:
         - name: str
         - id: int
-        - attributes: [any]
 
         Optional JSON fields:
-        - inventory_controller: InventoryController
+        - inventory: InventoryController
         - coin_purse: CoinPurse
         """
 
@@ -105,7 +104,7 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, Entity
         ]
 
         optional_fields = [
-            ("inventory_controller", dict), ("coin_purse", dict)
+            ("inventory", dict), ("coin_purse", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
