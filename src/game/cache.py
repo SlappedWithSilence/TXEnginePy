@@ -3,6 +3,8 @@ A utility python file that hosts a global cache, global config, and useful acces
 """
 from typing import Callable
 
+from loguru import logger
+
 config: dict[str, any] = None
 cache: dict[str, any] = {}
 
@@ -114,8 +116,11 @@ def get_loader(cls: type | str) -> Callable:
     loader_full_path = loader_base_path + [key, LoadableMixin.ATTR_KEY]
 
     if key in from_cache(loader_base_path):
-        return from_cache(loader_full_path)
-
+        try:
+            return from_cache(loader_full_path)
+        except KeyError as ke:
+            logger.error(f"Failed to locate loader for {str(cls)}")
+            raise ke
     else:
         raise KeyError(
             f"No loader found for class {key}! Available loaders:\n{' '.join(list(get_cache()['loader'].keys()))}"
