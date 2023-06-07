@@ -72,7 +72,7 @@ class LoadableFactory:
             # Verify field types
             elif field_name in json and type(json[field_name]) != field_type:
                 raise TypeError(
-                    f"Field {field_type} wrong type! Expected type {field_type.__name__}, "
+                    f"Field {field_name} wrong type! Expected type {field_type.__name__}, "
                     f"got type {type(json[field_name])} instead!"
                 )
 
