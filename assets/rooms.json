@@ -1,3 +1,36 @@
 {
-  "content": []
+  "content": [
+    {
+      "class" : "Room",
+      "id" : 0,
+      "name" : "Lonely Debug Room",
+      "enter_text": "You enter a small, cramped, debug room.",
+      "actions" : [
+        {
+          "class" : "ViewInventoryAction"
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 1,
+          "requirements" : [
+            {
+              "class" : "ConsumeItemRequirement",
+              "item_id" : 2,
+              "item_quantity" : 1
+            }
+          ]
+        },
+        {
+          "class" : "WrapperAction",
+          "menu_name" : "Ooh, shiny!",
+          "activation_text" : "You find a glittering brass key on the floor.",
+          "wrap" : {
+            "class": "AddItemEvent",
+            "item_id": 2,
+            "item_quantity": 1
+          }
+        }
+      ]
+    }
+  ]
 }

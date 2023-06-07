@@ -143,16 +143,16 @@ class Engine:
         exit_r_1 = actions.ExitAction(1, requirement_list=[key_req])
         exit_r_0 = actions.ExitAction(0)
 
-        r_0 = room.Room(name="A Debug Room",
-                        action_list=[inventory_action, exit_r_1, consume_test, get_key_action],
-                        enter_text="You enter a debug room",
-                        rid=0)
+        # r_0 = room.Room(name="A Debug Room",
+        #               action_list=[inventory_action, exit_r_1, consume_test, get_key_action],
+        #               enter_text="You enter a debug room",
+        #               id=0)
 
         r_1 = room.Room(name="A Second Debug Room",
                         action_list=[inventory_action, exit_r_0, shop],
                         enter_text="You enter yet another debug room",
-                        rid=1)
-        room.room_manager.register_room(r_0)
+                        id=1)
+        # room.room_manager.register_room(r_0)
         room.room_manager.register_room(r_1)
 
     def _load_assets(self) -> None:
