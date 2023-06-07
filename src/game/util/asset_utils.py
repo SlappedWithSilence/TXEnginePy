@@ -64,4 +64,6 @@ def get_asset(asset_name: str, file_type: str = DEFAULT_ASSET_TYPE) -> any:
 
 @asset_handler('json')
 def json_handler(raw_file_text: IO) -> dict:
-    return json.loads(raw_file_text.read())
+    payload = json.loads(raw_file_text.read())
+    raw_file_text.close()
+    return payload
