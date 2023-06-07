@@ -8,6 +8,8 @@ import game.cache as cache
 import game.systems.room as room
 import game.systems.event.use_item_event as uie
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.state_device import FiniteStateDevice, StateDevice
 import game.systems.event.events as events
 import game.systems.requirement.requirements as requirements
@@ -17,7 +19,7 @@ from game.systems import entity
 from loguru import logger
 
 
-class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
+class Action(LoadableMixin, requirements.RequirementsMixin, FiniteStateDevice, ABC):
     """
     Base class for all actions.
     """
@@ -27,7 +29,7 @@ class Action(FiniteStateDevice, requirements.RequirementsMixin, ABC):
                  visible: bool = True, reveal_other_action_index: int = -1,
                  hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None,
                  persistent: bool = False, *args, **kwargs):
-        super().__init__(default_input_type, states, default_state, *args, **kwargs)
+        super().__init__(default_input_type=default_input_type, states=states, default_state=default_state, *args, **kwargs)
 
         self._menu_name: str = menu_name  # Name of the Action when viewed from a room
         self.activation_text: str = activation_text  # Text that is printed when the Action is run
@@ -83,6 +85,24 @@ class ExitAction(Action):
         """
         return f"Move to {room.room_manager.get_name(self.target_room)}"
 
+    @staticmethod
+    @cache.cached([LoadableMixin.LOADER_KEY, "ExitAction", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        required_fields = [
+            ("target_room", int)
+        ]
+
+        optional_fields = [
+            ("menu_name", str), ("visible", bool), ("reveal_other_action_index", int),
+            ("hide_after_use", bool), ("requirement_list", list), ("on_exit", list)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        return ExitAction(json['target_room'], **kwargs)
+
 
 class ViewInventoryAction(Action):
     class States(Enum):
@@ -108,17 +128,18 @@ class ViewInventoryAction(Action):
 
     def __init__(self, *args, **kwargs):
         super().__init__("View inventory", "",
-                         ViewInventoryAction.States, ViewInventoryAction.States.DEFAULT, InputType.SILENT,
+                         self.States, self.States.DEFAULT, InputType.SILENT,
                          *args, **kwargs)
 
-        self.player_ref: entity.entities.Player = weakref.proxy(cache.get_cache()["player"])
+        self.player_ref: entity.entities.Player = None
         self.stack_index: int = None
 
         # DEFAULT
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-
+            if self.player_ref is None:
+                self.player_ref = weakref.proxy(cache.from_cache('player'))
             if self.player_ref.inventory.size == 0:
                 self.set_state(self.States.EMPTY)
             else:
@@ -236,10 +257,20 @@ class ViewInventoryAction(Action):
         def content() -> dict:
             return ComponentFactory.get()
 
+    @staticmethod
+    @cache.cached([LoadableMixin.LOADER_KEY, "ViewInventoryAction", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+
+        LoadableFactory.validate_fields([], json)
+        if json['class'] != 'ViewInventoryAction':
+            raise ValueError(f"Cannot load object of type {json['class']} via ViewInventoryAction.from_json!")
+
+        return ViewInventoryAction()
+
 
 class WrapperAction(Action):
     """Simply wrap and launch a state device. This Action is mostly designed to be used as a shortcut for debugging!"""
-    
+
     class States(Enum):
         DEFAULT = 0
         TERMINATE = -1
@@ -265,3 +296,27 @@ class WrapperAction(Action):
         def content():
             return ComponentFactory.get()
 
+    @staticmethod
+    @cache.cached([LoadableMixin.LOADER_KEY, "WrapperAction", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Required JSON fields:
+        - menu_name: str
+        - activation_text: str,
+        - wrap: Event
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("menu_name", str), ("activation_text", str), ("wrap", dict)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        return WrapperAction(
+            json['menu_name'],
+            json['activation_text'],
+            LoadableFactory.get(json['wrap'])
+        )
