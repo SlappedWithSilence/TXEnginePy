@@ -29,42 +29,36 @@ def test_init_kwargs(kwargs):
 def test_load():
     j = """
     {
-    "class": "Entity",
-    "name": "Test",
-    "id": 1,
-    "attributes": {
-        "inventory": [
-            {
-                "class": "InventoryController",
-                "capacity": 16,
-                "manifest": [
-                    [
-                        -110,
-                        1
-                    ],
-                    [
-                        -111,
-                        2
-                    ]
+        "class": "Entity",
+        "name": "Test",
+        "id": 1,
+        "inventory": {
+            "class": "InventoryController",
+            "capacity": 16,
+            "manifest": [
+                [
+                    -110,
+                    1
+                ],
+                [
+                    -111,
+                    2
                 ]
-            }
-        ],
-        "coin_purse": [
-            {
-                "class": "CoinPurse",
-                "currencies": [
-                    {
-                        "id": -110,
-                        "quantity": 300
-                    },
-                    {
-                        "id": -111,
-                        "quantity": 231
-                    }
-                ]
-            }
-        ]
-    }
+            ]
+        },
+        "coin_purse": {
+            "class": "CoinPurse",
+            "currencies": [
+                {
+                    "id": -110,
+                    "quantity": 300
+                },
+                {
+                    "id": -111,
+                    "quantity": 231
+                }
+            ]
+        }
     }
     """
 
