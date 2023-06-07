@@ -69,5 +69,7 @@ def test_load():
     assert e.name == "Test"
     assert e.id == 1
     assert len(e.inventory) == 2
+    assert -110 in e.inventory
+    assert -111 in e.inventory
     assert e.coin_purse.balance(-110) == 300
     assert e.coin_purse.balance(-111) == 231
