@@ -112,48 +112,11 @@ class Engine:
         Returns:
 
         """
-        # TODO: Remove debugging code
-        currency.currency_manager.register_currency(currency.Currency(0, "USD", {"cents": 1, "dollars": 100}))
-        currency.currency_manager.register_currency(currency.Currency(1, "Imperial",
-                                                                    {
-                                                                        "bronze": 1,
-                                                                        "silver": 1000,
-                                                                        "gold": 1000000
-                                                                    }))
-
-        shop_w = [0]
-        shop = game.systems.room.action.shop_action.ShopAction("Something Something Shop", "You enter the shop",
-                                                               wares=shop_w)
 
         get_cache()["player"] = Player(id=0, name="Player")
         p: Player = get_cache()["player"]
         p.coin_purse.adjust(0, 100)
         p.inventory.new_stack(1, 1)
-
-        consume_event = ConsumeItemEvent(1, 1)
-        consume_test = game.systems.room.action.actions.WrapperAction("Get robbed", "", consume_event)
-
-        get_key_event = AddItemEvent(2, 1)
-        get_key_action = game.systems.room.action.actions.WrapperAction("Inspect glinting object on the floor", "",
-                                                                        get_key_event)
-        key_req = ConsumeItemRequirement(2, 1)
-
-        inventory_action = ViewInventoryAction()
-
-        exit_r_1 = actions.ExitAction(1, requirement_list=[key_req])
-        exit_r_0 = actions.ExitAction(0)
-
-        # r_0 = room.Room(name="A Debug Room",
-        #               action_list=[inventory_action, exit_r_1, consume_test, get_key_action],
-        #               enter_text="You enter a debug room",
-        #               id=0)
-
-        r_1 = room.Room(name="A Second Debug Room",
-                        action_list=[inventory_action, exit_r_0, shop],
-                        enter_text="You enter yet another debug room",
-                        id=1)
-        # room.room_manager.register_room(r_0)
-        room.room_manager.register_room(r_1)
 
     def _load_assets(self) -> None:
         """
