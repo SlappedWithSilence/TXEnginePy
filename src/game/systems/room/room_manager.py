@@ -101,12 +101,13 @@ class RoomManager(manager.Manager):
 
         raw_asset: dict[str, any] = get_asset(self.ROOM_ASSET_PATH)
         for raw_room in raw_asset['content']:
-            room = LoadableFactory.get(raw_room)
+            r = LoadableFactory.get(raw_room)
 
-            if not isinstance(room, room.Room):
-                raise TypeError(f"Expected object of type Recipe, got type {type(room)} instead!")
+            if not isinstance(r, room.Room):
+                raise TypeError(f"Expected object of type Recipe, got type {type(r)} instead!")
 
-            self.register_room(room)
+            self.register_room(r)
+
 
     def save(self) -> None:
         """
