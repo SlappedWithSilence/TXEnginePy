@@ -1,29 +1,50 @@
 import dataclasses
+from abc import ABC
 from typing import Union
 
+from game.cache import cached
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 
-@dataclasses.dataclass
-class Currency:
+
+class BaseCurrency(LoadableMixin, ABC):
     """Currency records information about money an entity owns.
 
     Currency objects have a name, quantity, and one or more stages.
     A stage describes a quantified grouping. For example, USD has a stage of "cents: 1" and "dollars: 100"
     A Currency must have a first stage with a value of 1.
     """
-    id: int
-    name: str
-    stages: dict[str, int]
-    quantity: int = 0
-    allow_negative: bool = False
+
+    def __init__(self, id: int, name: str, stages: dict[str, int],
+                 quantity: int = 0, allow_negative: bool = False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.id: int = id
+        self.name: str = name
+        self.stages: dict[str, int] = stages
+        self.quantity: int = quantity
+        self.allow_negative: bool = allow_negative
+
+        # Sort the stages in ascending order, keyed by their numerical values
+        self.sorted_stages = list(self.stages.items())
+        self.sorted_stages.sort(key=lambda x: x[1])
+        self.sorted_stages.reverse()
+
+
+class Currency(BaseCurrency):
+    """
+    Currency records information about money an entity owns.
+
+    Currency objects have a name, quantity, and one or more stages.
+    A stage describes a quantified grouping. For example, USD has a stage of "cents: 1" and "dollars: 100"
+    A Currency must have a first stage with a value of 1.
+    """
 
     @property
     def key(self) -> tuple[int, str]:
         return self.id, self.name
 
     def __str__(self) -> str:
-        sorted_stages = list(self.stages.items())
-        sorted_stages.sort(key=lambda x: x[1])
-        sorted_stages.reverse()
 
         base: str = ""
         working_quantity: int = self.quantity
@@ -31,9 +52,9 @@ class Currency:
 
         # If the currency is zero
         if self.quantity == 0:
-            return f"0 {sorted_stages[-1][0]}"
+            return f"0 {self.sorted_stages[-1][0]}"
 
-        for stage_name, stage_scale in sorted_stages:
+        for stage_name, stage_scale in self.sorted_stages:
             stage_quantity: int = int(working_quantity / stage_scale)  # Amount of currency that fit into the stage
 
             if stage_quantity != 0:
@@ -120,3 +141,39 @@ class Currency:
         else:
             raise TypeError(f"Cannot set a Currency's quantity to type {type(quantity)}! Must be of type int.")
 
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "Currency", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Required JSON fields:
+        - id: int
+        - name: str,
+        - stages: dict[str, int]
+
+        Optional JSON fields:
+        - quantity: int = 0
+        - allow_negative: bool = False
+        """
+
+        required_fields = [
+            ("id", int), ("name", str), ("stages", dict)
+        ]
+
+        optional_fields = [
+            ("quantity", int), ("allow_negative", bool)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        if json['class'] != "Currency":
+            raise ValueError("Invalid class field!")
+
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        return Currency(
+            json['id'],
+            json['name'],
+            json['stages'],
+            **kwargs
+        )

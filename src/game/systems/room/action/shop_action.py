@@ -3,9 +3,11 @@ from enum import Enum
 import game
 import game.systems.item as item
 import game.systems.entity.entities as entities
-from game.cache import get_cache
+from game.cache import get_cache, cached
 from game.structures import enums
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.add_item_event import AddItemEvent
@@ -46,8 +48,8 @@ class ShopAction(Action):
         PURCHASE_FAILURE = 10,
         TERMINATE = -1
 
-    def __init__(self, menu_name: str, activation_text: str, wares: list[int],
-                 default_currency: int = 0, *args, **kwargs):
+    def __init__(self, menu_name: str,  wares: list[int],
+                 default_currency: int = 0, activation_text: str = "", *args, **kwargs):
         super().__init__(menu_name, activation_text, ShopAction.States, ShopAction.States.DISPLAY_WARES,
                          InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
@@ -194,123 +196,44 @@ class ShopAction(Action):
                            formatting="item_cost")]
             for item_id in self.wares]
 
-    """
-    @property
-    def components(self) -> dict[str, any]:
-        if self.state == self.States.DISPLAY_WARES:
-
-            # Adjust input type and domain
-            self.input_type = enums.InputType.INT
-            self.domain_min = -1
-            self.domain_max = len(self.wares) - 1
-
-            return {"content": [self.activation_text],
-                    "options": self._ware_to_option()
-                    }
-        elif self.state == self.States.WARE_SELECTED:
-
-            # Adjust input type and domain
-            self.input_type = enums.InputType.INT
-            self.domain_min = -1
-            self.domain_max = len(self._get_ware_options()) - 1
-            content = ["What would you like to do with ",
-                       StringContent(value=self.ware_of_interest.name, formatting="item_name"),
-                       "?"
-                       ]
-            return ComponentFactory.get(content, self._get_ware_options())
-        elif self.state == self.States.READ_WARE_DESC:
-            self.input_type = enums.InputType.ANY
-
-            return {
-                "content": [
-                    StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
-                    self.ware_of_interest.description
-                ]
-            }
-        elif self.state == self.States.CONFIRM_WARE_PURCHASE:
-            self.input_type = enums.InputType.AFFIRMATIVE
-
-            return {
-                "content": [
-                    "Are you sure that you would like to purchase 1x ",
-                    StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
-                    " for ",
-                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
-                                  formatting="item_cost"),
-                    "?"
-                ]
-            }
-
-        elif self.state == self.States.PURCHASE_FAILURE:
-            self.input_type = enums.InputType.ANY
-            return {
-                "content": [
-                    "Cannot purchase ",
-                    StringContent(value=self.ware_of_interest.name, formatting="item_name"),
-                    ". Item costs ",
-                    StringContent(value=str(self.ware_of_interest.get_currency_value(self.default_currency)),
-                                  formatting="item_cost"),
-                    ", but you only have RETRIEVE USER CURRENCY.\nYou need USER CURRENCY - COST more to purchase."
-                ]
-            }
-
-        elif self.state == self.States.TERMINATE:
-            self.input_type = enums.InputType.ANY
-            return {
-                "content": ["You leave the shop."]
-            }
-    
-    
-    def _logic(self, user_input: any) -> None:
-
-        # State 2
-        if self.state == self.States.DISPLAY_WARES:  # Select a ware
-            if user_input == -1:  # Chose to exit
-                self.state = self.States.TERMINATE
-            else:  # Chose an item
-                self.ware_of_interest = self.wares[user_input]
-                self.state = self.States.WARE_SELECTED
-
-        # State 3
-        elif self.state == self.States.WARE_SELECTED:
-
-            # TODO: Handle input dispatching better. Remove hardcoded state transitions
-            if user_input == -1:
-                self.state = self.States.DISPLAY_WARES
-            elif user_input == 0:
-                self.state = self.States.CONFIRM_WARE_PURCHASE
-            elif user_input == 1:
-                self.state = self.States.READ_WARE_DESC
-
-        # State 5
-        elif self.state == self.States.READ_WARE_DESC:
-            self.state = self.States.WARE_SELECTED
-
-        # State 8
-        elif self.state == self.States.CONFIRM_WARE_PURCHASE:
-            if user_input:
-
-                player: entities.Player = get_cache()['player']
-                if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
-                    player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
-                    game.state_device_controller.add_state_device(
-                        AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
-                    self.state = self.States.DISPLAY_WARES
-
-                else:
-                    self.state = self.States.PURCHASE_FAILURE
-
-            else:
-                self.state = self.States.WARE_SELECTED
-
-        elif self.state == self.States.PURCHASE_FAILURE:
-            self.state = self.States.DISPLAY_WARES
-            self.input_type = enums.InputType.INT
-            self.domain_min = -1
-            self.domain_max = len(self.wares)
-
-        # State 12
-        elif self.state == self.States.TERMINATE:
-            game.state_device_controller.set_dead()
-        
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ShopAction", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
         """
+        Required JSON fields:
+        - menu_name: str
+        - default_currency: int
+        - wares: list[int]
+
+        Optional JSON fields:
+        - activation_text: str = None
+        - requirements: list[Requirement] = None
+        """
+
+        required_fields: list = [
+            ("menu_name", str), ("default_currency", int), ("wares", list)
+        ]
+
+        optional_fields = [
+            ("activation_text", str), ("requirements", list)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        if json['class'] != "ShopAction":
+            raise ValueError("Invalid class field!")
+
+        kwargs = {
+            "requirements": LoadableFactory.collect_requirements(json)
+        }
+
+        if 'activation_text' in json:
+            kwargs['activation_text'] = json['activation_text']
+
+        return ShopAction(
+            json['menu_name'],
+            json['wares'],
+            json['default_currency'],
+            **kwargs
+        )
