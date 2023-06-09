@@ -1,3 +1,23 @@
 {
-  "content": []
+  "content": [
+    {
+      "class" : "Currency",
+      "id": 0,
+      "name": "USD",
+      "stages": {
+        "cents" : 1,
+        "dollars" : 100
+      }
+    },
+    {
+      "class" : "Currency",
+      "id" : 1,
+      "name" : "Imperial",
+      "stages" : {
+        "bronze" : 1,
+        "silver" : 1000,
+        "gold" : 1000000
+      }
+    }
+  ]
 }

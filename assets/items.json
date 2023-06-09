@@ -16,7 +16,7 @@
     },
     {
       "class" : "Item",
-      "name" : "key",
+      "name" : "Shiny Key",
       "id" : 2,
       "value" : {"0" :  1},
       "description" : "A simple key.",

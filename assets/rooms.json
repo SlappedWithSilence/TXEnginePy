@@ -30,6 +30,29 @@
             "item_quantity": 1
           }
         }
+      ],
+      "__comment__" : "End of Lonely Debug Room"
+    },
+    {
+      "class" : "Room",
+      "id" : 1,
+      "name" : "Slightly More Complex Room",
+      "enter_text" : "You enter a dank cellar. Its non-euclidean geometry confuses you.",
+      "actions" : [
+        {
+          "class" : "ViewInventoryAction"
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 0
+        },
+        {
+          "class" : "ShopAction",
+          "menu_name" : "Something Something Buy My Stuff Shop",
+          "activation_text" : "Welcome to my shop! I don't know why I'm here.",
+          "default_currency" : 0,
+          "wares" : [0, 1, 2]
+        }
       ]
     }
   ]
