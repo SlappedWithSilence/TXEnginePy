@@ -619,16 +619,111 @@ class CraftingEvent(Event):
         DEFAULT = 0  # Pre-logic
         WHAT_DO_NOW = 1  # Select crafting activity
         DISPLAY_RECIPES = 2  # Choose a recipe
-        CONFIRM_RECIPE = 3  # Confirm usage
-        RECIPE_UNAVAILABLE = 4  # Missing items
+        NUM_CRAFTS = 3  # How many times to execute recipe
+        CONFIRM_RECIPE = 4  # Confirm usage
+        RECIPE_UNAVAILABLE = 5  # Missing items
         TERMINATE = -1
 
     def __init__(self):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
-        # TODO: Implement
+        self._player_ref: entities.Player = None
+        self._main_menu_options = [["Craft something"], ["<Placeholder>"]]
+        self._main_menu_map = {"Craft Something": self.States.DISPLAY_RECIPES, "<Placeholder>": self.States.TERMINATE}
+
+        self._chosen_recipe: int = None
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: None):
+            """
+            Set up the event. Grab a reference to the player and clear any stateful variables.
+            """
+
+            # Fetch ref it hasn't already been fetched.
+            if self._player_ref is None:
+                self._player_ref = weakref.proxy(from_cache('player'))
+
+            # Reset in case the event is visited more than once
+            self._main_menu_choice = None
+            self._chosen_recipe = None
+
+            self.set_state(self.States.DISPLAY_RECIPES)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.WHAT_DO_NOW, InputType.INT,
+                                       -1, lambda: len(self._main_menu_options) - 1)
+        def logic(user_input: int):
+            """
+            Handle the user's choice at the main menu. If -1 is chosen, terminate the event.
+            """
+            if user_input == -1:
+                self.set_state(self.States.TERMINATE)
+
+            else:
+                self.set_state(self._main_menu_map[user_input])
+
+        @FiniteStateDevice.state_content(self, self.States.WHAT_DO_NOW)
+        def content():
+            return ComponentFactory.get(
+                ["What would you like to do?"],
+                self._main_menu_options
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.DISPLAY_RECIPES, InputType.INT,
+                                       -1, len(self._player_ref.crafting_controller.learned_recipes) - 1)
+        def logic(user_input: int):
+            self._chosen_recipe = user_input
+
+            if self._chosen_recipe == -1:
+                self.set_state(self.States.DEFAULT)
+
+            else:
+                self.set_state(self.States.CONFIRM_RECIPE)
+
+        @FiniteStateDevice.state_content(self, self.States.DISPLAY_RECIPES)
+        def content():
+            return ComponentFactory.get(
+                ["Choose a recipe:"],
+                self._player_ref.crafting_controller.get_recipes_as_options()
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.CONFIRM_RECIPE, InputType.AFFIRMATIVE)
+        def logic(user_input: bool):
+
+            return ComponentFactory.get(
+                ["Are you sure you want to craft <>?\n"]
+            )
+
+        @FiniteStateDevice.state_content(self, self.States.CONFIRM_RECIPE)
+        def content():
+            pass
+
+        @FiniteStateDevice.state_logic(self, self.States.RECIPE_UNAVAILABLE, InputType.ANY)
+        def logic():
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.RECIPE_UNAVAILABLE)
+        def content():
+            pass
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        def logic():
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
+        def content():
+            pass
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CraftingEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+
+        LoadableFactory.validate_fields([], json)
+
+        if json['class'] != "CraftingEvent":
+            raise ValueError("Invalid 'class' field!")
+
+        return CraftingEvent()

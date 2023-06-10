@@ -1,3 +1,5 @@
+import copy
+
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems.crafting.recpie import Recipe
@@ -32,6 +34,12 @@ class RecipeManager(Manager):
             raise ValueError(f"Recipe with id {recipe.id} already exists!")
 
         self._manifest[recipe.id] = recipe
+
+    def get_recipe(self, recipe_id: int) -> Recipe:
+        """
+        Returns a deep-copy of the Recipe with the specified id.
+        """
+        return copy.deepcopy(self._manifest[recipe_id])
 
     def load(self) -> None:
         raw_asset: dict[str, any] = get_asset(self.RECIPE_ASSET_PATH)

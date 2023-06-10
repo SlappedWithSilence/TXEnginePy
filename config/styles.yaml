@@ -11,4 +11,6 @@ styles:
   room_name : ["bold"]
   resource_name: ["orange"]
   resource_value : ["white"]
-  resource_max : ["green", "bold"]
+  resource_max : ["green", "bold"],
+  valid_recipe : ["white"],
+  invalid_recipe : ["red"]
