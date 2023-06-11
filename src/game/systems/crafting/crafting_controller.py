@@ -1,3 +1,4 @@
+from game.cache import from_cache
 from game.structures.messages import StringContent
 from game.systems.crafting import recipe_manager
 
@@ -113,3 +114,18 @@ class CraftingController:
 
         return opts
 
+    def get_missing_ingredients_as_options(self, recipe_id) -> list[list[str | StringContent]]:
+        """
+        Retrieve a list of missing ingredients for a given recipe and format them into a Frame-compatible,
+        text-formatted list.
+        """
+        payload = []
+
+        for ingredient_id, ingredient_quantity in self.get_missing_ingredients(recipe_id):
+            opt = [
+                StringContent(value=from_cache("managers.ItemManager").get_name(ingredient_id), fomatting="item_name"),
+                "\t" + f"x{ingredient_quantity}"
+            ]
+            payload.append(opt)
+
+        return payload
