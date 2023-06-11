@@ -621,7 +621,8 @@ class CraftingEvent(Event):
         DISPLAY_RECIPES = 2  # Choose a recipe
         NUM_CRAFTS = 3  # How many times to execute recipe
         CONFIRM_RECIPE = 4  # Confirm usage
-        RECIPE_UNAVAILABLE = 5  # Missing items
+        INSUFFICIENT_INGREDIENTS = 5  # Missing items
+        REQUIREMENTS_NOT_MET = 6
         TERMINATE = -1
 
     def __init__(self):
@@ -677,11 +678,24 @@ class CraftingEvent(Event):
         def logic(user_input: int):
             self._chosen_recipe = user_input
 
+            # Go back to start
             if self._chosen_recipe == -1:
                 self.set_state(self.States.DEFAULT)
 
+            # Ask number of times to execute recipe
+            elif self._player_ref.crafting_controller.has_sufficient_ingredients(self._chosen_recipe) and \
+                    recipe_manager.get_recipe(self._chosen_recipe).is_requirements_fulfilled(self._player_ref):
+                self.set_state(self.States.NUM_CRAFTS)
+
+            elif not self._player_ref.crafting_controller.has_sufficient_ingredients(self._chosen_recipe):
+                self.set_state(self.States.INSUFFICIENT_INGREDIENTS)
+
+            # Can't execute the recipe
+            elif not recipe_manager.get_recipe(self._chosen_recipe).is_requirements_fulfilled(self._player_ref):
+                self.set_state(self.States.REQUIREMENTS_NOT_MET)
+
             else:
-                self.set_state(self.States.CONFIRM_RECIPE)
+                raise RuntimeError("Invalid state transition!")
 
         @FiniteStateDevice.state_content(self, self.States.DISPLAY_RECIPES)
         def content():
@@ -693,21 +707,39 @@ class CraftingEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.CONFIRM_RECIPE, InputType.AFFIRMATIVE)
         def logic(user_input: bool):
 
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CONFIRM_RECIPE)
+        def content():
             return ComponentFactory.get(
                 ["Are you sure you want to craft <>?\n"]
             )
 
-        @FiniteStateDevice.state_content(self, self.States.CONFIRM_RECIPE)
-        def content():
-            pass
-
-        @FiniteStateDevice.state_logic(self, self.States.RECIPE_UNAVAILABLE, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.INSUFFICIENT_INGREDIENTS, InputType.ANY)
         def logic():
-            pass
 
-        @FiniteStateDevice.state_content(self, self.States.RECIPE_UNAVAILABLE)
+            if not recipe_manager.get_recipe(self._chosen_recipe).is_requirements_fulfilled(self._player_ref):
+                self.set_state(self.States.REQUIREMENTS_NOT_MET)
+
+            else:
+                self.set_state(self.States.DEFAULT)
+
+        @FiniteStateDevice.state_content(self, self.States.INSUFFICIENT_INGREDIENTS)
+        def content():
+            return ComponentFactory.get(
+                ["You are missing key ingredients for this recipe:"],
+                self._player_ref.crafting_controller.get_missing_ingredients_as_options(self._chosen_recipe)
+            )
+
+        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET, InputType.ANY)
+        def logic():
+
+           pass
+
+        @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_NOT_MET)
         def content():
             pass
+
 
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
         def logic():
