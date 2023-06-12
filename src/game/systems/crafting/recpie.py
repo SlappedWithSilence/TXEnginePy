@@ -1,8 +1,9 @@
 from abc import ABC
 
-from game.cache import cached
+from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
+from game.structures.messages import StringContent
 from game.systems.requirement.requirements import RequirementsMixin
 
 
@@ -40,6 +41,19 @@ class RecipeBase(ABC):
                 observed_item_ids.add(item_id)
             else:
                 raise ValueError(f"Duplicate product ID detected! {item_id}! All products entries must be unique")
+
+    def get_ingredients_as_options(self, num_crafts: int = 1) -> list[list[str | StringContent]]:
+        opts = []
+
+        for item_id, required_quantity in self.items_in:
+            opts.append(
+                [
+                    StringContent(value=from_cache("Managers.ItemManager").get_name(item_id), formatting="item_name"),
+                    "\t",
+                    StringContent(value=f"x{required_quantity * num_crafts}")
+                 ]
+            )
+            return opts
 
 
 class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
