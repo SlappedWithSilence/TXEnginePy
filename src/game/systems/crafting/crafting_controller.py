@@ -124,7 +124,8 @@ class CraftingController:
         for ingredient_id, ingredient_quantity in self.get_missing_ingredients(recipe_id):
             opt = [
                 StringContent(value=from_cache("managers.ItemManager").get_name(ingredient_id), fomatting="item_name"),
-                "\t" + f"x{ingredient_quantity}"
+                f"\tx{ingredient_quantity}",
+                f"\t({self.get_max_crafts(recipe_id)})"
             ]
             payload.append(opt)
 
