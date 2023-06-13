@@ -48,7 +48,7 @@ class RecipeBase(ABC):
         for item_id, required_quantity in self.items_in:
             opts.append(
                 [
-                    StringContent(value=from_cache("Managers.ItemManager").get_name(item_id), formatting="item_name"),
+                    StringContent(value=from_cache("managers.ItemManager").get_name(item_id), formatting="item_name"),
                     "\t",
                     StringContent(value=f"x{required_quantity * num_crafts}")
                  ]
@@ -68,7 +68,7 @@ class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
         super().__init__(recipe_id=id, items_in=items_in, items_out=items_out, **kwargs)
 
     @staticmethod
-    @cached
+    @cached([LoadableMixin.LOADER_KEY, "Recipe", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Instantiate a Recipe object from a JSON blob.
@@ -83,19 +83,20 @@ class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
         - items_in: [[int, int]]
         - items_out: [[int, int]]
 
-        Optional attribute fields:
-        - requirements: [Requirement]
-
         Optional JSON fields:
-        - None
+        - requirements: list[Requirements]
+        - name: str
         """
 
         required_fields = [("id", int), ("items_in", list), ("items_out", list)]
-        LoadableFactory.validate_fields(required_fields, json)
+        optional_fields = [("name", str), ("requirements", list)]
 
-        requirements: list = RequirementsMixin.get_requirements_from_json(json) if 'requirements' in json else []
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
         return Recipe(json['id'],
                       json['items_in'],
                       json['items_out'],
-                      requirements=requirements)
+                      **kwargs)
