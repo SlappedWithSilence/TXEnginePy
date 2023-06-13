@@ -1,3 +1,11 @@
 {
-  "content": []
+  "content": [
+    {
+      "class" : "Recipe",
+      "id" : 1,
+      "name" : "Refine Iron Ore",
+      "items_in" : [[3, 1]],
+      "items_out" : [[4, 1]]
+    }
+  ]
 }

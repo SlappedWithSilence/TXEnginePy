@@ -21,6 +21,22 @@
       "value" : {"0" :  1},
       "description" : "A simple key.",
       "max_quantity" : 1
+    },
+    {
+      "class" : "Item",
+      "name" : "Iron Ore",
+      "id" : 3,
+      "value" : {"0" : 5},
+      "description" : "A heavy, dull chunk of earth, interwoven with beads of glittering iron. This looks to be refinable.",
+      "max_quantity" : 10
+    },
+    {
+      "class" : "Item",
+      "name" : "Iron Ingot",
+      "id" : 4,
+      "value" : {"0" : 10},
+      "description" : "A solid ingot of pure iron.",
+      "max_quantity" : 20
     }
   ]
 }

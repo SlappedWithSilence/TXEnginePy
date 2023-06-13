@@ -12,5 +12,6 @@ styles:
   resource_name: ["orange"]
   resource_value : ["white"]
   resource_max : ["green", "bold"]
+  recipe_name : ["white"]
   valid_recipe : ["white"]
   invalid_recipe : ["red"]
