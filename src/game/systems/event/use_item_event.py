@@ -1,13 +1,13 @@
 from enum import Enum
 
-import game
 from game import cache
+from game.cache import cached
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity import entities as entities
 from game.systems.event.events import Event
-from game.systems.item.item import Usable
 
 
 class UseItemEvent(Event):
@@ -25,6 +25,8 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+
+            from game.systems.item.item import Usable
             if isinstance(self.player_ref.inventory.items[self.stack_index].ref, Usable):
 
                 if self.player_ref.inventory.items[self.stack_index].ref.is_requirements_fulfilled():
@@ -45,7 +47,7 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
         def content(_: any) -> dict:
-            ref: Usable = self.player_ref.inventory.items[self.stack_index].ref
+            ref = self.player_ref.inventory.items[self.stack_index].ref
             c = [
                 "Failed to use ",
                 StringContent(value=ref.name, formatting="item_name"),
@@ -88,3 +90,8 @@ class UseItemEvent(Event):
                     "."
                 ]
             )
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "UseItemEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        raise RuntimeError("UseItemEvent does not support JSON loading!")
