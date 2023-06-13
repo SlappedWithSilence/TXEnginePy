@@ -168,6 +168,21 @@ class CraftingEvent(Event):
                 recipe_manager.get_recipe().get_requirements_as_options()
             )
 
+        @FiniteStateDevice.state_logic(self, self.States.EXECUTE_RECIPE, InputType.ANY)
+        def logic(_: any) -> None:
+            self._player_ref.crafting_controller.perform_recipe(self._chosen_recipe, self._chosen_num_crafts)
+            self.set_state(self.States.DEFAULT)
+
+        @FiniteStateDevice.state_content(self, self.States.EXECUTE_RECIPE)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [
+                    "You crafted ",
+                    StringContent(value=recipe_manager.get_recipe(self._chosen_recipe).name, formatting="recipe_name"),
+                    f" {self._chosen_num_crafts} times."
+                ]
+            )
+
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
         def logic():
             game.state_device_controller.set_dead()

@@ -1,8 +1,11 @@
+import game
 from game.cache import from_cache
 from game.structures.messages import StringContent
 from game.systems.crafting import recipe_manager
 
 from loguru import logger
+
+from game.systems.event.add_item_event import AddItemEvent
 
 
 class CraftingController:
@@ -130,3 +133,29 @@ class CraftingController:
             payload.append(opt)
 
         return payload
+
+    def perform_recipe(self, recipe_id: int, num_crafts: int = 1) -> None:
+        """
+        Execute the specified recipe by consuming the required items and spawning AddItemEvents for the products.
+
+        This method assumes that all ingredients are present and that all requirements are met. If either of those
+        conditions are not met, an error will be raised.
+
+        args:
+            recipe_id: The id of the recipe to perform
+            num_crafts: The number of times to perform the recipe
+        """
+
+        if num_crafts > self.get_max_crafts(recipe_id):
+            raise ValueError(f"Cannot execute recipe:{recipe_id} {num_crafts} times! Insufficient ingredients!")
+
+        if not recipe_manager.get_recipe(recipe_id).is_requirements_fulfilled(self._owner):
+            raise RuntimeError("Cannot perform recipe, requirements not met!")
+
+        # Consume each ingredient in the recipe 'n' times, where 'n' is num_crafts
+        for item_id, item_quantity in recipe_manager.get_recipe(recipe_id).items_in:
+            self._owner.inventory.consume_item(item_id, item_quantity * num_crafts)
+
+        # Insert each product of the recipe into the player's inventory 'n' times, where 'n' is num_crafts
+        for item_id, item_quantity in recipe_manager.get_recipe(recipe_id).items_out:
+            game.state_device_controller.add_state_device(AddItemEvent(item_id, item_quantity * num_crafts))
