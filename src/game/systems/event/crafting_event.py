@@ -138,7 +138,7 @@ class CraftingEvent(Event):
                 [f"Are you sure you want to craft {recipe_manager.get_recipe(self._chosen_recipe).name} ",
                  f"x{self._chosen_num_crafts}?\nYou will consume: "
                  ],
-                recipe_manager.get_recipe(self._chosen_recipe).get_ingredients_as_options()
+                recipe_manager.get_recipe(self._chosen_recipe).get_ingredients_as_options(self._chosen_num_crafts)
             )
 
         @FiniteStateDevice.state_logic(self, self.States.INSUFFICIENT_INGREDIENTS, InputType.ANY)
@@ -159,12 +159,14 @@ class CraftingEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET, InputType.ANY)
         def logic():
-
-            pass
+            self.set_state(self.States.DEFAULT)
 
         @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_NOT_MET)
         def content():
-            pass
+            return ComponentFactory.get(
+                ["You do not meet the requirements for this recipe!"],
+                recipe_manager.get_recipe().get_requirements_as_options()
+            )
 
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
         def logic():
