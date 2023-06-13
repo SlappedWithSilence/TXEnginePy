@@ -117,6 +117,8 @@ class Engine:
         p: Player = get_cache()["player"]
         p.coin_purse.adjust(0, 100)
         p.inventory.new_stack(1, 1)
+        p.inventory.new_stack(3, 15)
+        p.crafting_controller.learn_recipe(1)
 
     def _load_assets(self) -> None:
         """
