@@ -34,13 +34,13 @@ class CraftingEvent(Event):
 
         self._player_ref: entities.Player | None = None
         self._main_menu_options = [["Craft something"], ["<Placeholder>"]]
-        self._main_menu_map = {"Craft Something": self.States.DISPLAY_RECIPES, "<Placeholder>": self.States.TERMINATE}
+        self._main_menu_map = {0: self.States.DISPLAY_RECIPES, 1: self.States.TERMINATE}
 
         self._chosen_recipe: int | None = None
         self._chosen_num_crafts: int | None = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
-        def logic(_: None):
+        def logic(_: any):
             """
             Set up the event. Grab a reference to the player and clear any stateful variables.
             """
@@ -52,7 +52,7 @@ class CraftingEvent(Event):
             # Reset in case the event is visited more than once
             self._main_menu_choice = self._chosen_recipe = self._chosen_num_crafts = None
 
-            self.set_state(self.States.DISPLAY_RECIPES)
+            self.set_state(self.States.WHAT_DO_NOW)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content():
@@ -66,6 +66,7 @@ class CraftingEvent(Event):
             """
             if user_input == -1:
                 self.set_state(self.States.TERMINATE)
+                return
 
             else:
                 self.set_state(self._main_menu_map[user_input])
@@ -78,16 +79,18 @@ class CraftingEvent(Event):
             )
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_RECIPES, InputType.INT,
-                                       -1, len(self._player_ref.crafting_controller.learned_recipes) - 1)
+                                       -1, lambda: len(self._player_ref.crafting_controller.learned_recipes) - 1)
         def logic(user_input: int):
-            self._chosen_recipe = user_input
 
             # Go back to start
-            if self._chosen_recipe == -1:
+            if user_input == -1:
                 self.set_state(self.States.DEFAULT)
+                return
+
+            self._chosen_recipe = self._player_ref.crafting_controller.learned_recipes[user_input]
 
             # Ask number of times to execute recipe
-            elif self._player_ref.crafting_controller.has_sufficient_ingredients(self._chosen_recipe) and \
+            if self._player_ref.crafting_controller.has_sufficient_ingredients(self._chosen_recipe) and \
                     recipe_manager.get_recipe(self._chosen_recipe).is_requirements_fulfilled(self._player_ref):
                 self.set_state(self.States.NUM_CRAFTS)
 
@@ -142,7 +145,7 @@ class CraftingEvent(Event):
             )
 
         @FiniteStateDevice.state_logic(self, self.States.INSUFFICIENT_INGREDIENTS, InputType.ANY)
-        def logic():
+        def logic(_: any):
 
             if not recipe_manager.get_recipe(self._chosen_recipe).is_requirements_fulfilled(self._player_ref):
                 self.set_state(self.States.REQUIREMENTS_NOT_MET)
@@ -158,7 +161,7 @@ class CraftingEvent(Event):
             )
 
         @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET, InputType.ANY)
-        def logic():
+        def logic(_: any):
             self.set_state(self.States.DEFAULT)
 
         @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_NOT_MET)
@@ -182,14 +185,6 @@ class CraftingEvent(Event):
                     f" {self._chosen_num_crafts} times."
                 ]
             )
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic():
-            game.state_device_controller.set_dead()
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content():
-            return ComponentFactory.get()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CraftingEvent", LoadableMixin.ATTR_KEY])
