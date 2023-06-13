@@ -33,7 +33,7 @@ class CraftingController:
                 if recipe not in recipe_manager:
                     raise ValueError(f"Unknown recipe id! {str(recipe)}")
 
-        self.learned_recipes: set[int] = set(recipe_manifest) if recipe_manifest is not None else set()
+        self.learned_recipes: list[int] = recipe_manifest if recipe_manifest is not None else []
         self._owner: Entity = None
         self.owner: Entity = owner
 
@@ -60,7 +60,7 @@ class CraftingController:
             logger.warning(f"{self.owner.name} has learned recipe with ID {recipe_id} without meeting requirements!")
 
         if recipe_id not in self.learned_recipes:
-            self.learned_recipes.add(recipe_id)
+            self.learned_recipes.append(recipe_id)
 
     def get_missing_ingredients(self, recipe_id: int) -> list[tuple[int, int]]:
         """
