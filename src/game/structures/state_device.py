@@ -336,7 +336,6 @@ class FiniteStateDevice(StateDevice, ABC):
 
             spec = inspect.getfullargspec(fn)
             if len(spec.args) != 1:
-                instance.dump()
                 raise ValueError(
                     f"""Error registering logic provider for state {state}.
                     State logic functions must accept only a single positional argument, not {len(spec.args)}!""")
