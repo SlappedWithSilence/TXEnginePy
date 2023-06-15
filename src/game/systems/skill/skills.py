@@ -115,17 +115,17 @@ class Skill(LoadableMixin, SkillBase):
         Required JSON fields:
         - name: str
         - id: int
-        - level_up_events: {int, events.Event}
+        - level_up_events: {str(int), list[events.Event]}
 
         Optional JSON fields:
         - level: int
         - xp: int
         - initial_level_up_limit: int
-        - next_level_ratio: int
+        - next_level_ratio: float
         """
 
         # Validate required fields exist
-        required_fields = [("name", str), ("id", int), ("level_up_events", any)]
+        required_fields = [("name", str), ("id", int), ("level_up_events", dict)]
 
         LoadableFactory.validate_fields(required_fields, json)
 
