@@ -12,6 +12,8 @@ import os
 from os.path import exists
 from typing import IO
 
+from loguru import logger
+
 DEFAULT_ASSET_PATH = "./assets"
 DEFAULT_ASSET_TYPE = "json"
 
@@ -64,6 +66,13 @@ def get_asset(asset_name: str, file_type: str = DEFAULT_ASSET_TYPE) -> any:
 
 @asset_handler('json')
 def json_handler(raw_file_text: IO) -> dict:
-    payload = json.loads(raw_file_text.read())
+
+    try:
+        payload = json.loads(raw_file_text.read())
+    except json.decoder.JSONDecodeError as e:
+        logger.error(f"JSON formatting error in file!")
+        raw_file_text.close()
+        raise e
+
     raw_file_text.close()
     return payload
