@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import copy
 
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 import game.systems.skill.skills as skills
+from game.util.asset_utils import get_asset
 
 
 class SkillManager(Manager):
+
+    SKILL_ASSET_PATH = "skills"
 
     def __init__(self):
         super().__init__()
@@ -17,6 +21,9 @@ class SkillManager(Manager):
 
     def __contains__(self, item) -> bool:
         return self._manifest.__contains__(item)
+
+    def __iter__(self):
+        return self._manifest.__iter__()
 
     def register_skill(self, skill: skills.Skill) -> None:
         if not isinstance(skill, skills.Skill):
@@ -36,7 +43,16 @@ class SkillManager(Manager):
         return copy.deepcopy(self._manifest[skill_id])
 
     def load(self) -> None:
-        pass
+
+        raw_asset: dict[str, any] = get_asset(self.SKILL_ASSET_PATH)
+
+        for raw_skill in raw_asset['content']:
+            skill = LoadableFactory.get(raw_skill)
+
+            if not isinstance(skill, skills.Skill):
+                raise TypeError(f"Expected object of type Skill, got {type(skill)} instead!")
+
+            self.register_skill(skill)
 
     def save(self) -> None:
         pass
