@@ -17,24 +17,35 @@ class SkillController:
         if type(obtain_all) != bool:
             raise TypeError()
 
-        if type(skill_ids) is not None and type(skill_ids) != list:
+        if type(skill_ids) is not None and type(skill_ids) != list and not obtain_all:
             raise TypeError()
 
+        self.obtain_all = obtain_all  # Marks if all the skills that exist have already been obtained
         self.skills = {}
 
         if obtain_all:
             for skill_id in skill_manager:
-                self.skills[skill_id] = skill_manager.get_skill(skill_id)
+                self.obtain_skill(skill_id)
 
         elif skill_ids is not None:
             for skill_id in skill_ids:
-                self.skills[skill_id] = skill_manager.get_skill(skill_id)
+                self.obtain_skill(skill_id)
 
     def __contains__(self, item: int) -> bool:
         return self.skills.__contains__(item)
 
     def __getitem__(self, item: int) -> Skill:
         return self.skills.__getitem__(item)
+
+    def obtain_skill(self, skill_id: int) -> None:
+        """
+        Obtain a skill that has not already been added to the controller from the manager
+        """
+
+        if skill_id in self.skills:
+            raise RuntimeError(f"Skill with id {skill_id} has already been obtained!")
+
+        self.skills[skill_id] = skill_manager.get_skill(skill_id)
 
     def get_level(self, skill_id: int) -> int:
         """
