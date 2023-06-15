@@ -23,6 +23,9 @@ class Event(FiniteStateDevice, LoadableMixin, ABC):
     def __init__(self, default_input_type: InputType, states: Enum, default_state):
         super().__init__(default_input_type, states, default_state)
 
+    def __str__(self) -> str:
+        return f"{self.__class__}"
+
 
 class FlagEvent(Event):
     """ An event that sets a specific flag to a given value
