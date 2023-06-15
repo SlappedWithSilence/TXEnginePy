@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from abc import ABC
 
-import game.systems.currency.coin_purse
+from loguru import logger
+
+import game.systems.combat.effect as effects
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
 from game.cache import cached
@@ -10,12 +13,8 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
 from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin
-import game.systems.combat.effect as effects
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
-
-from loguru import logger
-
 from game.systems.skill.skill_controller import SkillController
 
 
@@ -72,7 +71,50 @@ class ResourceMixin:
         self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
 
 
-class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
+class SkillMixin:
+
+    def __init__(self, skills: dict[str, dict[str, int]] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """
+        Expects a dict-form manifest formatted like so:
+        {
+            "skill_id" : {
+                "level" : 1
+                "xp" : 1
+            }
+        }
+        """
+
+        self.skill_controller = SkillController(obtain_all=True)
+
+        if skills is not None and type(skills) is not dict:
+            raise TypeError(f"Unexpected type for skills! Expected either dict or None, got {type(skills)} instead.")
+
+        # Iterate through the skill dicts provided, and load them into the controller's data
+        if skills is not None:
+            for skill_id in skills:
+
+                # JSON does not allow for int-typed keys, so we have to cast the str-equivalent of int back into an int
+                try:
+                    true_id = int(skill_id)
+                except ValueError:
+                    raise ValueError(f"ID of {skill_id} cannot be converted to int!")
+
+                if true_id not in self.skill_controller and self.skill_controller.obtain_all:
+                    raise ValueError(f"No skill with id {true_id}!")
+                elif true_id not in self.skill_controller and not self.skill_controller.obtain_all:
+                    self.skill_controller.obtain_skill(true_id)
+
+                for term in ["level", "xp"]:
+                    if term not in skills[skill_id]:
+                        raise ValueError(f"Missing field {term} in skill definition for skill {skill_id}")
+
+                # Finally, set the level and xp values of the skill (assuming it has already been obtained)
+                self.skill_controller[true_id].level = skills[skill_id]['level']
+                self.skill_controller[true_id].xp = skills[skill_id]['xp']
+
+
+class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
     def __init__(self, *args, **kwargs):
@@ -96,6 +138,7 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, Entity
         Optional JSON fields:
         - inventory: InventoryController
         - coin_purse: CoinPurse
+        - skills: dict
         """
 
         # Turn the attributes JSON fields into key-word arguments to be passed to Entity's subclasses
@@ -104,7 +147,7 @@ class Entity(CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, Entity
         ]
 
         optional_fields = [
-            ("inventory", dict), ("coin_purse", dict)
+            ("inventory", dict), ("coin_purse", dict), ("skills", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -240,37 +283,6 @@ class CraftingMixin:
     def __init__(self, recipes: list[int] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
-
-
-class SkillMixin:
-
-    def __init__(self, skill_manifest: dict[str, dict[str, int]]):
-        """
-        Expects a dict-form manifest formatted like so:
-        {
-            "skill_id" : {
-                "level" : 1
-                "xp" : 1
-            }
-        }
-        """
-
-        self.skill_controller = SkillController(obtain_all=True)
-        for skill_id in skill_manifest:
-            if skill_id not in self.skill_controller:
-                raise ValueError(f"No skill with id {skill_id}!")
-
-            for term in ["level", "xp"]:
-                if term not in skill_manifest[skill_id]:
-                    raise ValueError(f"Missing field {term} in skill definition for skill {skill_id}")
-
-            try:
-                true_id = int(skill_id)
-            except ValueError:
-                raise ValueError(f"ID of {skill_id} cannot be converted to int!")
-
-            self.skill_controller[true_id].level = skill_manifest[skill_id]['level']
-            self.skill_controller[true_id].xp = skill_manifest[skill_id]['xp']
 
 
 class Player(CraftingMixin, CombatEntity):
