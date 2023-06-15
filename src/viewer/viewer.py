@@ -39,6 +39,7 @@ class Viewer:
     def __init__(self):
         u = input("Enter the IP for the TXEngine server: ")
         self.ip = 'http://' + (u if u != "" else "localhost:8000")
+        self.session = requests.Session()
 
     def display(self, value: dict):
         """
@@ -103,11 +104,11 @@ if __name__ == "__main__":
     viewer = Viewer()
 
     while True:
-        results = requests.get(viewer.ip, verify=False)
+        results = viewer.session.get(viewer.ip, verify=False)
         viewer.display(results.json())
         user_input = input()
 
-        r = requests.put(viewer.ip, params={"user_input": user_input}, verify=False)
+        put_results = viewer.session.put(viewer.ip, params={"user_input": user_input}, verify=False)
 
 
     #viewer = TextualViewer()
