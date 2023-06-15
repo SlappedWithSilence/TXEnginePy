@@ -58,6 +58,9 @@ class Frame(BaseModel):
     input_range: dict[str, int | None]
     frame_type: str = "Generic"
 
+    class Config:
+        use_enum_values = True
+
 
 class ComponentFactory:
     """
