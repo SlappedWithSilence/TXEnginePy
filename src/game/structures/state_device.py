@@ -20,10 +20,21 @@ class StateDevice(ABC):
     """
 
     def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = None):
-        self.input_type: InputType = input_type
+        self._input_type: InputType = input_type
         self._input_range: dict[str, int] = input_range or to_range()
         self.name: str = name or f"StateDevice::{self.__class__.__name__}"
         self._controller: any = None  # This value should only be set by the GameStateController
+
+    @property
+    def input_type(self) -> InputType:
+        return self._input_type
+
+    @input_type.setter
+    def input_type(self, value) -> None:
+        if type(value) != InputType:
+            raise TypeError(f"Cannot set input_type to object of type {type(value)}")
+
+        self._input_type = value
 
     @property
     def controller(self) -> any:
