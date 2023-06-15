@@ -64,7 +64,7 @@ class Item(LoadableMixin):
 
         return Item(json['name'],
                     json['id'],
-                    json['value'],
+                    {int(k): json['value'][k] for k in json['value']},
                     json['description'],
                     **kwargs
                     )
