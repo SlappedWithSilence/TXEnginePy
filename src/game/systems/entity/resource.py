@@ -1,9 +1,13 @@
 import copy
 
+from game.cache import cached
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
 import game.systems.entity as entity
 
 import dataclasses
+from collections import namedtuple
 
 from loguru import logger
 
@@ -17,6 +21,19 @@ class Resource:
     value: int
     max: int
     description: str
+
+    def __post_init__(self):
+        if self.value < 0:
+            raise ValueError(f"Resource value is less than min! {self.value} < 0.")
+
+        if self.value > self.max:
+            raise ValueError(f"Resource cannot have value above max! {self.value > self.max}")
+
+        if self.name is None or self.name == "":
+            raise ValueError("Resource must have a name!")
+
+        if self.description is None or self.description == "":
+            raise ValueError("Resource must have a description!")
 
     @property
     def percent_remaining(self) -> float:
@@ -79,6 +96,48 @@ class Resource:
     def __repr__(self):
         return self.__str__()
 
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "Resource", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> "Resource":
+        """
+        Create a Resource object from a JSON blob
+
+        Required JSON fields:
+        - name: str
+        - value: int
+        - max: int
+        - description: str
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields: list = [
+            ("name", str), ("description", json), ("max", int), ("value", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        if json['class'] != "Resource":
+            raise TypeError()
+
+        return Resource(
+            json['name'],
+            json['value'],
+            json['max'],
+            json['description']
+        )
+
+
+class ResourceModifierMixin:
+    """
+    This mixin allows an object to be attached as a modifier to one or more Resources via the ResourceController
+    """
+
+    def __init__(self, resource_modifiers: dict[str, int | float] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.resource_modifiers = resource_modifiers or {}
+
 
 class ResourceController:
     """
@@ -87,7 +146,17 @@ class ResourceController:
 
     def __init__(self, resources: list[tuple[str, int, int] | Resource] = None):
 
-        self.resources: dict[str, Resource] = {r.name: r for r in entity.resource_manager.all_resources}
+        self._cached_max: [str, int] = {}  # A cache of max-values. Invalidated when a modifier is attached or removed
+
+        self.resources: dict[str, dict[str, any]] = {
+            r.name: {
+                "instance": r,
+                "modifiers": {
+                    "int": [],
+                    "float": [],
+                }
+            } for r in entity.resource_manager.all_resources
+        }
 
         if resources:
             if type(resources) != list:
@@ -99,15 +168,15 @@ class ResourceController:
                         raise ValueError(
                             f"Cannot overload a resource that doesn't exist! Unknown resource: {overloaded_resource.name}")
 
-                    self.resources[overloaded_resource.name] = copy.deepcopy(overloaded_resource)
+                    self.set_instance(copy.deepcopy(overloaded_resource))
 
                 elif type(overloaded_resource) == tuple[str, int, int]:
                     if overloaded_resource[0] not in self.resources:
                         raise ValueError(
                             f"Cannot overload a resource that doesn't exist! Unknown resource: {overloaded_resource[0]}")
 
-                    self.resources[overloaded_resource[0]].value = overloaded_resource[1]
-                    self.resources[overloaded_resource[0]].max = overloaded_resource[2]
+                    self.get_instance(overloaded_resource[0]).value = overloaded_resource[1]
+                    self.get_instance(overloaded_resource[0]).max = overloaded_resource[2]
 
     def __contains__(self, resource: str | Resource) -> bool:
         if type(resource) == str:
@@ -117,8 +186,117 @@ class ResourceController:
 
         return False
 
-    def __getitem__(self, item) -> Resource:
-        return self.resources.__getitem__(item)
+    def get_instance(self, resource_name) -> Resource:
+        return self.resources[resource_name]['instance']
 
-    def __setitem__(self, key, value) -> None:
-        self.resources.__setitem__(key, value)
+    def set_instance(self, resource: Resource) -> None:
+        if resource.name not in self.resources:
+            raise ValueError(f"Unknown resource {resource.name}!")
+
+        self.resources[resource.name]['instance'] = resource
+
+    def get_modifiers(self, resource_name, modifier_type: str | type) -> list[ResourceModifierMixin]:
+        """
+        Retrieve the modifiers for a given resource and modifier type
+        """
+
+        if resource_name not in self.resources:
+            raise ValueError(f"Unknown resource: {resource_name}!")
+
+        true_modifier_type: str = None
+        if type(modifier_type) == str:
+            true_modifier_type = modifier_type
+        elif type(modifier_type) == type:
+            true_modifier_type = modifier_type.__class__
+
+        if true_modifier_type not in ["int", "float"]:
+            raise ValueError(f"Unknown modifier type: {modifier_type}!")
+
+        return self.resources['modifiers'][true_modifier_type]
+
+    def attach_modifier(self, modifier: ResourceModifierMixin) -> None:
+        """
+        For each resource specified in the modifier object, attach a reference to it inside the controller and remove
+        any cached maxes.
+        """
+
+        if not isinstance(modifier, ResourceModifierMixin):
+            raise TypeError(f"Unexpected modifier type {type(modifier)}!")
+
+        for resource_name in modifier.resource_modifiers:
+            if resource_name not in self.resources:
+                raise ValueError(f"Unknown resource: {resource_name}!")
+
+            # Determine if the modifier is float or int typed and assign it accordingly
+            if type(modifier.resource_modifiers[resource_name]) == int:
+                self.get_modifiers(resource_name, int).append(modifier)
+
+            elif type(modifier.resource_modifiers[resource_name]) == float:
+                self.get_modifiers(resource_name, float).append(modifier)
+            else:
+                raise ValueError(f"Unknown modifier type: {type(modifier.resource_modifiers[resource_name])}!")
+
+            if resource_name in self._cached_max:
+                del self._cached_max[resource_name]
+
+    def detach_modifier(self, modifier: ResourceModifierMixin) -> None:
+        """
+        Search through the list of attached modifiers and remove any references to the specified object
+        """
+
+        for resource_name in modifier.resource_modifiers:
+            if resource_name not in self.resources:
+                raise ValueError(f"Unknown resource: {resource_name}!")
+
+            # Determine if the modifier is float or int typed and assign it accordingly
+            if type(modifier.resource_modifiers[resource_name]) == int:
+                if modifier in self.get_modifiers(resource_name, int):
+                    self.get_modifiers(resource_name, int).remove(modifier)
+                else:
+                    raise RuntimeError(f"Unable to detach modifier {str(modifier)}! No such object attached.")
+
+            elif type(modifier.resource_modifiers[resource_name]) == float:
+                if modifier in self.get_modifiers(resource_name, float):
+                    self.get_modifiers(resource_name, float).remove(modifier)
+                else:
+                    raise RuntimeError(f"Unable to detach modifier {str(modifier)}! No such object attached.")
+
+    def get_max(self, resource_name: str) -> int:
+        """
+        Compute the maximum value of the specified resource, by
+        """
+
+        if resource_name not in self.resources:
+            raise ValueError(f"Unknown resource {resource_name}!")
+
+        # Return cached value if available
+        if resource_name in self._cached_max:
+            return self._cached_max[resource_name]
+
+        computed_max: int = self.get_instance(resource_name).max  # Base value from Resource.max
+
+        # Compute the total % change specified by the float-based modifiers
+        percent_change: float = 0.0
+        for modifier in self.get_modifiers(resource_name, float):
+            if not isinstance(modifier, ResourceModifierMixin):
+                raise TypeError(f"Unexpected ResourceModifier type: {type(modifier)}")
+
+            percent_change += modifier.resource_modifiers[resource_name]
+
+        computed_max += (computed_max * percent_change)
+
+        # Compute the total flat changed specified by the int-based modifiers
+        flat_change: int = 0
+        for modifier in self.get_modifiers(resource_name, int):
+            if not isinstance(modifier, ResourceModifierMixin):
+                raise TypeError(f"Unexpected ResourceModifier type: {type(modifier)}")
+
+            flat_change += modifier.resource_modifiers[resource_name]
+
+        computed_max += flat_change
+
+        self._cached_max[resource_name] = computed_max  # Cached computed result
+        return round(computed_max)
+
+    def get_value(self, resource_name) -> int:
+        return self.get_instance(resource_name).value

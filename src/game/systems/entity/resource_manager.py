@@ -1,13 +1,17 @@
 import copy
 
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems.entity import Resource
+from game.util.asset_utils import get_asset
 
 
 class ResourceManager(Manager):
     """
     A master manager that tracks the default state of all available Resources.
     """
+
+    RESOURCE_ASSET_PATH = "resources"
 
     def __init__(self):
         super().__init__()
@@ -56,7 +60,15 @@ class ResourceManager(Manager):
         """
         Load resources from disk
         """
-        pass
+
+        raw_asset = get_asset(self.RESOURCE_ASSET_PATH)
+
+        for raw_resource in raw_asset['content']:
+            res = LoadableFactory.get(raw_resource)
+            if type(res) != Resource:
+                raise TypeError()
+
+            self.register_resource(res)
 
     def save(self) -> None:
         """

@@ -150,6 +150,8 @@ class Equipment(Item, req.RequirementsMixin):
         self.damage_buff: int = damage_buff
         self.damage_resist: int = damage_resist
 
+        self.resource_mods: dict[str, int | float] = {}
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> "Equipment":
