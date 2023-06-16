@@ -1,17 +1,14 @@
 from game.structures.manager import Manager
+from game.util.asset_utils import get_asset
 
 
 class FlagManager(Manager):
 
+    FLAG_ASSET_PATH = "flags"
+
     def __init__(self):
         super().__init__()
         self._manifest: dict[str, any] = {}
-
-    def load(self) -> None:
-        pass
-
-    def save(self) -> None:
-        pass
 
     def clear(self) -> None:
         self._manifest = {}
@@ -85,5 +82,14 @@ class FlagManager(Manager):
             # Set the final sub-key's value in the lowest-traversed dict
             level[parts[-1]] = value
 
+    def load(self) -> None:
+        raw_asset: dict[str, dict[str, bool]] = get_asset(self.FLAG_ASSET_PATH)
 
+        for flag in raw_asset['content']:
+            if type(raw_asset['content'][flag]) != bool:
+                raise TypeError("Flags must be set to a value of type bool!")
 
+            self.set_flag(flag, raw_asset['content'][flag])
+
+    def save(self) -> None:
+        pass

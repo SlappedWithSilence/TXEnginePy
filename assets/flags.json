@@ -1,0 +1,6 @@
+{
+  "content" : {
+    "test.flag.alpha": true,
+    "test.flag.beta" : false
+  }
+}
