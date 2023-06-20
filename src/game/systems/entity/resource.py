@@ -216,6 +216,12 @@ class ResourceController:
 
         return False
 
+    def __getitem__(self, item):
+        if type(item) == str:
+            return self.get_instance(item)
+        else:
+            raise KeyError("resource_name must be str!")
+
     def get_instance(self, resource_name) -> Resource:
         """
         Get a live-instance of the Resource object within the ResourceController

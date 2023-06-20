@@ -1,5 +1,7 @@
 import copy
 
+from loguru import logger
+
 from game.structures import manager as manager
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.currency import Currency
@@ -44,6 +46,7 @@ class CurrencyManager(manager.Manager):
 
     def register_currency(self, currency: Currency):
         if currency.id in self._manifest:
+            logger.error(f"Found duplicate currency with id {currency.id}: {str(self._manifest[currency.id])}")
             raise ValueError(f"Currency with id {currency.id} already exists!")
 
         self._manifest[currency.id] = currency
