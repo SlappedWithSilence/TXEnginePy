@@ -1,3 +1,5 @@
+from loguru import logger
+
 from game.cache import get_cache, get_loader
 from game.structures.loadable import LoadableMixin
 from game.systems.requirement import requirements as requirements
@@ -65,6 +67,13 @@ class LoadableFactory:
 
         for field_name, field_type in fields + (base_fields if implicit_fields else []):
 
+            # Verify valid tuple typings
+            if type(field_name) != str:
+                raise TypeError(f"field_name must be of type 'str'! Got {type(field_name)} instead.")
+
+            if type(field_type) != type:
+                raise TypeError(f"field_type must be of type 'type' Got {type(field_type)} instead.")
+
             # Verify field presence
             if field_name not in json and required:
                 raise ValueError(f"Field {field_name} not found!")
@@ -72,7 +81,7 @@ class LoadableFactory:
             # Verify field types
             elif field_name in json and type(json[field_name]) != field_type:
                 raise TypeError(
-                    f"Field {field_name} wrong type! Expected type {field_type.__name__}, "
+                    f"Field {field_name} wrong type! Expected type {field_type}, "
                     f"got type {type(json[field_name])} instead!"
                 )
 
@@ -98,4 +107,9 @@ class LoadableFactory:
         if json["class"] not in get_cache()[LoadableMixin.LOADER_KEY]:
             raise ValueError(f"No loader for class {json['class']} has been registered!")
 
-        return get_loader(json['class'])(json=json)
+        try:
+            return get_loader(json['class'])(json=json)
+
+        except Exception as e:
+            logger.error(f"Something wen wrong while trying to load an object of type {json['class']}!")
+            raise e
