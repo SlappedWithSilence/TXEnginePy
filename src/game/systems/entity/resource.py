@@ -14,11 +14,11 @@ class Resource:
     Represents an entity resource, ex: Health, Mana, Stamina, etc
     """
 
-    def __init__(self, name: str, max: int, description: str, value: int = 0):
-        if value < 0:
+    def __init__(self, name: str, max: int, description: str, value: int = None):
+        if value is not None and value < 0:
             raise ValueError(f"Resource value is less than min! {value} < 0.")
 
-        if value > max:
+        if value is not None and value > max:
             raise ValueError(f"Resource cannot have value above max! {value} > {max}")
 
         if name is None or name == "":
@@ -30,7 +30,7 @@ class Resource:
         self.name = name
         self.base_max = self.max = max  # Base max being the base value, max being the current max due to modifiers
         self.description = description
-        self.value = value
+        self.value = value or self.max
 
     @property
     def percent_remaining(self) -> float:
@@ -110,18 +110,24 @@ class Resource:
         """
 
         required_fields: list = [
-            ("name", str), ("description", json), ("max", int), ("value", int)
+            ("name", str), ("description", str), ("max", int)
+        ]
+
+        optional_fields: list = [
+            ("value", int)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
         if json['class'] != "Resource":
             raise TypeError()
 
         return Resource(
             json['name'],
-            json['value'],
+            json['description'],
             json['max'],
-            json['description']
+            **LoadableFactory.collect_optional_fields(optional_fields, json)
         )
 
 
