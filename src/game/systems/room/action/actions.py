@@ -12,14 +12,14 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.state_device import FiniteStateDevice, StateDevice
 import game.systems.event.events as events
-import game.systems.requirement.requirements as requirements
+from game.systems.requirement.requirements import Requirement, RequirementsMixin
 from game.structures.messages import StringContent, ComponentFactory
 from game.systems import entity
 
 from loguru import logger
 
 
-class Action(LoadableMixin, requirements.RequirementsMixin, FiniteStateDevice, ABC):
+class Action(LoadableMixin, RequirementsMixin, FiniteStateDevice, ABC):
     """
     Base class for all actions.
     """
@@ -27,7 +27,7 @@ class Action(LoadableMixin, requirements.RequirementsMixin, FiniteStateDevice, A
     def __init__(self, menu_name: str, activation_text: str,
                  states: type[enum.Enum], default_state, default_input_type: InputType,
                  visible: bool = True, reveal_other_action_index: int = -1,
-                 hide_after_use: bool = False, requirement_list: list[requirements.Requirement] = None,
+                 hide_after_use: bool = False,
                  persistent: bool = False, *args, **kwargs):
         super().__init__(default_input_type=default_input_type, states=states, default_state=default_state, *args, **kwargs)
 
@@ -37,7 +37,6 @@ class Action(LoadableMixin, requirements.RequirementsMixin, FiniteStateDevice, A
         self.reveal_other_action_index: int = reveal_other_action_index  # If >= 0 set room.actions[idx].hidden to False
         self.hide_after_use: bool = hide_after_use  # If True, the action will set itself to hidden after being used
         self.room: room.Room = None  # The Room that owns this action. Should ONLY be a weakref.proxy
-        self.requirements: list = requirement_list or []
         self.persistent: bool = persistent
 
     @property
@@ -59,10 +58,10 @@ class ExitAction(Action):
         TERMINATE = -1
 
     def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
-                 reveal_other_action_index: int = -1, hide_after_use: bool = False, requirement_list: list = None,
-                 on_exit: list[events.Event] = None):
+                 reveal_other_action_index: int = -1, hide_after_use: bool = False,
+                 on_exit: list[events.Event] = None, *args, **kwargs):
         super().__init__(menu_name, "", ExitAction.States, ExitAction.States.DEFAULT, InputType.SILENT,
-                         visible, reveal_other_action_index, hide_after_use, requirement_list)
+                         visible, reveal_other_action_index, hide_after_use, *args, **kwargs)
 
         # Set instance variables
         self.target_room = target_room
