@@ -7,7 +7,7 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 
 
-class BaseCurrency(LoadableMixin, ABC):
+class BaseCurrency(ABC):
     """Currency records information about money an entity owns.
 
     Currency objects have a name, quantity, and one or more stages.
@@ -16,8 +16,8 @@ class BaseCurrency(LoadableMixin, ABC):
     """
 
     def __init__(self, id: int, name: str, stages: dict[str, int],
-                 quantity: int = 0, allow_negative: bool = False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+                 quantity: int = 0, allow_negative: bool = False):
+        super().__init__()
 
         self.id: int = id
         self.name: str = name
@@ -31,7 +31,7 @@ class BaseCurrency(LoadableMixin, ABC):
         self.sorted_stages.reverse()
 
 
-class Currency(BaseCurrency):
+class Currency(LoadableMixin, BaseCurrency):
     """
     Currency records information about money an entity owns.
 
