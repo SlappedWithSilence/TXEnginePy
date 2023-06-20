@@ -2,7 +2,7 @@ from loguru import logger
 
 from game.cache import get_cache, get_loader
 from game.structures.loadable import LoadableMixin
-from game.systems.requirement import requirements as requirements
+from game.systems.requirement import requirements
 
 
 class LoadableFactory:
@@ -17,7 +17,7 @@ class LoadableFactory:
         """
 
         if field not in json:
-            return []
+            return None
 
         reqs = []
 
@@ -31,7 +31,19 @@ class LoadableFactory:
         return reqs
 
     @classmethod
-    def collect_optional_fields(cls, fields: list[tuple[str, type]], json: dict) -> dict:
+    def collect_resource_modifiers(cls, json: dict, field='resource_modifiers') -> dict[str, int | float]:
+        """
+        Interrogate a JSON blob and parse out any resource_modifiers it has stored inside.
+
+        Notably, this method expects the JSON blob to store its resource modifiers at a top-level under the
+        field 'resource_requirements'.
+        """
+
+        return json[field] if field in json else None
+
+    @classmethod
+    def collect_optional_fields(cls, fields: list[tuple[str, type]], json: dict,
+                                implicit_fields: bool = True) -> dict:
         """
         Search for optional fields within a JSON blob and bundle them into a dict. Any fields not found will simply not
         be included.
@@ -47,6 +59,21 @@ class LoadableFactory:
                         continue
 
                 kw[field_name] = json[field_name]  # Fall back and store the original dict
+
+        if implicit_fields:
+            res_mod = cls.collect_resource_modifiers(json)
+            req = cls.collect_requirements(json)
+
+            logger.debug(str(res_mod))
+            logger.debug(str(req))
+
+            if res_mod is not None:
+                kw['resource_modifiers'] = res_mod
+
+            if req is not None:
+                kw['requirements'] = req
+
+        logger.debug(kw)
 
         return kw
 
