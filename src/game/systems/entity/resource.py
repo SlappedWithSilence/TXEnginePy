@@ -134,12 +134,39 @@ class Resource:
 class ResourceModifierMixin:
     """
     This mixin allows an object to be attached as a modifier to one or more Resources via the ResourceController
+
+    A modifier dict is structured where resource_name (str) : modifier (int)
+
+    For example:
+        {
+            "health" : 10,
+            "stamina" : -5,
+            "mana" : 0.25,
+            "faith" : 0.1
+        }
+
+    Would set up a modifier for +10 health, -5 stamina, +25% mana, -10% faith.
     """
+
+    @classmethod
+    def validate_modifier(cls, resource_name, modifier):
+        if type(resource_name) != str:
+            raise TypeError(f"Invalid resource name: {resource_name}! Must be a str!")
+
+        if type(modifier) != int and type(modifier) != float:
+            raise TypeError(f"Invalid resource modifier: {modifier}! Must be an int or float.")
+
+        if modifier == 0:
+            raise ValueError(f"Modifier of {resource_name} cannot be 0!")
 
     def __init__(self, resource_modifiers: dict[str, int | float] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.resource_modifiers = resource_modifiers or {}
+        # Validate modifier dict structure and values
+        for res_name, mod in resource_modifiers.items():
+            self.validate_modifier(res_name, mod)
+
+        self.resource_modifiers: dict[str, int | float] = resource_modifiers or {}
 
 
 class ResourceController:
