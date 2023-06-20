@@ -1,5 +1,22 @@
 {
   "content" : [
-
+    {
+      "class" : "Resource",
+      "name" : "Health",
+      "max" : 100,
+      "description" : "Vitality itself. Losing all of it means certain death."
+    },
+    {
+      "class" : "Resource",
+      "name" : "Stamina",
+      "max" : 50,
+      "description": "A measure of how many hills one may yet climb."
+    },
+    {
+      "class" : "Resource",
+      "name" : "Mana",
+      "max" : 25,
+      "description" : "An essential spell-casting ingredient, succeeded by only intellect."
+    }
   ]
 }
