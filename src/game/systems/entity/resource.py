@@ -1,39 +1,36 @@
 import copy
 
+from loguru import logger
+
+import game.systems.entity as entity
 from game.cache import cached
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
-import game.systems.entity as entity
-
-import dataclasses
-from collections import namedtuple
-
-from loguru import logger
 
 
-@dataclasses.dataclass
 class Resource:
     """
     Represents an entity resource, ex: Health, Mana, Stamina, etc
     """
-    name: str
-    value: int
-    max: int
-    description: str
 
-    def __post_init__(self):
-        if self.value < 0:
-            raise ValueError(f"Resource value is less than min! {self.value} < 0.")
+    def __init__(self, name: str, max: int, description: str, value: int = 0):
+        if value < 0:
+            raise ValueError(f"Resource value is less than min! {value} < 0.")
 
-        if self.value > self.max:
-            raise ValueError(f"Resource cannot have value above max! {self.value > self.max}")
+        if value > max:
+            raise ValueError(f"Resource cannot have value above max! {value} > {max}")
 
-        if self.name is None or self.name == "":
+        if name is None or name == "":
             raise ValueError("Resource must have a name!")
 
-        if self.description is None or self.description == "":
+        if description is None or description == "":
             raise ValueError("Resource must have a description!")
+
+        self.name = name
+        self.base_max = self.max = max  # Base max being the base value, max being the current max due to modifiers
+        self.description = description
+        self.value = value
 
     @property
     def percent_remaining(self) -> float:
@@ -187,9 +184,15 @@ class ResourceController:
         return False
 
     def get_instance(self, resource_name) -> Resource:
+        """
+        Get a live-instance of the Resource object within the ResourceController
+        """
         return self.resources[resource_name]['instance']
 
     def set_instance(self, resource: Resource) -> None:
+        """
+        Set the live-instance of the Resource object within the ResourceController to a new Resource object
+        """
         if resource.name not in self.resources:
             raise ValueError(f"Unknown resource {resource.name}!")
 
@@ -236,8 +239,7 @@ class ResourceController:
             else:
                 raise ValueError(f"Unknown modifier type: {type(modifier.resource_modifiers[resource_name])}!")
 
-            if resource_name in self._cached_max:
-                del self._cached_max[resource_name]
+            self.get_instance(resource_name).max = self.compute_max(resource_name)
 
     def detach_modifier(self, modifier: ResourceModifierMixin) -> None:
         """
@@ -261,9 +263,9 @@ class ResourceController:
                 else:
                     raise RuntimeError(f"Unable to detach modifier {str(modifier)}! No such object attached.")
 
-    def get_max(self, resource_name: str) -> int:
+    def compute_max(self, resource_name: str) -> int:
         """
-        Compute the maximum value of the specified resource, by
+        Compute the maximum value of the specified resource via modifier
         """
 
         if resource_name not in self.resources:
@@ -273,7 +275,7 @@ class ResourceController:
         if resource_name in self._cached_max:
             return self._cached_max[resource_name]
 
-        computed_max: int = self.get_instance(resource_name).max  # Base value from Resource.max
+        computed_max: int = self.get_base_max(resource_name)  # Base value from Resource.max
 
         # Compute the total % change specified by the float-based modifiers
         percent_change: float = 0.0
@@ -298,5 +300,20 @@ class ResourceController:
         self._cached_max[resource_name] = computed_max  # Cached computed result
         return round(computed_max)
 
-    def get_value(self, resource_name) -> int:
+    def get_value(self, resource_name: str) -> int:
+        """
+        Get the current value of a given resource
+        """
         return self.get_instance(resource_name).value
+
+    def get_max(self, resource_name: str) -> int:
+        """
+        Get the current max-value of a given resource
+        """
+        return self.get_instance(resource_name).max
+
+    def get_base_max(self, resource_name: str) -> int:
+        """
+        Get the base maximum value of the given resource
+        """
+        return self.get_instance(resource_name).base_max
