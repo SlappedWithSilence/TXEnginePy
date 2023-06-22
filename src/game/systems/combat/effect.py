@@ -1,6 +1,7 @@
 import weakref
 from abc import ABC
-from typing import Union
+
+from loguru import logger
 
 import game.systems.entity.entities as entities
 from game.cache import cached
@@ -9,8 +10,6 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-
-from loguru import logger
 
 
 class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
@@ -188,11 +187,11 @@ class ResourceEffect(CombatEffect):
         # Validate that required fields are present and correctly-typed
         required_fields = [
             ("resource_name", str),
-            ("adjust_quantity", Union[int, float]),
+            ("adjust_quantity", (int, float)),
             ("trigger_message", str)
         ]
 
-        LoadableFactory.validate_fields(required_fields)
+        LoadableFactory.validate_fields(required_fields, json)
 
         # Type and value validation
         if json["class"] != "ResourceEffect":

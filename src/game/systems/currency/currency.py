@@ -1,6 +1,4 @@
-import dataclasses
 from abc import ABC
-from typing import Union
 
 from game.cache import cached
 from game.structures.loadable import LoadableMixin
@@ -118,7 +116,7 @@ class Currency(LoadableMixin, BaseCurrency):
         else:
             raise TypeError(f"A Currency may only be multiplied by int or float! Got {type(other)}")
 
-    def adjust(self, amount: Union[int, float]):
+    def adjust(self, amount: int | float):
         """ Adjust quantity by 'amount'.
 
             If amount is an int, simply add it to 'quantity' (flat adjustment).  2 + 3 = 5

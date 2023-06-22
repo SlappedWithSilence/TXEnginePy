@@ -1,7 +1,6 @@
 import weakref
 from abc import ABC
 from enum import Enum
-from typing import Union
 
 import game.systems.currency as currency
 import game.systems.flag as flag
@@ -13,9 +12,9 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems import item as item
+from game.systems.crafting import recipe_manager
 from game.systems.entity import entities as entities
 from game.systems.entity.resource import ResourceController
-from game.systems.crafting import recipe_manager
 
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
@@ -397,11 +396,11 @@ class ResourceEvent(Event):
             StringContent(value=f"{self.stat_name}.", formatting="resource_name")
         ]
 
-    def __init__(self, resource_name: str, quantity: int | float, target, silent: bool = False):
+    def __init__(self, resource_name: str, quantity: int | float, target=None, silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self.stat_name: str = resource_name
         self.amount: int | float = quantity
-        self.target = weakref.proxy(target)  # Weakref to an Entity object
+        self.target = weakref.proxy(target) if target else None  # Weakref to an Entity object
         self._summary: list[str | StringContent] = None
         self._silent = silent
 
@@ -437,13 +436,11 @@ class ResourceEvent(Event):
         def content():
             return ComponentFactory.get(self._summary)
 
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
+    def set_target(self, entity) -> None:
+        if not isinstance(entity, entities.Entity):
+            raise TypeError(f"Target Entity must be of type Entity! Got {type(entity)} instead.")
 
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content():
-            return ComponentFactory.get()
+        self.target = weakref.proxy(entity)
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
@@ -461,7 +458,7 @@ class ResourceEvent(Event):
 
         required_fields = [
             ("resource_name", str),
-            ("quantity", Union[int, float])
+            ("quantity", (int, float))
         ]
 
         optional_fields = [
@@ -610,5 +607,3 @@ class ConsumeItemEvent(Event):
             raise ValueError()
 
         return ConsumeItemEvent(json['item_id'], json['item_quantity'])
-
-

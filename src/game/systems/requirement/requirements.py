@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import Union
-
-from loguru import logger
 
 import game.structures.loadable_factory
 from game.cache import from_cache, cached
@@ -46,8 +43,8 @@ class RequirementsMixin:
     A mixin class that enables a child class to accept requirements.
     """
 
-    def __init__(self, requirements: list[Requirement] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, requirements: list[Requirement] = None, **kwargs):
+        super().__init__(**kwargs)
         self.requirements: list[Requirement] = requirements or None
 
     def is_requirements_fulfilled(self, entity) -> bool:
@@ -185,7 +182,7 @@ class ResourceRequirement(Requirement):
         - adjust_quantity (float | int)
         """
 
-        required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
+        required_fields = [('resource_name', str), ('adjust_quantity', (int, float))]
         game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ResourceRequirement":
@@ -242,7 +239,7 @@ class ConsumeResourceRequirement(Requirement):
         - adjust_quantity (float | int)
         """
 
-        required_fields = [('resource_name', str), ('adjust_quantity', Union[int, float])]
+        required_fields = [('resource_name', str), ('adjust_quantity', (int, float))]
         game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ConsumeResourceRequirement":
