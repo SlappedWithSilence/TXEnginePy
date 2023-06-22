@@ -2,23 +2,28 @@ import enum
 
 
 class EquipmentType(enum.Enum):
-    WEAPON = 0,
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    WEAPON = "weapon"
     # Armor
-    HEAD = 1,
-    CHEST = 2,
-    HANDS = 3,
-    LEGS = 4,
-    FEET = 5,
+    HEAD = "head"
+    CHEST = "chest"
+    HANDS = "hands"
+    LEGS = "legs"
+    FEET = "feet"
     # Jewelry
-    RING = 6,
-    NECKLACE = 7
+    RING = "ring"
+    NECKLACE = "necklace"
 
 
 class InputType(enum.Enum):
-    AFFIRMATIVE = "affirmative",  # Get a yes or no
-    INT = "int",  # Get an int
-    STR = "str",  # Get a string
-    SILENT = "silent",  # Operate silently, don't attempt to prompt user
+    AFFIRMATIVE = "affirmative"  # Get a yes or no
+    INT = "int"  # Get an int
+    STR = "str"  # Get a string
+    SILENT = "silent"  # Operate silently, don't attempt to prompt user
     ANY = "any"  # Get any key value as a response. Useful to simply prompt the user to continue
 
 
