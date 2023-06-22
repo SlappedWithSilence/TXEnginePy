@@ -37,6 +37,42 @@
       "value" : {"0" : 10},
       "description" : "A solid ingot of pure iron.",
       "max_quantity" : 20
+    },
+    {
+      "class" : "Usable",
+      "name" : "Unstable Health Potion",
+      "id" : 5,
+      "value" : {"0" : 3},
+      "description" : "A volatile health potion, rejected by its maker for failing quality control.",
+      "max_quantity" : 5,
+      "consumable" : true,
+      "on_use_events" : [
+        {
+          "class" : "ResourceEvent",
+          "resource_name" : "Health",
+          "quantity" : 5
+        }
+      ]
+    },
+    {
+      "class" : "Equipment",
+      "name" : "Blacksteel Cloak",
+      "id" : 6,
+      "value" : {"0": 100},
+      "description" : "Grants invincibility and fame to its wearer, but only against edgy teens.",
+      "max_quantity" : 1,
+      "equipment_slot" : "chest",
+      "damage_buff" : 10,
+      "damage_resist" : 15,
+      "resource_modifiers" : {"Health" : 20, "Mana" : -5},
+      "start_of_combat_effects" : [
+        {
+          "class" : "ResourceEffect",
+          "adjust_quantity" : 0.1,
+          "resource_name" : "Mana",
+          "trigger_message" : "The cloak yields is blessings."
+        }
+      ]
     }
   ]
 }
