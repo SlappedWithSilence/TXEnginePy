@@ -159,8 +159,8 @@ class ResourceModifierMixin:
         if modifier == 0:
             raise ValueError(f"Modifier of {resource_name} cannot be 0!")
 
-    def __init__(self, resource_modifiers: dict[str, int | float] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, resource_modifiers: dict[str, int | float] = None, **kwargs):
+        super().__init__(**kwargs)
 
         # Validate modifier dict structure and values
         for res_name, mod in resource_modifiers.items():
