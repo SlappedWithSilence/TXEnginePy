@@ -72,6 +72,9 @@ class ResourceMixin:
 
 
 class SkillMixin:
+    """
+    A mixin that gives an entity access to a SkillController
+    """
 
     def __init__(self, skills: dict[str, dict[str, int]] = None, **kwargs):
         super().__init__(**kwargs)
@@ -170,7 +173,7 @@ class EquipmentMixin:
 
 class AbilityMixin:
     """
-    A Mixin that grants an Entity the capacity to learn Abilities
+    A mixin that grants an Entity the capacity to learn Abilities
     """
 
     def __init__(self, abilities: list[str] = None, ability_controller=None, *args, **kwargs):
@@ -279,6 +282,9 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
 
 
 class CraftingMixin:
+    """
+    A mixin that adds support for CraftingController to an entity
+    """
 
     def __init__(self, recipes: list[int] = None, **kwargs):
         super().__init__(**kwargs)
