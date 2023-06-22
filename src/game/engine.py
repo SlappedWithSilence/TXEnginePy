@@ -30,8 +30,8 @@ class Engine:
     # lowest priority (the largest int).
     manager_load_priority = {
         0: ["CurrencyManager", "ResourceManager", "FlagManager"],
-        1: ["ItemManager"],
-        2: ["EquipmentManager"],
+        1: ["EquipmentManager"],
+        2: ["ItemManager"],
         3: ["EntityManager"],
         4: ["RoomManager"]
     }
@@ -103,14 +103,12 @@ class Engine:
         """
         A special function that runs before startup to support debugging efforts.
         Returns: None
-
         """
 
     def _debug_init_late(self) -> None:
         """
         A special function that runs post-startup to support debugging efforts.
         Returns:
-
         """
 
         get_cache()["player"] = Player(id=0, name="Player")
