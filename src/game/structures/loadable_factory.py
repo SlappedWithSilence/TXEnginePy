@@ -1,3 +1,5 @@
+import inspect
+
 from loguru import logger
 
 from game.cache import get_cache, get_loader
@@ -78,7 +80,7 @@ class LoadableFactory:
         return kw
 
     @classmethod
-    def validate_fields(cls, fields: list[tuple[str, type]], json: dict, required=True, implicit_fields=True) -> bool:
+    def validate_fields(cls, fields: list[tuple[str, type | tuple[type]]], json: dict, required=True, implicit_fields=True) -> bool:
         """
         Verify that the expected json fields are present and correctly typed.
 
@@ -98,18 +100,35 @@ class LoadableFactory:
             if type(field_name) != str:
                 raise TypeError(f"field_name must be of type 'str'! Got {type(field_name)} instead.")
 
-            if type(field_type) != type:
-                raise TypeError(f"field_type must be of type 'type' Got {type(field_type)} instead.")
-
             # Verify field presence
             if field_name not in json and required:
                 raise ValueError(f"Field {field_name} not found!")
 
-            # Verify field types
-            elif field_name in json and type(json[field_name]) != field_type:
+            if field_name not in json and not required:
+                continue
+
+            # Can guarantee that field_name is present
+            if inspect.isclass(field_type):  # If the class is a single type instance
+                if not isinstance(json[field_name], field_type):
+                    raise TypeError(
+                        f"Expected field {field_name} to be of type {field_type}, got {type(json[field_name])} instead!"
+                    )
+
+            elif type(field_type) == tuple:  # If there are multiple allowable types
+                valid_cls = False
+                for _cls in field_type:  # Iterate through allowable types
+                    if isinstance(json[field_name], _cls):
+                        valid_cls = True  # Flag that a valid type is located
+                        continue  # Stop checking
+
+                if not valid_cls:  # Double-check against the valid type flag
+                    raise TypeError(
+                        f"Expected {field_name} to be of type ({field_type})! Got type {type(json[field_name])} instead"
+                    )
+
+            else:
                 raise TypeError(
-                    f"Field {field_name} wrong type! Expected type {field_type}, "
-                    f"got type {type(json[field_name])} instead!"
+                    f"field_type must be of type 'type' or type 'tuple[type]' got {type(field_type)} instead!"
                 )
 
         return True
