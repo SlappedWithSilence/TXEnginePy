@@ -3,7 +3,7 @@ from loguru import logger
 from game.systems.crafting.recpie import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
-from game.systems.item import Item, item_manager
+from game.systems.item import Item, item_manager, Equipment
 from game.systems.crafting import recipe_manager
 
 
@@ -20,11 +20,11 @@ def pre_collect_setup():
     currency_manager.register_currency(Currency(-110, "USD", {"cents": 1, "dollars": 100}))
 
     currency_manager.register_currency(Currency(-111, "Imperial",
-                                                 {
-                                                     "bronze": 1,
-                                                     "silver": 1000,
-                                                     "gold": 1000000
-                                                 }))
+                                                {
+                                                    "bronze": 1,
+                                                    "silver": 1000,
+                                                    "gold": 1000000
+                                                }))
 
     logger.info("Setting up test items...")
     te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)
@@ -32,10 +32,17 @@ def pre_collect_setup():
     te3 = Item("Test Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
     te4 = Item("Test Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
+    te5 = Equipment("Test Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
+    te6 = Equipment("Test Equipment 2", -115, {-110: 1}, "", "chest", 0, 0, resource_modifiers={"tr_health": 1})
+    te7 = Equipment("Test Equipment 3", -116, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
+
     item_manager.register_item(te1)
     item_manager.register_item(te2)
     item_manager.register_item(te3)
     item_manager.register_item(te4)
+    item_manager.register_item(te5)
+    item_manager.register_item(te6)
+    item_manager.register_item(te7)
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
