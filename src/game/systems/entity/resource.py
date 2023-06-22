@@ -1,4 +1,5 @@
 import copy
+import inspect
 
 from loguru import logger
 
@@ -163,8 +164,9 @@ class ResourceModifierMixin:
         super().__init__(**kwargs)
 
         # Validate modifier dict structure and values
-        for res_name, mod in resource_modifiers.items():
-            self.validate_modifier(res_name, mod)
+        if resource_modifiers is not None:
+            for res_name, mod in resource_modifiers.items():
+                self.validate_modifier(res_name, mod)
 
         self.resource_modifiers: dict[str, int | float] = resource_modifiers or {}
 
@@ -245,16 +247,17 @@ class ResourceController:
         if resource_name not in self.resources:
             raise ValueError(f"Unknown resource: {resource_name}!")
 
-        true_modifier_type: str = None
         if type(modifier_type) == str:
             true_modifier_type = modifier_type
-        elif type(modifier_type) == type:
-            true_modifier_type = modifier_type.__class__
+        elif inspect.isclass(modifier_type):
+            true_modifier_type = modifier_type.__name__
+        else:
+            raise TypeError(f"Unknown modifier type: {type(modifier_type)}")
 
         if true_modifier_type not in ["int", "float"]:
             raise ValueError(f"Unknown modifier type: {modifier_type}!")
 
-        return self.resources['modifiers'][true_modifier_type]
+        return self.resources[resource_name]['modifiers'][true_modifier_type]
 
     def attach_modifier(self, modifier: ResourceModifierMixin) -> None:
         """
