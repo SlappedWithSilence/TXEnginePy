@@ -1,6 +1,7 @@
 import copy
 from dataclasses import dataclass
 
+from game.structures.enums import EquipmentType
 from game.structures.manager import Manager
 from loguru import logger
 
@@ -32,6 +33,9 @@ class EquipmentManager(Manager):
     def __init__(self):
         super().__init__()
         self._slots: dict[str, SlotProperties] = {}
+
+        for slot_type in EquipmentType.list():
+            self.register_slot(slot_type)
 
     def __contains__(self, item: str) -> bool:
         return self._slots.__contains__(item)
@@ -68,6 +72,7 @@ class EquipmentManager(Manager):
             raise ValueError(f"Cannot register slot with name {name}, slot already exists!")
 
         if type(name) != str or len(name) < 1:
+            logger.error(f"Invalid slot name: {name}")
             raise TypeError("Invalid name! Equipment slot names must be strings of length > 1!")
 
         if type(enabled) != bool:
