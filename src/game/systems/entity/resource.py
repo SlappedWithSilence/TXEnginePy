@@ -178,8 +178,6 @@ class ResourceController:
 
     def __init__(self, resources: list[tuple[str, int, int] | Resource] = None):
 
-        self._cached_max: [str, int] = {}  # A cache of max-values. Invalidated when a modifier is attached or removed
-
         self.resources: dict[str, dict[str, any]] = {
             r.name: {
                 "instance": r,
@@ -305,6 +303,12 @@ class ResourceController:
                 else:
                     raise RuntimeError(f"Unable to detach modifier {str(modifier)}! No such object attached.")
 
+            else:
+                raise TypeError()
+
+            # Recompute the max for the Resource
+            self.resources[resource_name]['instance'].max = self.compute_max(resource_name)
+
     def compute_max(self, resource_name: str) -> int:
         """
         Compute the maximum value of the specified resource via modifier
@@ -312,10 +316,6 @@ class ResourceController:
 
         if resource_name not in self.resources:
             raise ValueError(f"Unknown resource {resource_name}!")
-
-        # Return cached value if available
-        if resource_name in self._cached_max:
-            return self._cached_max[resource_name]
 
         computed_max: int = self.get_base_max(resource_name)  # Base value from Resource.max
 
@@ -339,7 +339,6 @@ class ResourceController:
 
         computed_max += flat_change
 
-        self._cached_max[resource_name] = computed_max  # Cached computed result
         return round(computed_max)
 
     def get_value(self, resource_name: str) -> int:
