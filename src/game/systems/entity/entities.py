@@ -37,8 +37,8 @@ class InventoryMixin:
     A mixin for Entity objects that provides Inventory functionality.
     """
 
-    def __init__(self, inventory: inv.InventoryController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, inventory: inv.InventoryController = None, **kwargs):
+        super().__init__(**kwargs)
         """
         An InventoryController's content may be provided via instance, by tuple, or both.
         """
@@ -55,8 +55,8 @@ class CurrencyMixin:
     A mixin for Entity objects that provides CoinPurse functionality.
     """
 
-    def __init__(self, coin_purse=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, coin_purse=None, **kwargs):
+        super().__init__(**kwargs)
         from game.systems.currency.coin_purse import CoinPurse
         self.coin_purse = coin_purse or CoinPurse()
 
@@ -66,15 +66,15 @@ class ResourceMixin:
     A mixin for Entity objects that provides ResourceController functionality
     """
 
-    def __init__(self, resource_controller: resource.ResourceController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, resource_controller: resource.ResourceController = None, **kwargs):
+        super().__init__(**kwargs)
         self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
 
 
 class SkillMixin:
 
-    def __init__(self, skills: dict[str, dict[str, int]] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, skills: dict[str, dict[str, int]] = None, **kwargs):
+        super().__init__(**kwargs)
         """
         Expects a dict-form manifest formatted like so:
         {
@@ -117,8 +117,8 @@ class SkillMixin:
 class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Entity", LoadableMixin.ATTR_KEY])
@@ -162,8 +162,8 @@ class EquipmentMixin:
     A mixin for Entity objects that provides EquipmentController functionality
     """
 
-    def __init__(self, equipment_controller: EquipmentController = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, equipment_controller: EquipmentController = None, **kwargs):
+        super().__init__(**kwargs)
         self.equipment_controller = equipment_controller or EquipmentController()
         self.equipment_controller.owner = self
 
@@ -189,8 +189,8 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
     def __init__(self,
                  xp_yield: int = 1,
                  turn_speed: int = 1,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
+                 **kwargs):
+        super().__init__(**kwargs)
         self.xp_yield: int = xp_yield
         self.turn_speed = turn_speed
         self.active_effects: dict[CombatPhase, list[effects.CombatEffect]] = {phase: [] for phase in CombatPhase}
@@ -280,8 +280,8 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
 
 class CraftingMixin:
 
-    def __init__(self, recipes: list[int] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, recipes: list[int] = None, **kwargs):
+        super().__init__(**kwargs)
         self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
 
 
@@ -292,8 +292,8 @@ class Player(CraftingMixin, CombatEntity):
     def from_json(json: dict[str, any]) -> any:
         pass
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def make_choice(self) -> str | int | None:
         """

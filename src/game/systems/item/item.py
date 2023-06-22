@@ -18,8 +18,8 @@ class Item(LoadableMixin):
     """
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
+                 **kwargs):
+        super().__init__(**kwargs)
         self.name: str = name  # Name of item
         self.id: int = iid  # Unique id of item
         self.value: dict[int, int] = value  # Item's currency values. Key is Currency.id, value is Currency.quantity
@@ -78,8 +78,8 @@ class Usable(Item, req.RequirementsMixin):
     """
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
-                 on_use_events: list[Event] = None, consumable: bool = False, *args, **kwargs):
-        super().__init__(name, iid, value, description, max_quantity, *args, **kwargs)
+                 on_use_events: list[Event] = None, consumable: bool = False, **kwargs):
+        super().__init__(name=name, iid=iid, value=value, description=description, max_quantity=max_quantity, **kwargs)
 
         self.on_use_events: list[Event] = on_use_events or []  # List of Events that trigger when item is used
         self.consumable: bool = consumable  # Determines if the item should decrement quantity after each use.
