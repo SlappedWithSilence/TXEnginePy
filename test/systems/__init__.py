@@ -33,7 +33,7 @@ def pre_collect_setup():
     te4 = Item("Test Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
     te5 = Equipment("Test Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
-    te6 = Equipment("Test Equipment 2", -115, {-110: 1}, "", "chest", 0, 0, resource_modifiers={"tr_health": 1})
+    te6 = Equipment("Test Equipment 2", -115, {-110: 1}, "", "chest", 0, 0, resource_modifiers={"tr_health": 3})
     te7 = Equipment("Test Equipment 3", -116, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
 
     item_manager.register_item(te1)
