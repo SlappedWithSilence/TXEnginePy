@@ -73,6 +73,18 @@
           "trigger_message" : "The cloak yields is blessings."
         }
       ]
-    }
+    },
+    {
+      "class" : "Equipment",
+      "name" : "Godstring",
+      "id" : 7,
+      "value" : {"0" :  150},
+      "description" : "A worn golden string, blessed by the gods.",
+      "max_quantity" : 2,
+      "equipment_slot" : "chest",
+      "damage_buff" : 0,
+      "damage_resist" : 0,
+      "resource_modifiers" : {"faith" : 0.1,"mana" : 0.1}
+      }
   ]
 }
