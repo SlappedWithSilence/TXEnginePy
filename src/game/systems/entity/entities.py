@@ -42,11 +42,6 @@ class InventoryMixin:
         """
         An InventoryController's content may be provided via instance, by tuple, or both.
         """
-        if inventory is None:
-            logger.debug("Using default inventory")
-        else:
-            logger.debug("Valid inventory found!")
-            logger.debug(str(inventory.items))
         self.inventory = inventory or inv.InventoryController()
 
 

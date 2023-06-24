@@ -74,7 +74,6 @@ class Resource:
         """
 
         self.value = self.test_adjust(amount)
-        logger.debug(f"Setting value to {self.test_adjust(amount)}")
         return self.value
 
     def __str__(self) -> str:

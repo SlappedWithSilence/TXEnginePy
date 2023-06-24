@@ -131,7 +131,6 @@ class ResourceEffect(CombatEffect):
         if self._resource_name not in target.resource_controller:
             raise ValueError(f"Cannot locate resource {self._resource_name} in entity {target.name}!")
 
-        logger.debug(f"Adjusting {self._resource_name} by {self._adjust_quantity}")
         target.resource_controller[self._resource_name].adjust(self._adjust_quantity)
 
     def _get_change_message(self) -> list[StringContent | str]:
