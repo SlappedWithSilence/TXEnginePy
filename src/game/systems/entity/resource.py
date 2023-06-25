@@ -125,8 +125,8 @@ class Resource:
 
         return Resource(
             json['name'],
-            json['description'],
             json['max'],
+            json['description'],
             **LoadableFactory.collect_optional_fields(optional_fields, json)
         )
 
