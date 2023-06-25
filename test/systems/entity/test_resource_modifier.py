@@ -132,6 +132,8 @@ def test_random_attach_detach(item_ids: list[int], seed):
 
     def verify_maxes():
         for res_name in resource_mods:
+            logger.debug(f"Checking {res_name}")
+            logger.debug(resource_mods[res_name])
             assert dummy_entity.resource_controller.get_max(res_name) == compute_max(res_name)
 
     unused_instances: list = [item_manager.get_instance(i) for i in item_ids]
