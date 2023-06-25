@@ -35,14 +35,9 @@ def pre_collect_setup():
     te5 = Equipment("Test Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
     te6 = Equipment("Test Equipment 2", -115, {-110: 1}, "", "chest", 0, 0, resource_modifiers={"tr_health": 3})
     te7 = Equipment("Test Equipment 3", -116, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
+    te8 = Equipment("Test Equipment 3", -117, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
 
-    item_manager.register_item(te1)
-    item_manager.register_item(te2)
-    item_manager.register_item(te3)
-    item_manager.register_item(te4)
-    item_manager.register_item(te5)
-    item_manager.register_item(te6)
-    item_manager.register_item(te7)
+    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8])
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])

@@ -9,6 +9,10 @@ from game.util.asset_utils import get_asset
 
 
 class ItemManager(Manager):
+    """
+    The global manager for Item objects. Stores master copies of all instances of Item objects, creates copies, and
+    handles IO for Item assets at load time.
+    """
 
     ITEM_ASSET_PATH = "items"
 
@@ -16,8 +20,21 @@ class ItemManager(Manager):
         super().__init__()
         self._manifest: dict[int, Item] = {}
 
-    def register_item(self, item_object: Item):
-        self._manifest[item_object.id] = item_object
+    def register_item(self, item_object: Item | list[Item]):
+        """
+        Register an item object with the ItemManager.
+        """
+        if isinstance(item_object, Item):
+            if item_object.id in self._manifest:
+                raise ValueError(f"Item with ID {item_object.id} already registered!")
+
+            self._manifest[item_object.id] = item_object
+
+        elif isinstance(item_object, list):
+            for obj in item_object:
+                self.register_item(obj)
+        else:
+            raise TypeError("Expected object of type Item or type list[Item]")
 
     def get_name(self, item_id: int) -> str:
         return self._manifest[item_id].name
@@ -71,6 +88,11 @@ class ItemManager(Manager):
         return copy.deepcopy(self._manifest[item_id])
 
     def get_ref(self, item_id: int) -> Item:
+        """
+        Get a direct reference to the master object copy stored in the ItemManager.
+
+        Use sparingly.
+        """
         if type(item_id) != int:
             raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
 
@@ -80,6 +102,9 @@ class ItemManager(Manager):
         return weakref.proxy(self._manifest[item_id])
 
     def load(self) -> None:
+        """
+        Load item game objects from disk.
+        """
         raw_asset: dict[str, any] = get_asset(self.ITEM_ASSET_PATH)
         for raw_item in raw_asset['content']:
             item = LoadableFactory.get(raw_item)
