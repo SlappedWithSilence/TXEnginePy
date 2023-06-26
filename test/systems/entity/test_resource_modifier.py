@@ -111,7 +111,7 @@ def test_mixed_attach_detach():
 
 
 random_attach_detach_cases = [
-    [[i for i in range(-117, -114)], 123456]
+    [[i for i in range(-119, -114)], 123456]
 ]
 
 
