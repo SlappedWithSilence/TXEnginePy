@@ -1,11 +1,12 @@
 from loguru import logger
+
 import game
-from game.cache import cached
+from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
 from game.systems import item as item
-from game.systems.event.events import ConsumeItemEvent
+from game.systems.event.events import TextEvent
 from game.systems.requirement.requirements import Requirement
 
 
@@ -65,19 +66,20 @@ class ConsumeItemRequirement(ItemRequirement):
     def __init__(self, item_id: int, item_quantity: int):
         super().__init__(item_id, item_quantity)
 
-        self.passed_event: bool = False
-
-    def set_passed(self, passed: bool) -> None:
-        logger.warning(f"set_passed: {passed}")
-        self.passed_event = passed
-
     def fulfilled(self, entity) -> bool:
         if entity.inventory.total_quantity(self.item_id) < self.item_quantity:
             return False
 
-        e = ConsumeItemEvent(self.item_id, self.item_quantity, self.set_passed)
-        game.state_device_controller.add_state_device(e)
-        return self.passed_event
+        prompt = [
+            "You consumed ",
+            StringContent(value=f"{self.item_quantity}x ", formatting="item_quantity"),
+            " ",
+            StringContent(value=f"{from_cache('managers.ItemManager').get_instance(self.item_id).name}.")
+        ]
+
+        entity.inventory.consume_item(self.item_id, self.item_quantity)
+        game.state_device_controller.add_state_device(TextEvent(prompt))
+        return True
 
     @property
     def description(self) -> list[str | StringContent]:
