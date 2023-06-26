@@ -1,9 +1,13 @@
 import os.path
 
-from loguru import logger
 from omegaconf import OmegaConf
 
-from .cache import get_config, set_config, get_cache, from_cache
+# These imports rescue stranded from_json declarations. Removing them prevents the interpreter from finding and caching
+# Those functions. Do not remove.
+from game.systems.requirement.item_requirement import *
+from game.systems.room.action.shop_action import *
+
+from .cache import get_config, set_config
 from .formatting import register_arguments, register_style
 from .systems.entity.entities import Player
 
