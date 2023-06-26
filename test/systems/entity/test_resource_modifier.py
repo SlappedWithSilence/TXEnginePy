@@ -124,9 +124,8 @@ def test_random_attach_detach(item_ids: list[int], seed):
     resource_mods = {res_name: {"float": 0.0, "int": 0} for res_name in dummy_entity.resource_controller.resources}
 
     def compute_max(resource_name):
-        total = dummy_entity.resource_controller.get_max(resource_name)
-        logger.debug(total)
-        total = total + round(dummy_entity.resource_controller.get_max(resource_name) * resource_mods[resource_name]['float'])
+        total = dummy_entity.resource_controller.get_base_max(resource_name)
+        total += round(dummy_entity.resource_controller.get_base_max(resource_name) * resource_mods[resource_name]['float'])
         total = total + resource_mods[resource_name]['int']
         return total
 
@@ -142,7 +141,7 @@ def test_random_attach_detach(item_ids: list[int], seed):
 
     # Randomly select items to attach and check that the maxes are correct at each step
     while len(unused_instances) > 0:
-        index = random.randint(0, len(unused_instances))  # Select a random index in the unused list
+        index = random.randint(0, len(unused_instances) - 1)  # Select a random index in the unused list
         selected_equipment = unused_instances[index]  # Extract item from list
         del unused_instances[index]
 
@@ -163,7 +162,7 @@ def test_random_attach_detach(item_ids: list[int], seed):
         verify_maxes()
 
     while len(used_instances) > 0:
-        index = random.randint(0, len(used_instances))  # Select a random index in the unused list
+        index = random.randint(0, len(used_instances) - 1)  # Select a random index in the unused list
         selected_equipment = used_instances[index]  # Extract item from list
         del used_instances[index]
 
