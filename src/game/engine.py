@@ -3,16 +3,9 @@ import os.path
 from loguru import logger
 from omegaconf import OmegaConf
 
-import game.systems.room.action.shop_action
 from .cache import get_config, set_config, get_cache, from_cache
 from .formatting import register_arguments, register_style
-from .systems import currency, room, item
 from .systems.entity.entities import Player
-from .systems.event.add_item_event import AddItemEvent
-from .systems.event.events import ConsumeItemEvent
-from .systems.requirement.item_requirement import ConsumeItemRequirement
-from .systems.room.action import actions
-from .systems.room.action.actions import ViewInventoryAction
 
 conf_dir_path: str = "./config/"
 conf_file_path: str = "conf.yaml"
