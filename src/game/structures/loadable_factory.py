@@ -6,13 +6,12 @@ from loguru import logger
 
 from game.cache import get_cache, get_loader
 from game.structures.loadable import LoadableMixin
-from game.systems.requirement import requirements
 
 
 class LoadableFactory:
 
     @classmethod
-    def collect_requirements(cls, json: dict, field='requirements') -> list[requirements.Requirement]:
+    def collect_requirements(cls, json: dict, field='requirements') -> list:
         """
         Interrogate a JSON blob and parse out any requirements it has stored inside.
 
@@ -25,9 +24,11 @@ class LoadableFactory:
 
         reqs = []
 
+        from game.systems.requirement.requirements import Requirement
+
         for requirement_json in json[field]:
             req = LoadableFactory.get(requirement_json)
-            if not isinstance(req, requirements.Requirement):
+            if not isinstance(req, Requirement):
                 raise TypeError(f"Expected requirement of type Requirement, got {type(req)} instead!")
 
             reqs.append(req)
