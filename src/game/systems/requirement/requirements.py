@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from enum import Enum
 
-import game.structures.loadable_factory
+from game.structures.loadable_factory import LoadableFactory
 from game.cache import from_cache, cached
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent
@@ -75,7 +75,8 @@ class RequirementsMixin:
                 if 'class' not in raw_requirement:
                     raise ValueError('Bad or missing class field!')
 
-                r = game.structures.loadable_factory.LoadableFactory.get(raw_requirement)  # Instantiate the Requirement via factory
+                r = LoadableFactory.get(
+                    raw_requirement)  # Instantiate the Requirement via factory
                 if not isinstance(r, Requirement):  # Typecheck it
                     raise TypeError(f'Unsupported class {type(r)} found in requirements field!')
 
@@ -131,7 +132,7 @@ class SkillRequirement(Requirement):
             ("skill_id", int), ("level", int)
         ]
 
-        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(required_fields, json)
 
         return SkillRequirement(json['skill_id'], json['level'])
 
@@ -183,7 +184,7 @@ class ResourceRequirement(Requirement):
         """
 
         required_fields = [('resource_name', str), ('adjust_quantity', (int, float))]
-        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ResourceRequirement":
             raise ValueError(f"Invalid class field for ResourceRequirement! Got {json['class']} "
@@ -240,7 +241,7 @@ class ConsumeResourceRequirement(Requirement):
         """
 
         required_fields = [('resource_name', str), ('adjust_quantity', (int, float))]
-        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ConsumeResourceRequirement":
             raise ValueError(f"Invalid class field for ConsumeResourceRequirement! Got {json['class']} "
@@ -285,7 +286,7 @@ class FlagRequirement(Requirement):
             ('description', str)
         ]
 
-        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields)
+        LoadableFactory.validate_fields(required_fields, json)
 
         return FlagRequirement(json['flag_name'], json['flag_value'], json['description'])
 
@@ -351,8 +352,8 @@ class FactionRequirement(Requirement):
             ("mode", str)
         ]
 
-        game.structures.loadable_factory.LoadableFactory.validate_fields(required_fields, json)
-        game.structures.loadable_factory.LoadableFactory.validate_fields(optional_fields, json)
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json)
         if json['class'] != "FactionRequirement":
             raise ValueError()
 
@@ -361,3 +362,90 @@ class FactionRequirement(Requirement):
             kwargs['mode'] = json['mode']
 
         return FactionRequirement(json['faction_id'], json['required_affinity'], **kwargs)
+
+
+class CurrencyRequirement(Requirement):
+
+    def __init__(self, currency_id: int, currency_quantity: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._currency_id = currency_id
+        self._currency_quantity = currency_quantity
+
+    def fulfilled(self, entity) -> bool:
+        if not hasattr(entity, "coin_purse"):
+            return False
+
+        return entity.coin_purse.balance(self._currency_id) >= self._currency_quantity
+
+    @property
+    def description(self) -> list[str | StringContent]:
+        return [
+            "Must have ",
+            str(from_cache("Managers.CurrencyManager").to_currency(self._currency_id, self._currency_quantity))
+        ]
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "CurrencyRequirement", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Load a CurrencyRequirement from a JSON blob.
+
+        Required JSON fields:
+        - currency_id: int
+        - currency_quantity: int
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("currency_id", int), ("currency_quantity", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        return CurrencyRequirement(json['currency_id'], json['currency_quantity'])
+
+
+class ConsumeCurrencyRequirement(CurrencyRequirement):
+
+    def __init__(self, currency_id: int, currency_quantity: int, *args, **kwargs):
+
+        super().__init__(currency_id, currency_quantity, *args, **kwargs)
+
+    def fulfilled(self, entity) -> bool:
+        if not hasattr(entity, "coin_purse"):
+            return False
+
+        if entity.coin_purse.balance(self._currency_id) < self._currency_quantity:
+            return False
+
+        entity.coin_purse.spend(self._currency_id, self._currency_quantity)
+        return True
+
+    @property
+    def description(self) -> list[str | StringContent]:
+        return [
+            "Must spend ",
+            str(from_cache("Managers.CurrencyManager").to_currency(self._currency_id, self._currency_quantity))
+        ]
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ConsumeCurrencyRequirement", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Load a ConsumeCurrencyRequirement from a JSON blob.
+
+        Required JSON fields:
+        - currency_id: int
+        - currency_quantity: int
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("currency_id", int), ("currency_quantity", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        return ConsumeCurrencyRequirement(json['currency_id'], json['currency_quantity'])

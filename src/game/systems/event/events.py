@@ -419,8 +419,8 @@ class ResourceEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.SILENT)
         def logic(_):
             resource_controller: ResourceController = self.target.resources
-            self._build_summary(resource_controller.resources[self.stat_name].value,  # Current value
-                                resource_controller.resources[self.stat_name].adjust(self.amount))  # Post-adjust value
+            self._build_summary(resource_controller.resources[self.stat_name]['instance'].value,  # Current value
+                                resource_controller.resources[self.stat_name]['instance'].adjust(self.amount))  # Post-adjust value
             self.set_state(self.States.SUMMARY)
 
         @FiniteStateDevice.state_content(self, self.States.APPLY)
@@ -510,5 +510,42 @@ class TextEvent(Event):
         return TextEvent(json["text"])
 
 
+class SkillXPEvent(Event):
+    """
+    An Event that gives a specific skill XP.
 
+    Flow handles both level-up and non-level-up scenarios.
+    """
 
+    class States:
+        DEFAULT = 0
+        GAIN_MESSAGE = 1  # Tell the user how much XP was gained
+        LEVEL_UP = 2  # Tell the user that a Skill leveled up
+        TERMINATE = -1
+
+    def __init__(self, skill_id: int, xp_gain: int):
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+        self._skill_id = skill_id
+        self._xp_gained = xp_gain
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "SkillXPEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Load a SkillXPEvent from a JSON blob
+
+        Required JSON fields:
+        - skill_id: int
+        - xp_gained: int
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("skill_id", int), ("xp_gained", int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        return SkillXPEvent(json['skill_id'], json['xp_gained'])
