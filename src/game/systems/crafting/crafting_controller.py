@@ -101,7 +101,7 @@ class CraftingController:
 
     def get_recipes_as_options(self) -> list[list[str | StringContent]]:
         """
-        This function is primarily used to translate the Player's learned recipes into a list of options to embedd into
+        This function is primarily used to translate the Player's learned recipes into a list of options to embedded into
         a Frame via a StateDevice.
 
         Returns a formatted list of lists of strings/StringContents.

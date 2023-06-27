@@ -8,8 +8,8 @@ from game.systems.inventory.equipment_manager import SlotProperties
 
 class EquipmentController(LoadableMixin):
     """
-    An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling the equipping
-    and unequipping processes, validating that an item is allowed to fit into a slot.
+    An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling
+    the equipping and unequipping processes, validating that an item is allowed to fit into a slot.
     """
 
     @property
@@ -33,7 +33,8 @@ class EquipmentController(LoadableMixin):
             self._owner = entity
             self.player_mode = False
 
-    def __init__(self, owner=None):
+    def __init__(self, owner=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.owner = owner
         self.player_mode: bool = False
         self._slots: dict[str, SlotProperties] = get_cache()['managers']['EquipmentManager'].get_slots()
@@ -99,7 +100,7 @@ class EquipmentController(LoadableMixin):
                 raise RuntimeError(f"Cannot equip {item_ref.name} to slot {item_ref.slot} since slot {item_ref.slot} is disabled.")
 
             # Do not check requirements if the equipment_controller is not in player mode
-            if not (self.player_mode and item_ref.is_requirements_fulfilled()):
+            if not (self.player_mode and item_ref.is_requirements_fulfilled(self._owner)):
                 return False
 
             self.unequip(item_ref.slot)

@@ -1,10 +1,9 @@
 from enum import Enum
 
 import game
-import game.systems.item as item
 import game.systems.entity.entities as entities
+import game.systems.item as item
 from game.cache import get_cache, cached
-from game.structures import enums
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory

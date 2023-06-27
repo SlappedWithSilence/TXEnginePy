@@ -1,7 +1,6 @@
 import weakref
 from enum import Enum
 
-import game
 from game.cache import from_cache, cached
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin

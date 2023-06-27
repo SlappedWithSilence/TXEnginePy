@@ -1,8 +1,6 @@
 import copy
 import inspect
 
-from loguru import logger
-
 import game.systems.entity as entity
 from game.cache import cached
 from game.structures.loadable import LoadableMixin

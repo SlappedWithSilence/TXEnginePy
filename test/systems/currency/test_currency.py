@@ -2,7 +2,6 @@ from copy import deepcopy
 
 import pytest
 
-from game.systems.currency import currency_manager
 from game.systems.currency.currency import Currency
 
 

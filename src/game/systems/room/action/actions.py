@@ -5,18 +5,16 @@ from enum import Enum
 
 import game
 import game.cache as cache
-import game.systems.room as room
+import game.systems.event.events as events
 import game.systems.event.use_item_event as uie
+import game.systems.room as room
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
-from game.structures.state_device import FiniteStateDevice, StateDevice
-import game.systems.event.events as events
-from game.systems.requirement.requirements import Requirement, RequirementsMixin
 from game.structures.messages import StringContent, ComponentFactory
+from game.structures.state_device import FiniteStateDevice, StateDevice
 from game.systems import entity
-
-from loguru import logger
+from game.systems.requirement.requirements import RequirementsMixin
 
 
 class Action(LoadableMixin, RequirementsMixin, FiniteStateDevice, ABC):

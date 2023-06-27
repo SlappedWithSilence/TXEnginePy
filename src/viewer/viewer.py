@@ -1,9 +1,8 @@
 import requests
+from loguru import logger
 from rich import print
 from textual.app import App, ComposeResult
-from textual.reactive import Reactive
-from textual.widgets import Header, Footer, Static
-from loguru import logger
+from textual.widgets import Header, Footer
 
 
 def formatting_to_tags(tags: list[str], opening_tag: bool = None, closing_tag: bool = None) -> str:

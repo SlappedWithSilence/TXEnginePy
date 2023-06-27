@@ -1,5 +1,3 @@
-from loguru import logger
-
 import game
 from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
@@ -21,7 +19,6 @@ class ItemRequirement(Requirement):
         self.item_quantity: int = item_quantity
 
     def fulfilled(self, entity) -> bool:
-        logger.warning(f"Checking for {self.item_quantity} of {self.item_id}... Found {entity.inventory.total_quantity(self.item_id)}x")
         return entity.inventory.total_quantity(self.item_id) >= self.item_quantity
 
     @property

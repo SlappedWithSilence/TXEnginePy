@@ -1,6 +1,6 @@
 from abc import ABC
 
-from game.cache import cached, from_cache
+from game.cache import cached
 from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory

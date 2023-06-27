@@ -1,8 +1,6 @@
 import weakref
 from abc import ABC
 
-from loguru import logger
-
 import game.systems.entity.entities as entities
 from game.cache import cached
 from game.structures.enums import InputType

@@ -1,5 +1,6 @@
 import os.path
 
+from loguru import logger
 from omegaconf import OmegaConf
 
 # These imports rescue stranded from_json declarations. Removing them prevents the interpreter from finding and caching

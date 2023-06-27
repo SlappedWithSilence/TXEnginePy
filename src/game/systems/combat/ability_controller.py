@@ -28,7 +28,7 @@ class AbilityController:
         Returns:
             True if the Requirements for the Ability are met by the owning CombatEntity, False otherwise.
         """
-        return from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled()
+        return from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(self.owner)
 
     def is_learned(self, ability_name: str) -> bool:
         """

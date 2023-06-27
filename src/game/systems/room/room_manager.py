@@ -1,7 +1,5 @@
 import weakref
 
-from loguru import logger
-
 from game.structures import manager as manager
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.room import room as room
