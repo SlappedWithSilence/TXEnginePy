@@ -1,3 +1,4 @@
+from game.structures.messages import StringContent
 from game.systems.skill import skill_manager
 from game.systems.skill.skills import Skill
 
@@ -21,7 +22,7 @@ class SkillController:
             raise TypeError()
 
         self.obtain_all = obtain_all  # Marks if all the skills that exist have already been obtained
-        self.skills = {}
+        self.skills: dict[int, Skill] = {}
 
         if obtain_all:
             for skill_id in skill_manager:
@@ -56,3 +57,13 @@ class SkillController:
             raise ValueError(f"No skill with id {skill_id} found!")
 
         return self.skills[skill_id].level
+
+    def get_skill_as_option(self, skill_id: int) -> list[str | StringContent]:
+        return [
+            StringContent(value=self.skills[skill_id].name, formatting="skill_name"), f" [{self.skills[skill_id].xp}",
+            f"/{self.skills[skill_id].level_up_limit}] ",
+            f"({round((self.skills[skill_id].xp/self.skills[skill_id].level_up_limit) * 100)}%)"
+        ]
+
+    def get_skills_as_options(self) -> list[list[str | StringContent]]:
+        return [self.get_skill_as_option(s) for s in self.skills]
