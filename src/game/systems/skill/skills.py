@@ -12,17 +12,19 @@ import game.systems.event.events as events
 
 class SkillBase(ABC):
 
-    def __init__(self, name: str, id: int, level: int = 1, xp: int = 0, initial_level_up_limit: int = 5,
-                 next_level_ratio: float = 1.3, level_up_events: dict[int, list[events.Event]] = None):
+    def __init__(self, name: str, id: int, description: str,
+                 level: int = 1, xp: int = 0, initial_level_up_limit: int = 5, next_level_ratio: float = 1.3,
+                 level_up_events: dict[int, list[events.Event]] = None):
         self.name: str = name  # Skill name
-        self.id = id  # Unique id associate with this skill
+        self.id: int = id  # Unique id associate with this skill
+        self.description: str = description
 
-        self.initial_level_up_limit = initial_level_up_limit  # How much XP is required to go from lvl 1 to lvl 2
-        self.next_level_ratio = next_level_ratio  # Additional XP required to go from lvl 2 to lvl3, lvl3 to lvl4, etc
+        self.initial_level_up_limit: int = initial_level_up_limit  # How much XP is required to go from lvl 1 to lvl 2
+        self.next_level_ratio: float = next_level_ratio  # Additional XP required to go from lvl 2 to lvl3, etc
 
         self.level: int = level  # Skill's current level
         self.xp: int = xp  # Skill's current xp quantity
-        self.level_up_limit = self._xp_ceiling(self.level)  # Current limit to level up against
+        self.level_up_limit: int = self._xp_ceiling(self.level)  # Current limit to level up against
 
         self.level_up_events: dict[int, list[events.Event]] = level_up_events or {}  # events.Events that are triggered on level up
 
@@ -125,7 +127,7 @@ class Skill(LoadableMixin, SkillBase):
         """
 
         # Validate required fields exist
-        required_fields = [("name", str), ("id", int), ("level_up_events", dict)]
+        required_fields = [("name", str), ("id", int), ("description", str), ("level_up_events", dict)]
 
         LoadableFactory.validate_fields(required_fields, json)
 
@@ -150,16 +152,12 @@ class Skill(LoadableMixin, SkillBase):
         # Verify that the optional fields are typed correctly if they're present
         optional_fields = [('level', int), ('xp', int), ('initial_level_up_limit', int), ('next_level_ratio', float)]
         LoadableFactory.validate_fields(optional_fields, json, required=False)
-        optional_kwargs = {}
-
-        # Collect the optional field values
-        for field, _ in optional_fields:
-            if field in json:
-                optional_kwargs[field] = json[field]
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
         return Skill(
             name=json['name'],
             id=json['id'],
+            description=json['description'],
             level_up_events=level_up_events,
-            **optional_kwargs
+            **kwargs
         )
