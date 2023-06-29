@@ -1,4 +1,27 @@
 {
+  "config" : {
+    "default_actions" : [
+      {
+        "class" : "ViewInventoryAction"
+      },
+      {
+        "class": "WrapperAction",
+        "menu_name": "Craft something",
+        "activation_text": "",
+        "wrap": {
+          "class": "CraftingEvent"
+        }
+      },
+      {
+        "class" : "WrapperAction",
+        "menu_name" : "View skills",
+        "activation_text" : "",
+        "wrap" : {
+          "class" : "ViewSkillsEvent"
+        }
+      }
+    ]
+  },
   "content": [
     {
       "class" : "Room",
@@ -6,9 +29,7 @@
       "name" : "Lonely Debug Room",
       "enter_text": "You enter a small, cramped, debug room.",
       "actions" : [
-        {
-          "class" : "ViewInventoryAction"
-        },
+
         {
           "class" : "ExitAction",
           "target_room" : 1,
@@ -28,14 +49,6 @@
             "class": "AddItemEvent",
             "item_id": 2,
             "item_quantity": 1
-          }
-        },
-        {
-          "class" : "WrapperAction",
-          "menu_name" : "Craft something",
-          "activation_text" : "",
-          "wrap" : {
-            "class" : "CraftingEvent"
           }
         }
       ],

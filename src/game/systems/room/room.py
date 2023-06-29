@@ -32,8 +32,8 @@ class Room(LoadableMixin, FiniteStateDevice):
         LEAVE_ROOM = 4
         TERMINATE = -1
 
-    def __init__(self, id: int, action_list: list[actions.Action], enter_text: str, first_enter_text: str = "",
-                 name: str = "Room"):
+    def __init__(self, id: int, name: str, action_list: list[actions.Action], enter_text: str,
+                 first_enter_text: str = "", default_actions_enabled: bool=True):
         super().__init__(InputType.INT, self.States, self.States.DEFAULT)
 
         self.actions: list[actions.Action] = action_list
@@ -41,7 +41,12 @@ class Room(LoadableMixin, FiniteStateDevice):
         self.first_enter_text: str = first_enter_text  # Text only printed the first time the user enters the room
         self.id: int = id
         self._action_index: int = None
-        self.name = name
+        self.name: str = name
+        self.default_actions_enabled: bool = default_actions_enabled
+
+        # Add default actions to room if enabled
+        if self.default_actions_enabled:
+            self.actions = room.room_manager.get_default_actions() + self.actions
 
         # Register self as the owner of each Action
         for action in self.actions:
@@ -159,6 +164,7 @@ class Room(LoadableMixin, FiniteStateDevice):
 
         return Room(
             json['id'],
+            json['name'],
             _actions,
             json['enter_text'],
             json['name'],
