@@ -1,6 +1,8 @@
+from enum import Enum
+
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
-from game.structures.messages import ComponentFactory
+from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity import Player
 from game.systems.skill.skills import Skill
@@ -10,7 +12,7 @@ from game.structures.loadable import LoadableMixin
 
 
 class ViewSkillsEvent(Event):
-    class States:
+    class States(Enum):
         DEFAULT = 0
         VIEW_SKILLS = 1
         SKILL_SELECTED = 2
@@ -19,10 +21,15 @@ class ViewSkillsEvent(Event):
     def __init__(self):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._selected_skill: int | None = None
-        self._player_ref: Player = from_cache("player")
+        self._player_ref: Player = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+
+            # Deffer acquired player reference until StateDevice is actually run
+            if not self._player_ref:
+                self._player_ref = from_cache("player")
+
             self._selected_skill = None
             self.set_state(self.States.VIEW_SKILLS)
 
@@ -31,14 +38,14 @@ class ViewSkillsEvent(Event):
             return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.VIEW_SKILLS, InputType.INT,
-                                       -1, lambda: len(self._player_ref.skill_controller.skills.keys()))
+                                       -1, lambda: len(self._player_ref.skill_controller.skills.keys()) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
                 self.set_state(self.States.TERMINATE)
                 return
 
             self._selected_skill = list(self._player_ref.skill_controller.skills.keys())[user_input]
-            self.set_state(self.States.VIEW_SKILLS)
+            self.set_state(self.States.SKILL_SELECTED)
 
         @FiniteStateDevice.state_content(self, self.States.VIEW_SKILLS)
         def content() -> dict:
@@ -55,6 +62,7 @@ class ViewSkillsEvent(Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [
+                    StringContent(value=self._player_ref.skill_controller.skills[self._selected_skill].name, formatting="skill_name"),
                     self._player_ref.skill_controller.get_skill_as_option(self._selected_skill),
                     "\n",
                     self._player_ref.skill_controller.skills[self._selected_skill].description

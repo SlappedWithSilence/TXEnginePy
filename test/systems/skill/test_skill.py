@@ -4,7 +4,7 @@ import pytest
 
 
 def test_init_trivial():
-    sk = Skill(name="SomeSkill", id=0)
+    sk = Skill(name="SomeSkill", id=0, description="")
     assert sk is not None
     assert sk.level == 1
     assert sk.xp == 0
@@ -15,7 +15,7 @@ def test_init_trivial():
 
 
 def test_remaining_xp():
-    sk = Skill(name="SomeSkill", id=0)
+    sk = Skill(name="SomeSkill", id=0, description="")
     assert sk.remaining_xp == sk.level_up_limit - sk.xp
 
     for i in range(sk.remaining_xp):
@@ -24,7 +24,7 @@ def test_remaining_xp():
 
 
 def test_xp_ceiling():
-    sk = Skill(name="SomeSkill", id=0)
+    sk = Skill(name="SomeSkill", id=0, description="")
     sk.level_up_limit = sk.initial_level_up_limit = 4
     sk.next_level_ratio = 1.5
 
@@ -40,7 +40,7 @@ def test_level_up_trivial():
     """
     Tests that level_up correctly handles a single level-up
     """
-    sk = Skill(name="SomeSkill", id=0)
+    sk = Skill(name="SomeSkill", id=0, description="")
     sk.level_up_limit = sk.initial_level_up_limit = 4
     sk.next_level_ratio = 1.5
 
@@ -63,7 +63,7 @@ def test_level_up_recursive(xp: int, expected_level: int, leftover_xp: int):
     """
     Tests that level_up correctly handles leveling up multiple levels at once
     """
-    sk = Skill(name="SomeSkill", id=0)
+    sk = Skill(name="SomeSkill", id=0, description="")
     sk.level_up_limit = sk.initial_level_up_limit = 4
     sk.next_level_ratio = 1.5
 
