@@ -1,8 +1,10 @@
+import copy
 import weakref
 
 from game.structures import manager as manager
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.room import room as room
+from game.systems.room.action.actions import Action
 from game.util.asset_utils import get_asset
 
 
@@ -18,7 +20,8 @@ class RoomManager(manager.Manager):
 
         self.rooms: dict[int, room.Room] = {}
         self.visited_rooms: set[int] = set()
-        self._manifest = self.rooms
+        self._manifest: dict[int, room.Room] = self.rooms
+        self._default_actions: list[Action] = []  # A set of Actions that are added to every Room by default
 
     def register_room(self, room_object: room.Room, room_id_override: int = None) -> None:
         """
@@ -98,17 +101,33 @@ class RoomManager(manager.Manager):
         """
 
         raw_asset: dict[str, any] = get_asset(self.ROOM_ASSET_PATH)
+
+        # Load default actions
+        for raw_default_action in raw_asset['config']['default_actions']:
+            da = LoadableFactory.get(raw_default_action)
+            if not isinstance(da, Action):
+                raise TypeError(f"Expected object of type Action, got {type(da)} instead!")
+
+            self._default_actions.append(da)
+
+        # Load rooms
         for raw_room in raw_asset['content']:
             r = LoadableFactory.get(raw_room)
 
             if not isinstance(r, room.Room):
-                raise TypeError(f"Expected object of type Recipe, got type {type(r)} instead!")
+                raise TypeError(f"Expected object of type Room, got type {type(r)} instead!")
 
             self.register_room(r)
-
 
     def save(self) -> None:
         """
         Save room metadata to disk
         """
         pass
+
+    def get_default_actions(self) -> list[Action]:
+        """
+        Get deep-copies of the default Room actions.
+        """
+
+        return [copy.deepcopy(a) for a in self._default_actions]
