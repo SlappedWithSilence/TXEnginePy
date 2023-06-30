@@ -2,7 +2,7 @@ import copy
 
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
-from game.systems.crafting.recpie import Recipe
+from game.systems.crafting.recipe import Recipe
 from game.util.asset_utils import get_asset
 
 

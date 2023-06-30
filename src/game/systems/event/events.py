@@ -420,7 +420,8 @@ class ResourceEvent(Event):
         def logic(_):
             resource_controller: ResourceController = self.target.resources
             self._build_summary(resource_controller.resources[self.stat_name]['instance'].value,  # Current value
-                                resource_controller.resources[self.stat_name]['instance'].adjust(self.amount))  # Post-adjust value
+                                resource_controller.resources[self.stat_name]['instance'].adjust(
+                                    self.amount))  # Post-adjust value
             self.set_state(self.States.SUMMARY)
 
         @FiniteStateDevice.state_content(self, self.States.APPLY)
@@ -517,16 +518,43 @@ class SkillXPEvent(Event):
     Flow handles both level-up and non-level-up scenarios.
     """
 
-    class States:
+    class States(Enum):
         DEFAULT = 0
         GAIN_MESSAGE = 1  # Tell the user how much XP was gained
         LEVEL_UP = 2  # Tell the user that a Skill leveled up
         TERMINATE = -1
 
-    def __init__(self, skill_id: int, xp_gain: int):
+    def __init__(self, skill_id: int, xp_gain: int, target=None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._skill_id = skill_id
         self._xp_gained = xp_gain
+        self._target = target  # A skill-enabled entity
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            if self._target is None:
+                self._target = from_cache('player')
+
+            self.set_state(self.States.GAIN_MESSAGE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.GAIN_MESSAGE, InputType.ANY)
+        def logic(_: any) -> None:
+            self._target.skill_controller[self._skill_id].gain_xp(self._xp_gained)
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.GAIN_MESSAGE)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [
+                    f"{self._target.name} gained {self._xp_gained} ",
+                    StringContent(value=self._target.skill_controller[self._skill_id].name, formatting="skill_name"),
+                    " xp!"
+                ]
+            )
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "SkillXPEvent", LoadableMixin.ATTR_KEY])

@@ -13,11 +13,13 @@ class RecipeBase(ABC):
     def __init__(self, recipe_id: int,
                  items_in: list[tuple[int, int]],
                  items_out: list[tuple[int, int]],
-                 name: str = None):
+                 name: str = None,
+                 xp_reward: dict[int, int] = None):
         self.id: int = recipe_id  # Unique identifier for recipe
         self.items_in: tuple[tuple[int, int]] = tuple(items_in or [])  # Items that are consumed
         self.items_out: tuple[tuple[int, int]] = tuple(items_out or [])  # Items returned to the crafter
         self.name: str = name  # Name of the ingredient
+        self.xp_reward = xp_reward or {}  # A map of skill-id-xp-quantity that is rewarded on completion of the recipe
 
         # If a name is not provided, supply a default name in the format of "ingredients -> products"
         if name is None:
@@ -51,7 +53,7 @@ class RecipeBase(ABC):
                     StringContent(value=from_cache("managers.ItemManager").get_name(item_id), formatting="item_name"),
                     "\t",
                     StringContent(value=f"x{required_quantity * num_crafts}")
-                 ]
+                ]
             )
             return opts
 
@@ -86,15 +88,20 @@ class Recipe(LoadableMixin, RequirementsMixin, RecipeBase):
         Optional JSON fields:
         - requirements: list[Requirements]
         - name: str
+        - xp_reward: dict[int, int]
         """
 
         required_fields = [("id", int), ("items_in", list), ("items_out", list)]
-        optional_fields = [("name", str), ("requirements", list)]
+        optional_fields = [("name", str), ("requirements", list), ("xp_reward", dict)]
 
         LoadableFactory.validate_fields(required_fields, json)
         LoadableFactory.validate_fields(optional_fields, json, False, False)
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        # Convert xp_reward dict from being str-keyed to being int-keyed
+        if "xp_reward" in kwargs:
+            kwargs["xp_reward"] = {int(k): v for k, v in kwargs["xp_reward"].items()}
 
         return Recipe(json['id'],
                       json['items_in'],

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from game.systems.crafting.recpie import Recipe
+from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
 from game.systems.item import Item, item_manager, Equipment

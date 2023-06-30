@@ -6,6 +6,7 @@ from game.systems.crafting import recipe_manager
 from loguru import logger
 
 from game.systems.event.add_item_event import AddItemEvent
+from game.systems.event.events import SkillXPEvent
 
 
 class CraftingController:
@@ -107,7 +108,7 @@ class CraftingController:
         Returns a formatted list of lists of strings/StringContents.
         """
 
-        opts: list[list[str| StringContent]] = []
+        opts: list[list[str | StringContent]] = []
 
         for recipe in self.learned_recipes:
             if self.has_sufficient_ingredients(recipe):
@@ -159,3 +160,7 @@ class CraftingController:
         # Insert each product of the recipe into the player's inventory 'n' times, where 'n' is num_crafts
         for item_id, item_quantity in recipe_manager.get_recipe(recipe_id).items_out:
             game.state_device_controller.add_state_device(AddItemEvent(item_id, item_quantity * num_crafts))
+
+        # Give skill-xp as needed
+        for skill_id, skill_xp in recipe_manager.get_recipe(recipe_id).xp_reward.items():
+            game.state_device_controller.add_state_device(SkillXPEvent(skill_id, skill_xp))
