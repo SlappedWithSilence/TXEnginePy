@@ -69,16 +69,11 @@ class LoadableFactory:
             res_mod = cls.collect_resource_modifiers(json)
             req = cls.collect_requirements(json)
 
-            logger.debug(str(res_mod))
-            logger.debug(str(req))
-
             if res_mod is not None:
                 kw['resource_modifiers'] = res_mod
 
             if req is not None:
                 kw['requirements'] = req
-
-        logger.debug(kw)
 
         return kw
 
