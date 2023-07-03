@@ -112,6 +112,7 @@ class ViewInventoryAction(Action):
         DESC_ITEM = 6
         EQUIP_ITEM = 7
         EMPTY = 8,
+        DETECT_EMPTY = 9,
         TERMINATE = -1
 
     stack_inspect_options = {"Inspect": States.DESC_ITEM,
@@ -135,18 +136,28 @@ class ViewInventoryAction(Action):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+            if cache.from_cache('player') is None:
+                raise RuntimeError("Cannot launch ViewInventoryAction without a valid Player instance!")
+
             if self.player_ref is None:
-                self.player_ref = weakref.proxy(cache.from_cache('player'))
-            if self.player_ref.inventory.size == 0:
-                self.set_state(self.States.EMPTY)
-            else:
-                self.set_state(self.States.DISPLAY_INVENTORY)
+                self.player_ref = cache.from_cache('player')
+
+            self.set_state(self.States.DETECT_EMPTY)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
             return ComponentFactory.get([""])
 
-        # EMPTY
+        @FiniteStateDevice.state_logic(self, self.States.DETECT_EMPTY, InputType.SILENT)
+        def logic(_: any):
+            if self.player_ref.inventory.size == 0:
+                self.set_state(self.States.EMPTY)
+            else:
+                self.set_state(self.States.DISPLAY_INVENTORY)
+
+        @FiniteStateDevice.state_content(self, self.States.DETECT_EMPTY)
+        def content() -> dict:
+            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.EMPTY, InputType.ANY)
         def logic(_: any) -> None:

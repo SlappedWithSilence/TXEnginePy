@@ -1,5 +1,6 @@
 import copy
 import weakref
+from loguru import logger
 
 from game.structures import manager as manager
 from game.structures.loadable_factory import LoadableFactory
@@ -21,7 +22,7 @@ class RoomManager(manager.Manager):
         self.rooms: dict[int, room.Room] = {}
         self.visited_rooms: set[int] = set()
         self._manifest: dict[int, room.Room] = self.rooms
-        self._default_actions: list[Action] = []  # A set of Actions that are added to every Room by default
+        self._default_actions: list[dict[str, any]] = []  # A set of Actions that are added to every Room by default
 
     def register_room(self, room_object: room.Room, room_id_override: int = None) -> None:
         """
@@ -103,12 +104,8 @@ class RoomManager(manager.Manager):
         raw_asset: dict[str, any] = get_asset(self.ROOM_ASSET_PATH)
 
         # Load default actions
-        for raw_default_action in raw_asset['config']['default_actions']:
-            da = LoadableFactory.get(raw_default_action)
-            if not isinstance(da, Action):
-                raise TypeError(f"Expected object of type Action, got {type(da)} instead!")
-
-            self._default_actions.append(da)
+        logger.info("Loading default actions...")
+        self._default_actions = raw_asset['config']['default_actions']
 
         # Load rooms
         for raw_room in raw_asset['content']:
@@ -130,4 +127,4 @@ class RoomManager(manager.Manager):
         Get deep-copies of the default Room actions.
         """
 
-        return [copy.deepcopy(a) for a in self._default_actions]
+        return [LoadableFactory.get(raw_action) for raw_action in self._default_actions]

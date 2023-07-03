@@ -23,13 +23,13 @@
     ]
   },
   "content": [
+
     {
       "class" : "Room",
       "id" : 0,
       "name" : "Lonely Debug Room",
       "enter_text": "You enter a small, cramped, debug room.",
       "actions" : [
-
         {
           "class" : "ExitAction",
           "target_room" : 1,

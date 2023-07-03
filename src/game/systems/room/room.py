@@ -53,6 +53,8 @@ class Room(LoadableMixin, FiniteStateDevice):
         for action in self.actions:
             action.room = weakref.proxy(self)
 
+        logger.debug(self.actions)
+
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             self.set_state(self.States.DISPLAY_OPTIONS)

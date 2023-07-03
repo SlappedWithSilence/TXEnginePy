@@ -29,6 +29,7 @@ class GameStateController:
     GameStateController is singleton class that transforms sd.StateDevices into Frames and delivering user inputs to the
     correct sd.StateDevices.
     """
+
     def __init__(self):
         self.state_device_stack: list[tuple[sd.StateDevice, StackState]] = []
         self.add_state_device(room.room_manager.get_room(cache.get_cache()["player_location"]))
@@ -76,11 +77,19 @@ class GameStateController:
         return self.state_device_stack.pop()[0]
 
     def _advance_if_silent(self):
+        from game.structures.state_device import FiniteStateDevice
+
+        current_sd = self._get_state_device()
 
         # There has got to be a better way to do this.
-        while self._get_state_device().input_type == enums.InputType.SILENT:
-            logger.info(f"[{self._get_state_device().__class__.__name__}] Detected silent state. Advancing...")
-            self._get_state_device().input("")
+        while current_sd.input_type == enums.InputType.SILENT:
+            logger.info(f"[{repr(current_sd)}] Detected silent state. Advancing...")
+
+            if isinstance(current_sd, FiniteStateDevice):
+                logger.debug(f"Current State: {current_sd.current_state}")
+
+            current_sd.input("")
+            current_sd = self._get_state_device()
 
     # Public functions
     def deliver_input(self, user_input: any) -> bool:
