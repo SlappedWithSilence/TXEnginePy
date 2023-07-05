@@ -9,6 +9,7 @@ from game.cache import cached
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 import game.systems.event.events as events
+from game.structures.messages import StringContent
 
 
 class SkillBase(ABC):
@@ -27,7 +28,12 @@ class SkillBase(ABC):
         self.xp: int = xp  # Skill's current xp quantity
         self.level_up_limit: int = self._xp_ceiling(self.level)  # Current limit to level up against
 
-        self.level_up_events: dict[int, list[events.Event]] = level_up_events or {}  # events.Events that are triggered on level up
+        self.level_up_events: dict[
+            int, list[events.Event]] = level_up_events or {}  # events.Events that are triggered on level up
+
+        # Detect invalid next_level_ratios
+        if self.next_level_ratio < 1.0:
+            raise ValueError(f"Invalid next_level_ratio for Skill {self.name}: {self.next_level_ratio}")
 
         # Detect xp-level mismatches
         if self.xp >= self.level_up_limit:
@@ -56,6 +62,17 @@ class SkillBase(ABC):
         if level in self.level_up_events:
             for event in self.level_up_events[level]:
                 game.state_device_controller.add_state_device(copy.deepcopy(event))
+
+        # Add user prompt for level-up LAST so that it is executed before all the level-up events
+        game.state_device_controller.add_state_device(
+            events.TextEvent(
+                [
+                    f"Congratulations! ",
+                    StringContent(value=self.name, formatting="skill_name"),
+                    f" reached level {self.level}!"
+                ]
+            )
+        )
 
     def force_level_up(self) -> None:
         """
