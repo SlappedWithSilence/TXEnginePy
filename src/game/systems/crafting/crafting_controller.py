@@ -163,4 +163,4 @@ class CraftingController:
 
         # Give skill-xp as needed
         for skill_id, skill_xp in recipe_manager.get_recipe(recipe_id).xp_reward.items():
-            game.state_device_controller.add_state_device(SkillXPEvent(skill_id, skill_xp))
+            game.state_device_controller.add_state_device(SkillXPEvent(skill_id, skill_xp * num_crafts))
