@@ -91,6 +91,12 @@ class UseItemEvent(Event):
                 ]
             )
 
+    def __copy__(self):
+        return UseItemEvent(self.stack_index)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "UseItemEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:

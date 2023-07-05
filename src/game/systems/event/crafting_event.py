@@ -185,6 +185,12 @@ class CraftingEvent(Event):
                 ]
             )
 
+    def __copy__(self):
+        return CraftingEvent()
+
+    def __deepcopy__(self, memodict={}):
+        return CraftingEvent()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CraftingEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:

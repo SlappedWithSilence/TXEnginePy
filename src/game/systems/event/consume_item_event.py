@@ -121,6 +121,12 @@ class ConsumeItemEvent(Event):
                 "."
             ])
 
+    def __copy__(self):
+        return ConsumeItemEvent(self.item_id, self.item_quantity, self.callback)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ConsumeItemEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:

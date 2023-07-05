@@ -51,6 +51,12 @@ class FlagEvent(Event):
         def content() -> dict:
             return ComponentFactory.get()
 
+    def __copy__(self):
+        return FlagEvent(self._flags)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "FlagEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -167,6 +173,12 @@ class LearnAbilityEvent(Event):
         def logic(_: any) -> None:
             game.state_device_controller.set_dead()
 
+    def __copy__(self):
+        return LearnAbilityEvent(self.target_ability)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -200,6 +212,7 @@ class CurrencyEvent(Event):
         self._quantity = quantity
         self._cur = currency.currency_manager.to_currency(currency_id, quantity)
         self._player_ref = from_cache("player")
+        self._silent = silent
         self._gain_message: list[StringContent] = [
             f"{self._player_ref.name} gained ",
             StringContent(value=str(self._cur))
@@ -219,6 +232,12 @@ class CurrencyEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content():
             return ComponentFactory.get(self._message)
+
+    def __copy__(self):
+        return CurrencyEvent(self._currency_id, self._quantity, self._silent)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CurrencyEvent", LoadableMixin.ATTR_KEY])
@@ -303,6 +322,12 @@ class LearnRecipeEvent(Event):
                 recipe_manager[recipe_id].get_requirements_as_options()
             )
 
+    def __copy__(self):
+        return LearnRecipeEvent(self.recipe_id)
+
+    def __deepcopy__(self, memodict={}):
+        return LearnRecipeEvent(self.recipe_id)
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -341,6 +366,24 @@ class ReputationEvent(Event):
                         StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
                         StringContent(value=f" by {reputation_change}")
                         ]
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
+        def logic(_: any) -> None:
+            from_cache("managers.FactionManager").adjust_affinity(self.faction_id, self.reputation_change)
+
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get(
+                self.message
+            )
+
+    def __copy__(self):
+        return ReputationEvent(self.faction_id, self.reputation_change, self._silent)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
@@ -442,6 +485,12 @@ class ResourceEvent(Event):
 
         self.target = weakref.proxy(entity)
 
+    def __copy__(self):
+        return ResourceEvent(self.stat_name, self.amount, self.target, self._silent)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -491,6 +540,12 @@ class TextEvent(Event):
             return ComponentFactory.get(
                 self.text
             )
+
+    def __copy__(self):
+        return TextEvent(self.text)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
@@ -555,6 +610,12 @@ class SkillXPEvent(Event):
                     " xp!"
                 ]
             )
+
+    def __copy__(self):
+        return SkillXPEvent(self._skill_id, self._xp_gained, self._target)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "SkillXPEvent", LoadableMixin.ATTR_KEY])

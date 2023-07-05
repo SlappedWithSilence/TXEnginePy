@@ -2,13 +2,11 @@ from enum import Enum
 
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity import Player
-from game.systems.skill.skills import Skill
 from game.systems.event.events import Event
-from game.structures.loadable_factory import LoadableFactory
-from game.structures.loadable import LoadableMixin
 
 
 class ViewSkillsEvent(Event):
@@ -68,6 +66,12 @@ class ViewSkillsEvent(Event):
                     self._player_ref.skill_controller.skills[self._selected_skill].description
                 ]
             )
+
+    def __copy__(self):
+        return ViewSkillsEvent()
+
+    def __deepcopy__(self, memodict={}):
+        return ViewSkillsEvent()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewSkillsEvent", LoadableMixin.ATTR_KEY])
