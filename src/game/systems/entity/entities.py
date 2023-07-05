@@ -21,7 +21,6 @@ from game.systems.skill.skill_controller import SkillController
 class EntityBase(ABC):
 
     def __init__(self, id: int, name: str):
-        logger.debug("EntityBase.init")
         if type(id) != int:
             raise TypeError(f"Expected id to be of type int, got {type(id)} instead.")
 

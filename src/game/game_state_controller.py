@@ -1,13 +1,12 @@
 import dataclasses
-
-import game.systems.room as room
-
-import game.structures.messages as messages
-import game.structures.state_device as sd
-import game.cache as cache
+import weakref
 
 from loguru import logger
 
+import game.cache as cache
+import game.structures.messages as messages
+import game.structures.state_device as sd
+import game.systems.room as room
 from game.structures import enums
 
 
@@ -77,19 +76,23 @@ class GameStateController:
         return self.state_device_stack.pop()[0]
 
     def _advance_if_silent(self):
-        from game.structures.state_device import FiniteStateDevice
-
-        current_sd = self._get_state_device()
 
         # There has got to be a better way to do this.
-        while current_sd.input_type == enums.InputType.SILENT:
-            logger.info(f"[{repr(current_sd)}] Detected silent state. Advancing...")
+        while self._get_state_device().input_type == enums.InputType.SILENT:
+            logger.info(
+                f"Detected silent state in device: {self._get_state_device()}. Skipping...")
+            if hasattr(self._get_state_device(), "current_state"):
+                logger.info(f"State: {self._get_state_device().current_state}")
 
-            if isinstance(current_sd, FiniteStateDevice):
-                logger.debug(f"Current State: {current_sd.current_state}")
+            if not self._get_state_device().input(""):
+                logger.error("Input rejected while advancing through a silent state!")
+                logger.debug(repr(self._get_state_device()))
+                logger.debug(self._get_state_device().to_frame())
 
-            current_sd.input("")
-            current_sd = self._get_state_device()
+                if hasattr(self._get_state_device(), "current_state"):
+                    logger.info(f"State: {self._get_state_device().current_state}")
+                    logger.debug(self._get_state_device().state_data)
+                raise RuntimeError("Input rejected while advancing Silent State!")
 
     # Public functions
     def deliver_input(self, user_input: any) -> bool:

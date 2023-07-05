@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from abc import ABC
+from loguru import logger
 
 import game
 from game.cache import cached
@@ -76,14 +77,19 @@ class SkillBase(ABC):
 
         if self.xp >= self.level_up_limit:  # Check for a level-up
             remaining_xp = self.xp - self.level_up_limit  # Calculate how much xp carries into the next level
+            logger.debug(f"Remaining xp: {remaining_xp} = {self.xp} - {self.level_up_limit}")
 
+            logger.debug(f"Level up limit before: ({self.level}) -> ({self.level_up_limit})")
             self.level += 1
-            self.level_up_limit = round(self.level_up_limit * self.next_level_ratio)  # Update level_up_limit
+            self.level_up_limit = self._xp_ceiling(self.level)  # Update level_up_limit
+            logger.debug(f"Level up limit after: ({self.level}) -> ({self.level_up_limit})")
+
             self.xp = remaining_xp  # Update xp value to carry-over value
 
             if self.xp >= self.level_up_limit:  # Detect a hanging level up
                 self._check_level_up()  # Recursive call. This will make the lowest-level events resolve first.
 
+            logger.debug("Triggering level-up-events...")
             self._trigger_level_up_events(self.level)
 
     def gain_xp(self, xp: int) -> None:
