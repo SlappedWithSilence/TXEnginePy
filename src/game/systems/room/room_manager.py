@@ -41,18 +41,18 @@ class RoomManager(manager.Manager):
 
     def get_room(self, room_id: int) -> room.Room:
         """
-        Return a weak reference to the desired room.
+        Return a reference to the desired room.
 
         Args:
             room_id (int): The ID of the room the retrieve
 
-        Returns: A weakref.proxy of the desired Room
+        Returns: The desired Room
         """
 
         if room_id not in self.rooms:
             raise ValueError(f"Cannot retrieve Room:{room_id}! No such Room exists!")
 
-        return weakref.proxy(self.rooms[room_id])
+        return self.rooms[room_id]
 
     def visit_room(self, r: int | room.Room) -> None:
         """
