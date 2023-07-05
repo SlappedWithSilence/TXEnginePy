@@ -6,7 +6,7 @@
       "id": 1,
       "description" : "A measure of your talent as a blacksmith. Gain smithing XP by smelting ores or working the forges.",
       "initial_level_up_limit" : 10,
-      "next_level_ratio" : 0.5,
+      "next_level_ratio" : 1.5,
       "level_up_events": {
         "2": [
           {

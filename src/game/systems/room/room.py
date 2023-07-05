@@ -53,8 +53,6 @@ class Room(LoadableMixin, FiniteStateDevice):
         for action in self.actions:
             action.room = weakref.proxy(self)
 
-        logger.debug(self.actions)
-
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             self.set_state(self.States.DISPLAY_OPTIONS)
@@ -117,7 +115,7 @@ class Room(LoadableMixin, FiniteStateDevice):
     @property
     def visible_actions(self) -> list[actions.Action]:
         """Returns a list containing only the actions that are visible in the room"""
-        return [weakref.proxy(action) for action in self.actions if action.visible]
+        return [action for action in self.actions if action.visible]
 
     @property
     def options(self) -> list[list[str | StringContent]]:
