@@ -1,6 +1,8 @@
 import weakref
 from enum import Enum
 
+from loguru import logger
+
 from game import cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
@@ -30,30 +32,43 @@ class AddItemEvent(Event):
         """
         Args:
             item_id: The ID of the Item to attempt to add to the player's inventory.
-            item_quantity: The quantity of the Item to attemtp to add to the player's inventory.
+            item_quantity: The quantity of the Item to attempt to add to the player's inventory.
 
         Returns: An instance of an AddItemEvent
         """
-        super().__init__(InputType.SILENT, AddItemEvent.States, self.States.DEFAULT)
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.item_id = item_id
         self.item_quantity = item_quantity
         self.remaining_quantity = item_quantity
-        self.current_state = self.States.DEFAULT  # Set the starting state to DEFAULT
         self.player_ref: entities.Player = None
         self._build_states()
+
+    def __str__(self) -> str:
+        return f"FiniteStateDevice::AddItemEvent::" \
+               f"(item_id: {self.item_id}, item_quantity: {self.item_quantity})::{id(self)}"
+
+    def __copy__(self):
+        return AddItemEvent(self.item_id, self.item_quantity)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     def _build_states(self) -> None:
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
             if self.player_ref is None:
-               self.player_ref = weakref.proxy(cache.get_cache()['player'])  # Grab a weak reference to Player
+                logger.debug("Setting player ref...")
+                self.player_ref = weakref.proxy(cache.get_cache()['player'])  # Grab a weak reference to Player
 
             # Detect collision
             if self.player_ref.inventory.is_collidable(self.item_id, self.remaining_quantity):
+                logger.debug("Moving to PROMPT_KEEP_NEW_ITEM")
                 self.set_state(self.States.PROMPT_KEEP_NEW_ITEM)  # Make player choose to keep or drop new item
             else:
+                logger.debug("MOVING TO INSERT_ITEM")
                 self.set_state(self.States.INSERT_ITEM)  # Insert items
+                logger.debug(f"{self.current_state}: {id(self)}")
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
@@ -118,4 +133,3 @@ class AddItemEvent(Event):
             raise ValueError("Invalid class field!")
 
         return AddItemEvent(json['item_id'], json['item_quantity'])
-
