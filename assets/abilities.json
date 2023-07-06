@@ -6,16 +6,25 @@
       "description" : "The first ability ever created",
       "on_use" : "Feelsbad",
       "damage" : 1,
-      "target_mode": "SINGLE_ENEMY"
+      "target_mode": "single_enemy"
     },
-
-     {
+    {
       "class" : "Ability",
-      "name" : "Getho Ability",
-      "description" : "The second ability ever created",
-      "on_use" : "Feelsok",
-      "damage" : 2,
-      "target_mode": "SINGLE_ALLY"
+      "name" : "Etchings of Iron",
+      "description" : "The might of your forefathers fills you, restoring your stamina",
+      "on_use" : "The might of your forefathers fills you.",
+      "damage" : 0,
+      "target_mode": "self",
+      "effects" : {
+        "post_action_phase" : [
+          {
+            "class" : "ResourceEffect",
+            "resource_name" : "Stamina",
+            "adjust_quantity" : 0.5,
+            "trigger_message" : "You recovered your stamina."
+          }
+        ]
+      }
     }
 
 

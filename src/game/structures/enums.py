@@ -28,20 +28,29 @@ class InputType(enum.Enum):
 
 
 class CombatPhase(enum.Enum):
-    START_PHASE = 0
-    PRE_ACTION_PHASE = 1
-    ACTION_PHASE = 2
-    POST_ACTION_PHASE = 3
-    END_PHASE = 4
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    START_PHASE = "start_phase"
+    PRE_ACTION_PHASE = "pre_action_phase"
+    ACTION_PHASE = "action_phase"
+    POST_ACTION_PHASE = "post_action_phase"
+    END_PHASE = "end_phase"
 
 
 class TargetMode(enum.Enum):
-    ALL = "ALL"
-    SINGLE = "SINGLE"
-    SINGLE_ALLY = "SINGLE_ALLY"
-    SINGLE_ENEMY = "SINGLE_ENEMY"
-    ALL_ALLY = "ALL_ALLY"
-    ALL_ENEMY = "ALL_ENEMY"
-    NOT_SELF = "NOT_SELF"
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    ALL = "all"
+    SINGLE = "single"
+    SINGLE_ALLY = "single_ally"
+    SINGLE_ENEMY = "single_enemy"
+    ALL_ALLY = "all_allies"
+    ALL_ENEMY = "all_enemies"
+    NOT_SELF = "not_self"
+    SELF = "self"
 
 

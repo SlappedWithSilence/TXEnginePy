@@ -14,6 +14,12 @@
             "item_id": 4,
             "item_quantity": 3
           }
+        ],
+        "4" : [
+          {
+            "class" : "LearnAbilityEvent",
+            "ability_name" : "Etchings of Iron"
+          }
         ]
       }
     }

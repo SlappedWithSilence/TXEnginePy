@@ -4,7 +4,6 @@ from enum import Enum
 
 import game.systems.currency as currency
 import game.systems.flag as flag
-import game.util.input_utils
 from game.cache import from_cache, cached
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
@@ -18,7 +17,7 @@ from game.systems.entity.resource import ResourceController
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
 
-    def __init__(self, default_input_type: InputType, states: Enum, default_state):
+    def __init__(self, default_input_type: InputType, states: type[Enum], default_state):
         super().__init__(default_input_type, states, default_state)
 
     def __str__(self) -> str:
@@ -101,7 +100,7 @@ class LearnAbilityEvent(Event):
     def __init__(self, ability_name: str):
         super().__init__(InputType.SILENT, LearnAbilityEvent.States, self.States.DEFAULT)
         self.target_ability: str = ability_name
-        self.player_ref = from_cache("player")
+        self.player_ref = None
 
         @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
         def content() -> dict:
@@ -109,6 +108,8 @@ class LearnAbilityEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+            if not self.player_ref:
+                self.player_ref = from_cache("player")
 
             if self.player_ref.ability_controller.is_learned(ability_name):
                 self.set_state(self.States.ALREADY_LEARNED)
@@ -164,14 +165,6 @@ class LearnAbilityEvent(Event):
                 # Retrieve the requirements for this ability and pass them through the options argument
                 from_cache("managers.AbilityManager").get_ability(ability_name).get_requirements_as_options()
             )
-
-        @FiniteStateDevice.state_content(self, self.States.TERMINATE)
-        def content() -> dict:
-            return ComponentFactory.get()
-
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.state_device_controller.set_dead()
 
     def __copy__(self):
         return LearnAbilityEvent(self.target_ability)

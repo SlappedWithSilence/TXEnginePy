@@ -82,7 +82,7 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
             effects = {}  # Pass to kwargs once filled
 
             for phase in json['effects']:  # Effects are sorted into lists based on trigger phase; iterate through phase
-                if phase not in CombatPhase:  # Catch bad phase
+                if phase not in CombatPhase.list():  # Catch bad phase
                     raise ValueError(f"Unknown combat phase: {phase}")
 
                 # Catch broken formatting
