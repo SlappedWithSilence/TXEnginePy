@@ -69,7 +69,7 @@ class SkillBase(ABC):
                 [
                     f"Congratulations! ",
                     StringContent(value=self.name, formatting="skill_name"),
-                    f" reached level {self.level}!"
+                    f" reached level {level}!"
                 ]
             )
         )
@@ -102,12 +102,12 @@ class SkillBase(ABC):
             logger.debug(f"Level up limit after: ({self.level}) -> ({self.level_up_limit})")
 
             self.xp = remaining_xp  # Update xp value to carry-over value
-
+            cur_level = self.level
             if self.xp >= self.level_up_limit:  # Detect a hanging level up
                 self._check_level_up()  # Recursive call. This will make the lowest-level events resolve first.
 
             logger.debug("Triggering level-up-events...")
-            self._trigger_level_up_events(self.level)
+            self._trigger_level_up_events(cur_level)
 
     def gain_xp(self, xp: int) -> None:
         """
