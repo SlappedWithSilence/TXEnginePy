@@ -5,7 +5,7 @@ from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.effect import CombatEffect
-from game.systems.requirement.requirements import RequirementsMixin
+from game.systems.requirement.requirements import RequirementsMixin, ResourceRequirement
 
 
 class AbilityBase(ABC):
@@ -19,7 +19,7 @@ class AbilityBase(ABC):
     def __init__(self, name: str, description: str, on_use: str,
                  target_mode: TargetMode,
                  effects: dict[CombatPhase, list[CombatEffect]] = None,
-                 damage: int = 1,
+                 damage: int = 1, costs: dict[str, int | float] = None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name: str = name
@@ -28,6 +28,7 @@ class AbilityBase(ABC):
         self.effects: dict[CombatPhase, list[CombatEffect]] = effects or {ev: [] for ev in CombatPhase}
         self.target_mode = target_mode
         self.damage: int = damage
+        self.costs = costs or {}
 
 
 class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
@@ -40,6 +41,13 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # For each cost, insert a ResourceRequirement that matches the cost to enforce resource-minimums without extra
+        # logic.
+        for resource_name, cost_quantity in self.costs.items():
+            self.requirements.append(
+                ResourceRequirement(resource_name, cost_quantity)
+            )
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Ability", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -47,15 +55,16 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         Loads an Ability object from a JSON blob.
 
         Required JSON fields:
-        - name (str)
-        - description (str)
-        - on_use (str)
-        - target_mode (str)
-        - damage (int)
+        - name: str
+        - description: str
+        - on_use: str
+        - target_mode: str
+        - damage: int
 
         Optional JSON fields:
-        - effects {CombatPhase:[CombatEffect]}
-        - requirements
+        - effects: dict[CombatPhase:[CombatEffect]]
+        - costs: dict[str: int | float]
+        - requirements: list[Requirement]
         """
 
         required_fields: list[tuple[str, type]] = [

@@ -15,6 +15,9 @@
       "on_use" : "The might of your forefathers fills you.",
       "damage" : 0,
       "target_mode": "self",
+      "costs" : {
+        "Health" : 0.1
+      },
       "effects" : {
         "post_action_phase" : [
           {

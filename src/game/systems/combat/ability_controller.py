@@ -1,4 +1,5 @@
 from game.cache import from_cache
+from game.structures.messages import StringContent
 
 
 class AbilityController:
@@ -59,3 +60,37 @@ class AbilityController:
             return True
 
         return False
+
+    def _get_ability_as_option(self, ability_name) -> list[str | StringContent]:
+        """
+        Retrieve an instance of the passed ability and return a formatted list containing it.
+
+        Returned formatting is gray if requirements not met, white if met.
+
+        """
+        if not from_cache('managers.AbilityManager').is_ability(ability_name):
+            raise ValueError(f"{ability_name} is not a known Ability!")
+
+        return [
+            StringContent(value=ability_name,
+                          formatting="ability_enabled" if
+                          from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(self.owner)
+                          else "ability_disabled"
+                          )
+        ]
+
+    def get_abilities_as_options(self) -> list[list[str | StringContent]]:
+        """
+        Returns a formatted collection of lists containing all learned abilities.
+
+        Abilities that can be used are white, abilities that cannot be used are grey.
+
+        args:
+            None
+
+        Returns: A list of lists that contains formatted learned abilities.
+        """
+
+        return [
+            self._get_ability_as_option(ability_name) for ability_name in self.abilities
+        ]

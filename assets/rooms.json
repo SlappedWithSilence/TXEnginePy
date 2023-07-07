@@ -19,6 +19,14 @@
         "wrap" : {
           "class" : "ViewSkillsEvent"
         }
+      },
+      {
+        "class" : "WrapperAction",
+        "menu_name" : "View abilities",
+        "activation_text" : "",
+        "wrap" : {
+          "class" : "ViewAbilitiesEvent"
+        }
       }
     ]
   },
