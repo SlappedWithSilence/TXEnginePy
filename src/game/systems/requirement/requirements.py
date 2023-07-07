@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from enum import Enum
 
+from loguru import logger
+
 from game.structures.loadable_factory import LoadableFactory
 from game.cache import from_cache, cached
 from game.structures.loadable import LoadableMixin
@@ -95,22 +97,29 @@ class SkillRequirement(Requirement):
         self.skill_id: int = skill_id
         self.level: int = level
 
-        from game.systems.skill import skill_manager
-        self._skill_name = skill_manager.get_skill(self.skill_id).name
+        self._skill_name: str | None = None
 
     def fulfilled(self, entity) -> bool:
         from game.systems.entity.entities import SkillMixin
 
         if isinstance(entity, SkillMixin):
-            return self.skill_id in entity.skill_controller and \
-                entity.skill_controller[self.skill_id].level >= self.level
+
+            if self.skill_id not in entity.skill_controller.skills:
+                return False
+
+            return entity.skill_controller.get_level(self.skill_id) >= self.level
 
         # If the target entity does not have support for skills (IE, NPC CombatEntities) simply return True
         else:
+            logger.warning(f"SkillRequirement defaulted to True for entity: {str(entity)}")
             return True
 
     @property
     def description(self) -> list[str | StringContent]:
+
+        if self._skill_name is None:
+            self._skill_name = from_cache("managers.SkillManager").get_skill(self.skill_id).name
+
         return [
             "Requires ",
             StringContent(value=self._skill_name),
