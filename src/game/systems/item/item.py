@@ -4,7 +4,7 @@ import game
 import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
-from game.cache import cached
+from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.entity.resource import ResourceModifierMixin
@@ -27,8 +27,9 @@ class Item(LoadableMixin):
         self.max_quantity: int = max_quantity  # The maximum number of items allowed in an inventory stack
 
     def get_currency_value(self, currency_id: int = None) -> currency.Currency:
-        return currency.currency_manager.to_currency(currency_id,
-                                                     self.value[currency_id]) if currency is not None else self.value
+        if type(currency_id) != int:
+            raise TypeError(f"currency_id must be of type int! Got type {type(currency_id)} instead.")
+        return from_cache('managers.CurrencyManager').to_currency(currency_id, self.value[currency_id])
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Item", LoadableMixin.ATTR_KEY])
@@ -137,7 +138,7 @@ class Usable(Item, req.RequirementsMixin):
 
         return Usable(json['name'],
                       json['id'],
-                      json['value'],
+                      {int(k): v for k, v in json['value'].items()},
                       json['description'],
                       )
 
@@ -211,7 +212,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
 
         return Equipment(json['name'],
                          json['id'],
-                         json['value'],
+                         {int(k): v for k, v in json['value'].items()},
                          json['description'],
                          json['equipment_slot'],
                          json['damage_buff'],
