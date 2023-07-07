@@ -1,3 +1,5 @@
+import os
+
 import requests
 from loguru import logger
 from rich import print
@@ -44,6 +46,7 @@ class Viewer:
         u = input("Enter the IP for the TXEngine server: ")
         self._ip = 'http://' + (u if u != "" else "localhost:8000")
         self._session = requests.Session()
+        self.clear = lambda: os.system("cls")
 
     def start_session(self):
         """
@@ -58,7 +61,8 @@ class Viewer:
             self._session.put(self._ip, params={"user_input": user_input}, verify=False)
 
     def get_text_header(self, tx_engine_response: dict) -> str:
-        input_type = tx_engine_response["input_type"] if type(tx_engine_response["input_type"]) == str else tx_engine_response["input_type"][0]
+        input_type = tx_engine_response["input_type"] if type(tx_engine_response["input_type"]) == str else \
+        tx_engine_response["input_type"][0]
         input_range = tx_engine_response["input_range"]
 
         formatting = ['italic']
@@ -87,6 +91,7 @@ class Viewer:
         """
         Primitively print GET results
         """
+        self.clear()
 
         def entity_to_str(entity_dict: dict[str, any]) -> str:
             return f"{entity_dict['name']}\n{entity_dict['primary_resource_name']}: [{entity_dict['primary_resource_val']}/{entity_dict['primary_resource_max']}]"
