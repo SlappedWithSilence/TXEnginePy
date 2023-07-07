@@ -1,5 +1,4 @@
 import enum
-import weakref
 from abc import ABC
 from enum import Enum
 
@@ -283,11 +282,11 @@ class WrapperAction(Action):
         DEFAULT = 0
         TERMINATE = -1
 
-    def __init__(self, menu_name: str, activation_text: str, wrap: StateDevice, *args, **kwargs):
+    def __init__(self, menu_name: str, activation_text: str, wrap: StateDevice | list[StateDevice], *args, **kwargs):
         super().__init__(menu_name, activation_text, WrapperAction.States, WrapperAction.States.DEFAULT,
                          InputType.SILENT, *args, **kwargs)
 
-        if not isinstance(wrap, StateDevice):
+        if not isinstance(wrap, StateDevice) and not isinstance(wrap, list):
             raise TypeError(f"Cannot wrap object of type {type(wrap)}! Must be a subclass of StateDevice!")
 
         self.wrapped_device = wrap
@@ -297,7 +296,16 @@ class WrapperAction(Action):
             if self.wrapped_device is None:
                 raise TypeError("Cannot launch WrapperAction, wrapped_device is None!")
 
-            game.state_device_controller.add_state_device(self.wrapped_device)
+            if type(self.wrapped_device) == list:
+                for device in self.wrapped_device:
+                    game.state_device_controller.add_state_device(device)
+
+            elif isinstance(self.wrapped_device, StateDevice):
+                game.state_device_controller.add_state_device(self.wrapped_device)
+
+            else:
+                raise TypeError(f"Invalid type of wrapped object: {type(self.wrapped_device)}!")
+
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
@@ -314,17 +322,26 @@ class WrapperAction(Action):
         - wrap: Event
 
         Optional JSON fields:
-        - None
+        - requirements
         """
 
         required_fields = [
-            ("menu_name", str), ("activation_text", str), ("wrap", dict)
+            ("menu_name", str), ("activation_text", str), ("wrap", (dict, list))
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
+        kw = LoadableFactory.collect_optional_fields([], json)
+
+        if type(json['wrap']) == dict:
+            wrap = LoadableFactory.get(json['wrap'])
+        elif type(json['wrap']) == list:
+            wrap = [LoadableFactory.get(j) for j in json['wrap']]
+        else:
+            raise TypeError("Unknown type for field 'wrap'")
 
         return WrapperAction(
             json['menu_name'],
             json['activation_text'],
-            LoadableFactory.get(json['wrap'])
+            wrap,
+            **kw
         )
