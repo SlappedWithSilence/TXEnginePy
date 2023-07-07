@@ -22,6 +22,16 @@
           }
         ]
       }
+    },
+    {
+      "class": "Skill",
+      "name": "Mining",
+      "id": 2,
+      "description" : "A measure of your talent as a miner. Gain mining XP by gathering ores and gems.",
+      "initial_level_up_limit" : 10,
+      "next_level_ratio" : 1.5,
+      "level_up_events": {
+      }
     }
   ]
 }

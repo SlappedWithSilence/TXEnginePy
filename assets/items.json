@@ -85,6 +85,70 @@
       "damage_buff" : 0,
       "damage_resist" : 0,
       "resource_modifiers" : {"faith" : 0.1,"mana" : 0.1}
-      }
+      },
+    {
+      "class" : "Usable",
+      "name" : "Pint of Ale",
+      "id" : 8,
+      "value" : {"0" : 7},
+      "description" : "A crisp pint of ale, topped with a tantalizing cap of bubbling white foam.",
+      "max_quantity" : 5,
+      "consumable" : true,
+      "on_use_events" : [
+        {
+          "class" : "ResourceEvent",
+          "resource_name" : "Health",
+          "quantity" : 5
+        }
+      ]
+    },
+    {
+      "class" : "Usable",
+      "name" : "Roughshod Steak",
+      "id" : 9,
+      "value" : {"0" : 11},
+      "description" : "A crudely-cut steak, coated in a variety of common spices, cooked over an open flame.",
+      "max_quantity" : 3,
+      "consumable" : true,
+      "on_use_events" : [
+        {
+          "class" : "ResourceEvent",
+          "resource_name" : "Health",
+          "quantity" : 5
+        },
+        {
+          "class" : "ResourceEvent",
+          "resource_name" : "Stamina",
+          "quantity" : 0.10
+        }
+      ]
+    },
+    {
+      "class" : "Item",
+      "name" : "Copper Ore",
+      "id" : 10,
+      "value" : {"0" : "5"},
+      "description" : "A dull hunk of crudely gathered copper ore.",
+      "max_quantity" : 10
+    },
+    {
+      "class" : "Item",
+      "name" : "Copper Ingot",
+      "id" : 11,
+      "value" : {"0" : "9"},
+      "description" : "A glimmering ingot of copper.",
+      "max_quantity" : 10
+    },
+    {
+      "class" : "Equipment",
+      "name" : "Standard-Issue Pickaxe",
+      "id" : 13,
+      "value" : {"0" :  1},
+      "description" : "An inexpensive, but effective, pickaxe. Capable of extracting most common ores.",
+      "equipment_slot" : "weapon",
+      "damage_buff" : 1,
+      "damage_resist" : 0,
+      "resource_modifiers" : {}
+    }
   ]
 }

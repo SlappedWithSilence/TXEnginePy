@@ -58,6 +58,10 @@
             "item_id": 2,
             "item_quantity": 2
           }
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 2
         }
       ],
       "__comment__" : "End of Lonely Debug Room"
@@ -81,6 +85,128 @@
           "activation_text" : "Welcome to my shop! I don't know why I'm here.",
           "default_currency" : 0,
           "wares" : [0, 1, 2]
+        }
+      ]
+    },
+    {
+      "class" : "Room",
+      "id" : 2,
+      "name" : "Adventurer's Guild",
+      "enter_text" : "The Adventurer's Guild lies before you. Long wooden tables brimming with eager warriors and the smell of ale greet you",
+      "actions" : [
+        {
+          "class" : "ExitAction",
+          "target_room" : 1
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 3
+        },
+        {
+          "class" : "ShopAction",
+          "menu_name" : "Waive down a waitress",
+          "activation_text" : "A young waitress deftly navigates the busy tavern room, swiftly arriving at your table. 'Welcome to the Adventurer's Tavern! What can I get for you?'",
+          "default_currency" : 0,
+          "wares" : [8, 9, 13]
+        }
+      ]
+    },
+    {
+      "class" : "Room",
+      "id" : 3,
+      "name" : "Adventurer's Guide - Basement",
+      "enter_text" : "You enter a dark, damp basement, hewn from stone and erected with a well-crafted wooden foundation.",
+      "actions" : [
+        {
+          "class" : "ExitAction",
+          "target_room" : 2
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 4,
+          "menu_name" : "Investigate sinkhole",
+          "activation_text" : "You peer down into the sinkhole. Deep within the swirling darkness you spot a glimmering vein of ores and gems. Do you want to descend?"
+        },
+        {
+          "class" : "WrapperAction",
+          "menu_name" : "Inspect wooden supply crates",
+          "activation_text" : "You rummage through an open crate.",
+          "wrap" : {
+            "class" : "AddItemEvent",
+            "item_id" : 7,
+            "item_quantity" : 1
+          }
+        }
+      ]
+    },
+    {
+      "class" : "Room",
+      "id" : 4,
+      "name" : "Glittering Cave",
+      "enter_text" : "The walls of the cave are slick with condensation. You are surrounded by a variety of ores and gems, ripe for the taking.",
+      "actions" : [
+        {
+          "class" : "WrapperAction",
+          "menu_name" : "Mine copper ore",
+          "activation_text" : "You swing your pickaxe at the vein of copper. The earth yields her bounty to you.",
+          "wrap" : [
+            {
+              "class" : "AddItemEvent",
+              "item_id" : 10,
+              "item_quantity": 2
+            },
+            {
+              "class" : "SkillXPEvent",
+              "skill_id" : 2,
+              "xp_gained" : 5
+            }
+          ],
+          "requirements" : [
+            {
+              "class" : "SkillRequirement",
+              "skill_id" : 2,
+              "level" : 1
+            },
+            {
+              "class" : "ItemRequirement",
+              "item_id" : 13,
+              "item_quantity" : 1
+            }
+          ]
+        },
+        {
+          "class" : "WrapperAction",
+          "menu_name" : "Mine iron ore",
+          "activation_text" : "You swing your pickaxe at the vein of iron. The earth yields her bounty to you.",
+          "hide_after_use" : true,
+          "wrap" :[
+            {
+              "class" : "AddItemEvent",
+              "item_id" : 3,
+              "item_quantity": 2
+            },
+            {
+              "class" : "SkillXPEvent",
+              "skill_id" : 2,
+              "xp_gained" : 8
+            }
+          ],
+          "requirements" : [
+            {
+              "class" : "SkillRequirement",
+              "skill_id" : 2,
+              "level" : 3
+            },
+            {
+              "class" : "ItemRequirement",
+              "item_id" : 13,
+              "item_quantity" : 1
+            }
+          ]
+        },
+        {
+          "class" : "ExitAction",
+          "target_room" : 3
         }
       ]
     }
