@@ -43,7 +43,7 @@ def from_cache(path: list[str] | str) -> any:
     depth = get_cache()
     for key in true_path[:-1]:  # Skip last key in path
         if key not in depth:
-            raise KeyError()
+            raise KeyError(f"Invalid cache path key: {key}")
         if type(depth[key]) != dict:
             raise TypeError(f"Expected key {key}'s value to be of type dict! Got {type(depth[key])} instead.")
 
