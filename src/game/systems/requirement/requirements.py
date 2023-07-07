@@ -45,7 +45,7 @@ class RequirementsMixin:
 
     def __init__(self, requirements: list[Requirement] = None, **kwargs):
         super().__init__(**kwargs)
-        self.requirements: list[Requirement] = requirements or None
+        self.requirements: list[Requirement] = requirements or []
 
     def is_requirements_fulfilled(self, entity) -> bool:
         """
