@@ -522,7 +522,7 @@ class TextEvent(Event):
 
     def __init__(self, text: str | list[str | StringContent]):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
-        self.text = text
+        self.text: str | list[str | StringContent] = text
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
         def logic(_: any) -> None:
@@ -531,7 +531,7 @@ class TextEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
             return ComponentFactory.get(
-                self.text
+                self.text if type(text) == list else [self.text]
             )
 
     def __copy__(self):
