@@ -54,15 +54,16 @@ class ExitAction(Action):
         DEFAULT = 0
         TERMINATE = -1
 
-    def __init__(self, target_room: int, menu_name: str = None, visible: bool = True,
+    def __init__(self, target_room: int, menu_name: str = None, activation_text: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False,
                  on_exit: list[events.Event] = None, *args, **kwargs):
-        super().__init__(menu_name, "", ExitAction.States, ExitAction.States.DEFAULT, InputType.SILENT,
+        super().__init__(menu_name, activation_text or "", ExitAction.States, ExitAction.States.DEFAULT, InputType.SILENT,
                          visible, reveal_other_action_index, hide_after_use, *args, **kwargs)
 
         # Set instance variables
         self.target_room = target_room
         self.__on_exit: list[events.Event] = on_exit or []
+        self._menu_name = menu_name
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
@@ -79,7 +80,7 @@ class ExitAction(Action):
         """
         Dynamically return a menu name that retrieves the room_name of the target Room
         """
-        return f"Move to {room.room_manager.get_name(self.target_room)}"
+        return self._menu_name or f"Move to {room.room_manager.get_name(self.target_room)}"
 
     @staticmethod
     @cache.cached([LoadableMixin.LOADER_KEY, "ExitAction", LoadableMixin.ATTR_KEY])
