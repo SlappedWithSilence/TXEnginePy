@@ -17,6 +17,8 @@ import game.systems.room.action.actions as actions
 
 from loguru import logger
 
+from game.systems.event.events import TextEvent
+
 
 class Room(LoadableMixin, FiniteStateDevice):
     """
@@ -84,6 +86,11 @@ class Room(LoadableMixin, FiniteStateDevice):
         def logic(_) -> None:
             game.state_device_controller.add_state_device(self.visible_actions[self._action_index])
 
+            if self.visible_actions[self._action_index].activation_text not in [None, ""]:
+                game.state_device_controller.add_state_device(
+                    TextEvent([self.visible_actions[self._action_index].activation_text])
+                )
+
             if isinstance(self.visible_actions[self._action_index], actions.ExitAction):
                 self.set_state(self.States.LEAVE_ROOM)
             else:
@@ -110,7 +117,7 @@ class Room(LoadableMixin, FiniteStateDevice):
 
         @FiniteStateDevice.state_content(self, self.States.LEAVE_ROOM)
         def content():
-            return ComponentFactory.get([f"You leave {self.name}"])
+            return ComponentFactory.get([f"You leave {self.name}"] )
 
     @property
     def visible_actions(self) -> list[actions.Action]:
