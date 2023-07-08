@@ -3,7 +3,7 @@ from enum import Enum
 import game
 import game.systems.entity.entities as entities
 import game.systems.item as item
-from game.cache import get_cache, cached
+from game.cache import get_cache, cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
@@ -47,7 +47,11 @@ class ShopAction(Action):
         PURCHASE_FAILURE = 10,
         TERMINATE = -1
 
-    def __init__(self, menu_name: str,  wares: list[int],
+    def get_text_header(self) -> str:
+        return str(from_cache('player').coin_purse.balance(self.default_currency)) + "\n"
+
+
+    def __init__(self, menu_name: str, wares: list[int],
                  default_currency: int = 0, activation_text: str = "", *args, **kwargs):
         super().__init__(menu_name, activation_text, ShopAction.States, ShopAction.States.DISPLAY_WARES,
                          InputType.INT, *args, **kwargs)
@@ -65,7 +69,7 @@ class ShopAction(Action):
 
         @FiniteStateDevice.state_content(self, self.States.DISPLAY_WARES)
         def content():
-            return ComponentFactory.get([self.activation_text], self._ware_to_option())
+            return ComponentFactory.get([self.get_text_header(), self.activation_text], self._ware_to_option())
 
         @FiniteStateDevice.state_logic(self, self.States.WARE_SELECTED, InputType.INT, -1,
                                        lambda:
@@ -82,10 +86,12 @@ class ShopAction(Action):
         @FiniteStateDevice.state_content(self, self.States.WARE_SELECTED)
         def content():
             return ComponentFactory.get(
-                ["What would you like to do with ",
-                 StringContent(value=self.ware_of_interest.name, formatting="item_name"),
-                 "?"
-                 ],
+                [
+                    self.get_text_header(),
+                    "What would you like to do with ",
+                    StringContent(value=self.ware_of_interest.name, formatting="item_name"),
+                    "?"
+                ],
                 self._get_ware_options()
             )
 
@@ -96,6 +102,7 @@ class ShopAction(Action):
         @FiniteStateDevice.state_content(self, self.States.READ_WARE_DESC)
         def content():
             return ComponentFactory.get([
+                self.get_text_header(),
                 StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
                 self.ware_of_interest.description
             ]
@@ -122,6 +129,7 @@ class ShopAction(Action):
         def content():
             return ComponentFactory.get(
                 [
+                    self.get_text_header(),
                     "Are you sure that you would like to purchase 1x ",
                     StringContent(value=self.ware_of_interest.name + ":\n", formatting="item_name"),
                     " for ",
@@ -139,6 +147,7 @@ class ShopAction(Action):
         def content():
             return ComponentFactory.get(
                 [
+                    self.get_text_header(),
                     "Cannot purchase ",
                     StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                     ". Item costs ",

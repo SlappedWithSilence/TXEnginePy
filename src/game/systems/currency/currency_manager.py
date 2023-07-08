@@ -31,6 +31,17 @@ class CurrencyManager(manager.Manager):
     def __iter__(self):
         return self._manifest.values().__iter__()
 
+    def get_currency(self, currency_id: int) -> Currency:
+        """
+        Get a bare instance of a Currency with the specified ID.
+
+        Args:
+            currency_id (int): The ID of the currency to instantiate
+
+        Returns: A Currency instance with the specified ID and a value of 0.
+        """
+        return self.to_currency(currency_id, 0)
+
     def to_currency(self, currency_id: int, quantity: int) -> Currency:
         """
         Convert a currency id and quantity into a Currency object.
