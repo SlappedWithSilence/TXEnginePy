@@ -631,3 +631,97 @@ class SkillXPEvent(Event):
         LoadableFactory.validate_fields(required_fields, json)
 
         return SkillXPEvent(json['skill_id'], json['xp_gained'])
+
+
+class ViewResourcesEvent(Event):
+
+    def __init__(self, target=None):
+        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
+        self._target = target  # The entity to read Resource values from
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [f"{self.target.name}'s resources:"],
+                self.target.resource_controller.get_resources_as_options()
+            )
+
+    @property
+    def target(self):
+        """
+        Returns the event's target. If no target is specified, return a reference to the player.
+        """
+        return self._target or from_cache('player')
+
+    @target.setter
+    def target(self, ce):
+        """
+        Set the target of the event to a combat entity
+        """
+        from game.systems.entity.entities import CombatEntity
+
+        if not isinstance(ce, CombatEntity):
+            raise TypeError(
+                f"ViewResourcesEvent target must be an instance of class CombatEntity! Got {type(ce)} instead!")
+
+        self._target = ce
+
+    def __copy__(self):
+        return ViewResourcesEvent(self.target)
+
+    def __deepcopy__(self, memodict={}):
+        return ViewResourcesEvent(self.target)
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        return ViewResourcesEvent()
+
+
+class ViewSummaryEvent(Event):
+
+    class States(Enum):
+        DEFAULT = 0
+        VIEW_OPTIONS = 1
+        EXECUTE_OPTION = 2
+        TERMINATE = -1
+
+    def __init__(self, target=None):
+        super().__init__(InputType.INT, self.States, self.States.DEFAULT)
+
+        self._target = target
+
+    @property
+    def target(self):
+        """
+        Returns the event's target. If no target is specified, return a reference to the player.
+        """
+        return self._target or from_cache('player')
+
+    @target.setter
+    def target(self, entity):
+        """
+        Set the target of the event to a combat entity
+        """
+        from game.systems.entity.entities import Entity
+
+        if not isinstance(entity, Entity):
+            raise TypeError(
+                f"ViewSummaryEvent target must be an instance of class CombatEntity! Got {type(entity)} instead!")
+
+        self._target = entity
+
+    def __copy__(self):
+        return ViewSummaryEvent(self.target)
+
+    def __deepcopy__(self, memodict={}):
+        return ViewSummaryEvent(self.target)
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ViewSummaryEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        return ViewSummaryEvent()

@@ -355,3 +355,9 @@ class ResourceController:
         Get the base maximum value of the given resource
         """
         return self.get_instance(resource_name).base_max
+
+    def get_resource_as_option(self, resource_name: str) -> list[str | StringContent]:
+        return [str(self.get_instance(resource_name))]
+
+    def get_resources_as_options(self) -> list[list[str | StringContent]]:
+        return [self.get_resource_as_option(res) for res in self.resources]
