@@ -48,8 +48,8 @@ class ShopAction(Action):
         TERMINATE = -1
 
     def get_text_header(self) -> str:
-        return str(from_cache('player').coin_purse.balance(self.default_currency)) + "\n"
-
+        cur = from_cache('player').coin_purse[self.default_currency]
+        return f"Your {cur.name} balance: {cur}\n\n"
 
     def __init__(self, menu_name: str, wares: list[int],
                  default_currency: int = 0, activation_text: str = "", *args, **kwargs):
