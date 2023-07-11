@@ -14,18 +14,10 @@
       },
       {
         "class" : "WrapperAction",
-        "menu_name" : "View skills",
+        "menu_name" : "View Summary",
         "activation_text" : "",
         "wrap" : {
-          "class" : "ViewSkillsEvent"
-        }
-      },
-      {
-        "class" : "WrapperAction",
-        "menu_name" : "View abilities",
-        "activation_text" : "",
-        "wrap" : {
-          "class" : "ViewAbilitiesEvent"
+          "class" : "ViewSummaryEvent"
         }
       }
     ]

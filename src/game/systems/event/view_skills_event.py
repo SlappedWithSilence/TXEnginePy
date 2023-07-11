@@ -16,7 +16,7 @@ class ViewSkillsEvent(Event):
         SKILL_SELECTED = 2
         TERMINATE = -1
 
-    def __init__(self):
+    def __init__(self, _):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._selected_skill: int | None = None
         self._player_ref: Player = None

@@ -7,8 +7,7 @@ from omegaconf import OmegaConf
 # Those functions. Do not remove.
 from game.systems.requirement.item_requirement import *
 from game.systems.room.action.shop_action import *
-from game.systems.event.view_skills_event import *
-from game.systems.event.view_abilities_event import *
+from game.systems.event.view_summary_event import *
 
 from .cache import get_config, set_config
 from .formatting import register_arguments, register_style
