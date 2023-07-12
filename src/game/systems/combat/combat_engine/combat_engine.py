@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import weakref
 from enum import Enum
 
@@ -91,13 +92,41 @@ class CombatEngine(FiniteStateDevice):
         """
         The active entity has chosen to ue an Item. Handle its usage.
         """
-        pass
+        from game.systems.item.item import Usable
 
-    def _handle_use_ability(self, ability_name: str) -> None:
+        # Get an instance of the item
+        item_instance = from_cache("managers.ItemManager").get_instance(item_id)
+
+        # Type check
+        if not isinstance(item_instance, Usable):
+            raise TypeError(f"Cannot use {item_instance}! Not an instance of Usable!")
+
+        # Use the item on the active entity, then decrement its quantity
+        item_instance.use(self.active_entity)
+        self.active_entity.inventory.consume_item(item_id, 1)
+
+    def _handle_use_ability(self, ability_name: str, targets: list[entities.CombatEntity]) -> None:
         """
         The active entity has chosen to use an Ability. Handle its usage.
         """
-        pass
+
+        ability = from_cache("managers.AbilityManager").get_ability(ability_name)
+
+        if not ability.is_requirements_fulfilled(self.active_entity):
+            raise RuntimeError(
+                f"Cannot activate ability '{ability}! Requirements not met for entity: {self.active_entity}"
+            )
+
+        for target in targets:  # For each selected target of the chosen ability
+            for phase, effects in ability.effects:  # Unpack the ability's effects into phases
+                for effect in effects:  # Iterate through each effect and assign it to that phase on the target
+                    effect_copy = copy.deepcopy(effect)  # Deepcopy may cause an issue
+
+                    # Assign sources and targets from the deepcopy
+                    effect_copy.assign(self.active_entity, target)
+                    target.acquire_effect(effect_copy, phase)
+
+        self.active_entity.ability_controller.consume_ability_resources(ability_name)
 
     def _handle_pass_turn(self) -> None:
         """

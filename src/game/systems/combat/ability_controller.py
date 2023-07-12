@@ -1,5 +1,7 @@
+import game
 from game.cache import from_cache
 from game.structures.messages import StringContent
+from game.systems.event import ResourceEvent
 
 
 class AbilityController:
@@ -61,12 +63,24 @@ class AbilityController:
 
         return False
 
+    def consume_ability_resources(self, ability_name) -> None:
+        """
+        Consume the required resources for a selected ability.
+
+        args:
+            ability_name: The name of the Ability to fetch resource costs for
+
+        returns: None
+        """
+
+        for resource, quantity in from_cache("managers.AbilityManager").get_ability(ability_name).costs.items():
+            game.state_device_controller.add_state_device(ResourceEvent(resource, quantity, self.owner))
+
     def _get_ability_as_option(self, ability_name) -> list[str | StringContent]:
         """
         Retrieve an instance of the passed ability and return a formatted list containing it.
 
         Returned formatting is gray if requirements not met, white if met.
-
         """
         if not from_cache('managers.AbilityManager').is_ability(ability_name):
             raise ValueError(f"{ability_name} is not a known Ability!")
@@ -74,7 +88,8 @@ class AbilityController:
         return [
             StringContent(value=ability_name,
                           formatting="ability_enabled" if
-                          from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(self.owner)
+                          from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(
+                              self.owner)
                           else "ability_disabled"
                           )
         ]

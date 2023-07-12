@@ -1,12 +1,10 @@
 from enum import Enum
 
-from game import cache
-from game.cache import cached
+from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-from game.systems.entity import entities as entities
 from game.systems.event.events import Event
 
 
@@ -18,18 +16,18 @@ class UseItemEvent(Event):
         NOT_REQUIREMENTS = 3
         TERMINATE = -1
 
-    def __init__(self, stack_index: int):
+    def __init__(self, stack_index: int, target = None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.stack_index = stack_index
-        self.player_ref: entities.Player = cache.get_cache()['player']
+        self._target = target  # Type Entity
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
             from game.systems.item.item import Usable
-            if isinstance(self.player_ref.inventory.items[self.stack_index].ref, Usable):
+            if isinstance(self.target.inventory.items[self.stack_index].ref, Usable):
 
-                if self.player_ref.inventory.items[self.stack_index].ref.is_requirements_fulfilled():
+                if self.target.inventory.items[self.stack_index].ref.is_requirements_fulfilled(self.target):
                     self.set_state(self.States.USE_ITEM)
                 else:
                     self.set_state(self.States.NOT_REQUIREMENTS)
@@ -47,7 +45,7 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
         def content(_: any) -> dict:
-            ref = self.player_ref.inventory.items[self.stack_index].ref
+            ref = self.target.inventory.items[self.stack_index].ref
             c = [
                 "Failed to use ",
                 StringContent(value=ref.name, formatting="item_name"),
@@ -63,7 +61,7 @@ class UseItemEvent(Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [
-                    StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name,
+                    StringContent(value=self.target.inventory.items[self.stack_index].ref.name,
                                   formatting="item_name"),
                     " cannot be used."
                 ]
@@ -71,8 +69,8 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
         def logic(_: any) -> None:
-            stack = self.player_ref.inventory.items[self.stack_index]
-            stack.ref.use()
+            stack = self.target.inventory.items[self.stack_index]
+            stack.ref.use(self.target)
 
             if stack.ref.consumable:
                 stack.quantity = stack.quantity - 1
@@ -81,7 +79,7 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
         def content() -> dict:
-            stack = self.player_ref.inventory.items[self.stack_index]
+            stack = self.target.inventory.items[self.stack_index]
 
             return ComponentFactory.get(
                 [
@@ -90,6 +88,10 @@ class UseItemEvent(Event):
                     "."
                 ]
             )
+
+    @property
+    def target(self):
+        return self._target or from_cache('player')
 
     def __copy__(self):
         return UseItemEvent(self.stack_index)
