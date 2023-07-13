@@ -94,7 +94,15 @@ class Usable(Item, req.RequirementsMixin):
         for e in self.on_use_events:
             if not isinstance(e, Event):
                 raise TypeError(f"Invalid use_event object type! Got type {type(e)}. Expected type Event!")
-            game.state_device_controller.add_state_device(copy.deepcopy(e))
+
+            dce = copy.deepcopy(e)
+            if hasattr(dce, "_target"):
+                dce._target = target
+
+            elif hasattr(dce, "target"):
+                dce.target = target
+
+            game.state_device_controller.add_state_device(dce)
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Usable", LoadableMixin.ATTR_KEY])
@@ -140,6 +148,7 @@ class Usable(Item, req.RequirementsMixin):
                       json['id'],
                       {int(k): v for k, v in json['value'].items()},
                       json['description'],
+                      **kwargs
                       )
 
 
