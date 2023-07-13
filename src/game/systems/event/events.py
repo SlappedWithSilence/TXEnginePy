@@ -454,7 +454,7 @@ class ResourceEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.SILENT)
         def logic(_):
-            resource_controller: ResourceController = self.target.resources
+            resource_controller: ResourceController = self.target.resource_controller
             self._build_summary(resource_controller.resources[self.stat_name]['instance'].value,  # Current value
                                 resource_controller.resources[self.stat_name]['instance'].adjust(
                                     self.amount))  # Post-adjust value
