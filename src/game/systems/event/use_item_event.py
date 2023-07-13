@@ -16,18 +16,33 @@ class UseItemEvent(Event):
         NOT_REQUIREMENTS = 3
         TERMINATE = -1
 
-    def __init__(self, stack_index: int, target = None):
+    def __init__(self, item_id: int, target=None):
+        """
+        Args:
+            item_id: The id of the item to use
+            target: The entity to pull items from
+        """
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
-        self.stack_index = stack_index
+        self.item_id: int = item_id
         self._target = target  # Type Entity
+        self._item_instance = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
-            from game.systems.item.item import Usable
-            if isinstance(self.target.inventory.items[self.stack_index].ref, Usable):
+            self._item_instance = from_cache('managers.ItemManager').get_instance(item_id)
 
-                if self.target.inventory.items[self.stack_index].ref.is_requirements_fulfilled(self.target):
+            # Check that the entity actually owns enough of the item to use it. If not, raise and Error since it
+            # shouldn't be possible to get to this point normally.
+            if self.target.inventory.total_quantity(self.item_id) < 1:
+                raise RuntimeError(
+                    f"Cannot use an item with quantity less than 1! {self.target} failed to use item {self._item_instance}"
+                )
+
+            from game.systems.item.item import Usable
+            if isinstance(self._item_instance, Usable):
+
+                if self._item_instance.is_requirements_fulfilled(self.target):
                     self.set_state(self.States.USE_ITEM)
                 else:
                     self.set_state(self.States.NOT_REQUIREMENTS)
@@ -45,13 +60,12 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.NOT_REQUIREMENTS)
         def content(_: any) -> dict:
-            ref = self.target.inventory.items[self.stack_index].ref
             c = [
                 "Failed to use ",
-                StringContent(value=ref.name, formatting="item_name"),
+                StringContent(value=self._item_instance.name, formatting="item_name"),
                 ". Requirements are not met."
             ]
-            return ComponentFactory.get(c, ref.get_requirements_as_options())
+            return ComponentFactory.get(c, self._item_instance.get_requirements_as_options())
 
         @FiniteStateDevice.state_logic(self, self.States.NOT_USABLE, InputType.ANY)
         def logic(_: any) -> None:
@@ -61,7 +75,7 @@ class UseItemEvent(Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [
-                    StringContent(value=self.target.inventory.items[self.stack_index].ref.name,
+                    StringContent(value=self._item_instance.name,
                                   formatting="item_name"),
                     " cannot be used."
                 ]
@@ -69,22 +83,20 @@ class UseItemEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.ANY)
         def logic(_: any) -> None:
-            stack = self.target.inventory.items[self.stack_index]
-            stack.ref.use(self.target)
+            self._item_instance.use(self.target)
 
-            if stack.ref.consumable:
-                stack.quantity = stack.quantity - 1
+            if self._item_instance.consumable:
+                self.target.inventory.consume_item(self.item_id, 1)
 
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
         def content() -> dict:
-            stack = self.target.inventory.items[self.stack_index]
 
             return ComponentFactory.get(
                 [
                     "You used ",
-                    stack.ref.name,
+                    self._item_instance.name,
                     "."
                 ]
             )
@@ -94,7 +106,7 @@ class UseItemEvent(Event):
         return self._target or from_cache('player')
 
     def __copy__(self):
-        return UseItemEvent(self.stack_index)
+        return UseItemEvent(self.item_id, target=self._target)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()

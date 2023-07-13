@@ -258,7 +258,11 @@ class ViewInventoryAction(Action):
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.SILENT)
         def logic(_: any) -> None:
-            game.state_device_controller.add_state_device(uie.UseItemEvent(self.stack_index))
+            game.state_device_controller.add_state_device(
+                uie.UseItemEvent(
+                    self.player_ref.inventory.items[self.stack_index].id
+                )
+            )
             self.set_state(self.States.INSPECT_STACK)
 
         @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
