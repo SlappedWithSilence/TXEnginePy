@@ -134,14 +134,14 @@ class PlayerResourceCondition(TerminationHandler):
         )
 
 
-class AllyResourceCondition(TerminationHandler):
+class GroupResourceCondition(TerminationHandler, ABC):
     """
-    A condition that triggers when all allies (including the Player) reach a specified resource value threshold.
+    A condition that triggers when all entities in the designated group reach a specified resource value threshold.
     """
 
     class Mode(Enum):
         """
-        Operational mode for AllyResourceCondition.
+        Operational mode for GroupResourceCondition.
         """
 
         EQUAL_TO = "equal_to"
@@ -156,9 +156,25 @@ class AllyResourceCondition(TerminationHandler):
         self.resource_value: int | float = resource_value
         self.termination_mode: TerminationHandler.TerminationMode = termination_mode
 
+    @property
+    def group_name(self) -> str:
+        """Returns the name of the group of entities to test against.
+
+        The returned string will be used to populate player-facing messages. As such, the group name should be in
+        plural form.
+        """
+        raise NotImplementedError()
+
+    @property
+    def group(self) -> list:
+        """
+        Returns a list of entities to test the condition against
+        """
+        raise NotImplementedError()
+
     def is_conditions_met(self) -> bool:
 
-        resources = [ally.resource_controller[self.resource_name] for ally in self.owner.allies]
+        resources = [entity.resource_controller[self.resource_name] for entity in self.group]
 
         match self.mode:
             case self.Mode.EQUAL_TO:
@@ -192,11 +208,51 @@ class AllyResourceCondition(TerminationHandler):
     @property
     def trigger_message(self) -> list[str | StringContent]:
         if type(self.resource_value) == int:
-            return [f"All allies have reached {self.resource_value} {self.resource_name}"]
+            return [f"All {self.group_name} have reached {self.resource_value} {self.resource_name}"]
         else:
-            return [f"All allies have reached {self.resource_value * 100}% {self.resource_name}"]
+            return [f"All {self.group_name} have reached {self.resource_value * 100}% {self.resource_name}"]
 
     @staticmethod
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Instantiate an GroupResourceCondition object from a JSON blob.
+
+        Required JSON fields:
+        - resource_name: str
+        - resource_value: str
+        - termination_mode: TerminationMode
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        return GroupResourceCondition(
+            json["resource_name"],
+            json["resource_value"],
+            GroupResourceCondition.TerminationMode(json["termination_mode"])
+        )
+
+
+class AllyResourceCondition(GroupResourceCondition):
+    """
+    A TerminationHandler that triggers when all allies (including the player) reach the designated resource threshold.
+    """
+
+    @property
+    def group_name(self) -> str:
+        return "allies"
+
+    @property
+    def group(self) -> list:
+        return self.owner.allies
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "AllyResourceCondition", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Instantiate an AllyResourceCondition object from a JSON blob.
@@ -222,3 +278,38 @@ class AllyResourceCondition(TerminationHandler):
         )
 
 
+class EnemyResourceCondition(GroupResourceCondition):
+
+    @property
+    def group_name(self) -> str:
+        return "enemies"
+
+    @property
+    def group(self) -> list:
+        return self.owner.enemies
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "EnemyResourceCondition", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Instantiate an EnemyResourceCondition object from a JSON blob.
+
+        Required JSON fields:
+        - resource_name: str
+        - resource_value: str
+        - termination_mode: TerminationMode
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        return EnemyResourceCondition(
+            json["resource_name"],
+            json["resource_value"],
+            GroupResourceCondition.TerminationMode(json["termination_mode"])
+        )
