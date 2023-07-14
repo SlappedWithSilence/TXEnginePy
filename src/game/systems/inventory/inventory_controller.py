@@ -64,12 +64,18 @@ class InventoryController(LoadableMixin):
         return [idx for idx, stack in enumerate(self.items) if stack.id == item_id]
 
     def _all_stacks(self, item_id: int) -> list[Stack]:
+        """
+        Retrieve a list of references to each stack containing the designated item id
+        """
         if type(item_id) != int:
             raise TypeError(f"item_id must be an int! Got object of type {type(item_id)} instead.")
 
         return [weakref.proxy(stack) for stack in self.items if stack.id == item_id]
 
     def _consolidate_stacks(self):
+        """
+        Combine multiple non-full stacks of the same item_id into a single stack.
+        """
         quantity_cache = {}
 
         for stack in self.items:
