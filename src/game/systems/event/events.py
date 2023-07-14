@@ -426,7 +426,7 @@ class ResourceEvent(Event):
     def _build_summary(self, start_value: int, end_value: int) -> None:
         """Assemble a list[str | StringContent] to be printed within the SUMMARY state"""
         self._summary = [
-            f"{self.target.name} {'lost' if self.amount < 0 else 'gained'}",
+            f"{self.target.name} {'lost' if self.amount < 0 else 'gained'} ",
             f"{abs(start_value - end_value)} ",
             StringContent(value=f"{self.stat_name}.", formatting="resource_name")
         ]
