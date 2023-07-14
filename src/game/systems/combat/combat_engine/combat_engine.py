@@ -211,11 +211,24 @@ class CombatEngine(FiniteStateDevice):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
-            self.set_state(self.States.HANDLE_PHASE)
+            self.set_state(self.States.START_TURN_CYCLE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content():
             return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.START_TURN_CYCLE, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.total_turn_cycles += 1
+            self.set_state(self.States.START_ENTITY_TURN)
+
+        @FiniteStateDevice.state_content(self, self.States.START_TURN_CYCLE)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.START_ENTITY_TURN, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.set_state(self.States.HANDLE_PHASE)
 
         @FiniteStateDevice.state_logic(self, self.States.HANDLE_PHASE, InputType.SILENT)
         def logic(_: any) -> None:
