@@ -10,6 +10,8 @@ from game.structures.enums import CombatPhase, InputType
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator
+from game.systems.combat.combat_engine.termination_handler import TerminationHandler, PlayerResourceCondition, \
+    EnemyResourceCondition
 
 
 class CombatEngine(FiniteStateDevice):
@@ -23,10 +25,12 @@ class CombatEngine(FiniteStateDevice):
 
     class States(Enum):
         DEFAULT = 0
-        HANDLE_PHASE = 1
-        DETECT_COMBAT_TERMINATION = 2
-        PLAYER_LOSS = 3
-        PLAYER_VICTORY = 4
+        START_TURN_CYCLE = 1
+        START_ENTITY_TURN = 2
+        HANDLE_PHASE = 3  # For the current phase, call all phase handlers
+        DETECT_COMBAT_TERMINATION = 4  # Call all TerminationHandlers and end combat if triggered
+        PLAYER_LOSS = 5  # Player sucks and has lost
+        PLAYER_VICTORY = 6  # Player doesn't suck and has won
         TERMINATE = -1
 
     @classmethod
@@ -36,8 +40,24 @@ class CombatEngine(FiniteStateDevice):
             CombatPhase.POST_ACTION_PHASE, CombatPhase.END_PHASE
         ]
 
-    def __init__(self, ally_entity_ids: list[int], enemy_entity_ids: list[int]):
+    def __init__(self, ally_entity_ids: list[int], enemy_entity_ids: list[int],
+                 termination_conditions: list[TerminationHandler] = None):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
+
+        # Validate termination conditions
+        self._termination_conditions = termination_conditions or self._get_default_termination_conditions()
+        win_con_found = False
+        loss_con_found = False
+        for condition in self._termination_conditions:
+            if condition.mode == TerminationHandler.TerminationMode.WIN:
+                win_con_found = True
+            else:
+                loss_con_found = True
+
+        if not win_con_found and loss_con_found:
+            raise ValueError(
+                "CombatEngine must have at least 1 win termination condition and 1 loss termination condition!"
+            )
 
         # Master collections
         entity_manager = from_cache("managers.EntityManager")
@@ -54,6 +74,7 @@ class CombatEngine(FiniteStateDevice):
         self._PHASE_ORDER = tuple(CombatEngine.get_master_phase_order())  # Ordered immutable collection of phases
 
         # State data for current turn
+        self.total_turn_cycles: int = 0
         self.current_turn: int = 0
         self.current_phase: CombatPhase = CombatPhase.START_PHASE
 
@@ -170,6 +191,18 @@ class CombatEngine(FiniteStateDevice):
             self._handle_pass_turn()
         else:
             raise TypeError(f"Unexpected type for choice! Expected str, int, None, got {type(choice)} instead!")
+
+    @classmethod
+    def _get_default_termination_conditions(cls) -> list[TerminationHandler]:
+        """
+        Returns a PlayerResourceCondition.Health == 0 for loss condition and an EnemyResourceCondition.Health == 0
+        for a win condition.
+        """
+
+        return [
+            PlayerResourceCondition("Heath", 0, PlayerResourceCondition.TerminationMode.WIN),
+            EnemyResourceCondition("Heath", 0, EnemyResourceCondition.TerminationMode.LOSS),
+        ]
 
     def _build_states(self) -> None:
         """
