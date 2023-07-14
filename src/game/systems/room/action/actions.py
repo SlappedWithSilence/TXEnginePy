@@ -263,7 +263,7 @@ class ViewInventoryAction(Action):
                     self.player_ref.inventory.items[self.stack_index].id
                 )
             )
-            self.set_state(self.States.INSPECT_STACK)
+            self.set_state(self.States.DISPLAY_INVENTORY)
 
         @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
         def content() -> dict:
