@@ -45,95 +45,6 @@ class TerminationHandler(LoadableMixin, ABC):
         raise NotImplementedError()
 
 
-class PlayerResourceCondition(TerminationHandler):
-    """
-    The PlayerResourceCondition triggers when a specified resource meets a specified value.
-    """
-
-    class Mode(Enum):
-        """
-        Operational mode for PlayerResourceCondition.
-        """
-
-        EQUAL_TO = "equal_to"
-        GREATER_THAN = "greater_than"
-        LESS_THAN = "less_than"
-
-    def __init__(self, resource_name: str, resource_value: int | float,
-                 termination_mode: TerminationHandler.TerminationMode,
-                 owner=None):
-        super().__init__(owner)
-        self.resource_name: str = resource_name
-        self.resource_value: int | float = resource_value
-        self.termination_mode: TerminationHandler.TerminationMode = termination_mode
-
-    def is_conditions_met(self) -> bool:
-
-        res = from_cache('player').resource_controller.get_instance(self.resource_name)
-
-        match self.mode:
-            case self.Mode.EQUAL_TO:
-                if type(self.resource_value) != int:
-                    raise TypeError(f"Invalid resource_value type! Expected float, got {type(self.resource_value)}")
-                return res.value == self.resource_value
-
-            case self.Mode.LESS_THAN:
-                if type(self.resource_value) == int:
-                    return res.value < self.resource_value
-
-                elif type(self.resource_value) == float:
-                    return res.percent_remaining < self.resource_value
-                else:
-                    raise TypeError(
-                        f"Invalid resource_value type! Expected int | float, got {type(self.resource_value)}")
-
-            case self.Mode.GREATER_THAN:
-                if type(self.resource_value) == int:
-                    return res.value > self.resource_value
-
-                elif type(self.resource_value) == float:
-                    return res.percent_remaining > self.resource_value
-                else:
-                    raise TypeError(
-                        f"Invalid resource_value type! Expected int | float, got {type(self.resource_value)}")
-
-            case _:
-                raise RuntimeError(f"Unknown operating mode: {self.mode}!")
-
-    @property
-    def trigger_message(self) -> list[str | StringContent]:
-        if type(self.resource_value) == int:
-            return [f"All allies have reached {self.resource_value} {self.resource_name}"]
-        else:
-            return [f"All allies have reached {self.resource_value * 100}% {self.resource_name}"]
-
-    @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "PlayerResourceCondition"])
-    def from_json(json: dict[str, any]) -> any:
-        """
-        Instantiate a PlayerResourceCondition object from a JSON blob.
-
-        Required JSON fields:
-        - resource_name: str
-        - resource_value: str
-        - termination_mode: TerminationMode
-
-        Optional JSON fields:
-        - None
-        """
-
-        required_fields = [
-            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
-        ]
-
-        LoadableFactory.validate_fields(required_fields, json)
-        return PlayerResourceCondition(
-            json["resource_name"],
-            json["resource_value"],
-            PlayerResourceCondition.TerminationMode(json["termination_mode"])
-        )
-
-
 class GroupResourceCondition(TerminationHandler, ABC):
     """
     A condition that triggers when all entities in the designated group reach a specified resource value threshold.
@@ -312,4 +223,60 @@ class EnemyResourceCondition(GroupResourceCondition):
             json["resource_name"],
             json["resource_value"],
             GroupResourceCondition.TerminationMode(json["termination_mode"])
+        )
+
+
+class PlayerResourceCondition(GroupResourceCondition):
+    """
+    The PlayerResourceCondition triggers when a specified resource meets a specified value.
+    """
+
+    @property
+    def group_name(self) -> str:
+        return "player"
+
+    @property
+    def group(self) -> list:
+        return from_cache("player")
+
+    class Mode(Enum):
+        """
+        Operational mode for PlayerResourceCondition.
+        """
+
+        EQUAL_TO = "equal_to"
+        GREATER_THAN = "greater_than"
+        LESS_THAN = "less_than"
+
+    @property
+    def trigger_message(self) -> list[str | StringContent]:
+        if type(self.resource_value) == int:
+            return [f"You have reached {self.resource_value} {self.resource_name}"]
+        else:
+            return [f"You have reached {self.resource_value * 100}% {self.resource_name}"]
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "PlayerResourceCondition"])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Instantiate a PlayerResourceCondition object from a JSON blob.
+
+        Required JSON fields:
+        - resource_name: str
+        - resource_value: str
+        - termination_mode: TerminationMode
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        return PlayerResourceCondition(
+            json["resource_name"],
+            json["resource_value"],
+            PlayerResourceCondition.TerminationMode(json["termination_mode"])
         )
