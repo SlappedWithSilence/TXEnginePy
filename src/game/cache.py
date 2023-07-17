@@ -41,15 +41,20 @@ def from_cache(path: list[str] | str) -> any:
     true_path = decode_path(path)
 
     depth = get_cache()
-    for key in true_path[:-1]:  # Skip last key in path
-        if key not in depth:
-            raise KeyError(f"Invalid cache path key: {key}")
-        if type(depth[key]) != dict:
-            raise TypeError(f"Expected key {key}'s value to be of type dict! Got {type(depth[key])} instead.")
 
-        depth = depth[key]
+    try:
+        for key in true_path[:-1]:  # Skip last key in path
+            if key not in depth:
+                raise KeyError(f"Invalid cache path key: {key}")
+            if type(depth[key]) != dict:
+                raise TypeError(f"Expected key {key}'s value to be of type dict! Got {type(depth[key])} instead.")
 
-    return depth[true_path[-1]]
+            depth = depth[key]
+
+        return depth[true_path[-1]]
+    except KeyError as ke:
+        logger.warning(f"Caught a key-error while searching cache: {ke}")
+        return None
 
 
 def cache_element(path: list[str] | str, element: any) -> None:
