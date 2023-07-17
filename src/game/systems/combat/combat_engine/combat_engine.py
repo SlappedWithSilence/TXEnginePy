@@ -34,18 +34,11 @@ class CombatEngine(FiniteStateDevice):
         PLAYER_VICTORY = 7  # Player doesn't suck and has won
         TERMINATE = -1
 
-    @classmethod
-    def get_master_phase_order(cls) -> list[CombatPhase]:
-        return [
-            CombatPhase.START_PHASE, CombatPhase.PRE_ACTION_PHASE, CombatPhase.ACTION_PHASE,
-            CombatPhase.POST_ACTION_PHASE, CombatPhase.END_PHASE
-        ]
-
     def __init__(self, ally_entity_ids: list[int], enemy_entity_ids: list[int],
                  termination_conditions: list[TerminationHandler] = None):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
 
-        # Validate termination conditions
+        # Verify that there's at least one win and one loss condition
         self._termination_conditions = termination_conditions or self._get_default_termination_conditions()
         win_con_found = False
         loss_con_found = False
@@ -77,7 +70,7 @@ class CombatEngine(FiniteStateDevice):
         # State data for current turn
         self.total_turn_cycles: int = 0
         self.current_turn: int = -1  # Start at -1 so that when combat begins the index can be incremented to 0
-        self.current_phase: int = 0  # Index of current phase against self._PHASE_ORDER
+        self.current_phase_index: int = 0  # Index of current phase against self._PHASE_ORDER
 
         self._build_states()
 
@@ -85,6 +78,8 @@ class CombatEngine(FiniteStateDevice):
         if from_cache("combat") is not None:
             raise RuntimeError("An active combat is already cached!")
         cache_element("combat", weakref.proxy(self))
+
+    # Private helper functions
 
     def _handle_phase(self) -> None:
         """
@@ -156,6 +151,28 @@ class CombatEngine(FiniteStateDevice):
         """
         pass
 
+    # Public methods
+
+    def handle_turn_action(self, choice: int | str | None) -> None:
+        """
+        Perform the logic for executing the choice made by the active entity.
+        """
+
+        if type(choice) == int:
+            self._handle_use_item(choice)
+        elif type(choice) == str:
+            self._handle_use_item(choice)
+        elif choice is None:
+            self._handle_pass_turn()
+        else:
+            raise TypeError(f"Unexpected type for choice! Expected str, int, None, got {type(choice)} instead!")
+
+    # Properties
+
+    @property
+    def current_phase(self) -> CombatPhase:
+        return self._PHASE_ORDER[self.current_phase_index]
+
     @property
     def active_entity(self) -> entities.CombatEntity:
         """
@@ -179,19 +196,7 @@ class CombatEngine(FiniteStateDevice):
     def allies(self) -> list[entities.CombatEntity]:
         return self._allies
 
-    def handle_turn_action(self, choice: int | str | None) -> None:
-        """
-        Perform the logic for executing the choice made by the active entity.
-        """
-
-        if type(choice) == int:
-            self._handle_use_item(choice)
-        elif type(choice) == str:
-            self._handle_use_item(choice)
-        elif choice is None:
-            self._handle_pass_turn()
-        else:
-            raise TypeError(f"Unexpected type for choice! Expected str, int, None, got {type(choice)} instead!")
+    # Class Methods
 
     @classmethod
     def _get_default_termination_conditions(cls) -> list[TerminationHandler]:
@@ -204,6 +209,15 @@ class CombatEngine(FiniteStateDevice):
             PlayerResourceCondition("Heath", 0, PlayerResourceCondition.TerminationMode.WIN),
             EnemyResourceCondition("Heath", 0, EnemyResourceCondition.TerminationMode.LOSS),
         ]
+
+    @classmethod
+    def get_master_phase_order(cls) -> list[CombatPhase]:
+        return [
+            CombatPhase.START_PHASE, CombatPhase.PRE_ACTION_PHASE, CombatPhase.ACTION_PHASE,
+            CombatPhase.POST_ACTION_PHASE, CombatPhase.END_PHASE
+        ]
+
+    # State logic
 
     def _build_states(self) -> None:
         """
@@ -231,7 +245,7 @@ class CombatEngine(FiniteStateDevice):
         @FiniteStateDevice.state_logic(self, self.States.START_ENTITY_TURN, InputType.SILENT)
         def logic(_: any) -> None:
             self.current_turn += 1  # Increment turn index
-            self.current_phase = 0  # Reset phase index to 0 (Start phase)
+            self.current_phase_index = 0  # Reset phase index to 0 (Start phase)
 
             if self.active_entity:  # If incremented position is in range, handle the turn's phase logic
                 self.set_state(self.States.HANDLE_PHASE)
@@ -242,11 +256,11 @@ class CombatEngine(FiniteStateDevice):
         def logic(_: any) -> None:
 
             # Check if the current phase index is out of bounds. If so, start the next entity's turn and reset phase.
-            if self.current_phase >= len(self._PHASE_ORDER):
+            if self.current_phase_index >= len(self._PHASE_ORDER):
                 self.set_state(self.States.START_ENTITY_TURN)
                 return
 
-            for handler_cls in self.PHASE_HANDLERS[self._PHASE_ORDER[self.current_phase]]:
+            for handler_cls in self.PHASE_HANDLERS[self.current_phase]:
                 handler_cls().handle_phase(self)
 
             self.set_state(self.States.DETECT_COMBAT_TERMINATION)
@@ -279,7 +293,7 @@ class CombatEngine(FiniteStateDevice):
 
         @FiniteStateDevice.state_logic(self, self.States.NEXT_PHASE, InputType.SILENT)
         def logic(_: any):
-            self.current_phase += 1
+            self.current_phase_index += 1
             self.set_state(self.States.HANDLE_PHASE)
 
         @FiniteStateDevice.state_content(self, self.States.NEXT_PHASE)
