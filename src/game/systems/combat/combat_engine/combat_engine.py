@@ -4,6 +4,8 @@ import copy
 import weakref
 from enum import Enum
 
+from loguru import logger
+
 import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element
 from game.structures.enums import CombatPhase, InputType
@@ -43,12 +45,12 @@ class CombatEngine(FiniteStateDevice):
         win_con_found = False
         loss_con_found = False
         for condition in self._termination_conditions:
-            if condition.mode == TerminationHandler.TerminationMode.WIN:
+            if condition.termination_mode == TerminationHandler.TerminationMode.WIN:
                 win_con_found = True
             else:
                 loss_con_found = True
 
-        if not win_con_found and loss_con_found:
+        if not (win_con_found and loss_con_found):
             raise ValueError(
                 "CombatEngine must have at least 1 win termination condition and 1 loss termination condition!"
             )
@@ -77,6 +79,8 @@ class CombatEngine(FiniteStateDevice):
         # Cache a global weak reference to this instance for later use by CombatSummary state devices.
         if from_cache("combat") is not None:
             raise RuntimeError("An active combat is already cached!")
+
+        logger.debug(f"Caching reference to new CombatEngine: {self}")
         cache_element("combat", weakref.proxy(self))
 
     # Private helper functions
@@ -206,8 +210,8 @@ class CombatEngine(FiniteStateDevice):
         """
 
         return [
-            PlayerResourceCondition("Heath", 0, PlayerResourceCondition.TerminationMode.WIN),
-            EnemyResourceCondition("Heath", 0, EnemyResourceCondition.TerminationMode.LOSS),
+            PlayerResourceCondition("Heath", 0, TerminationHandler.TerminationMode.WIN),
+            EnemyResourceCondition("Heath", 0, TerminationHandler.TerminationMode.LOSS),
         ]
 
     @classmethod
@@ -216,6 +220,15 @@ class CombatEngine(FiniteStateDevice):
             CombatPhase.START_PHASE, CombatPhase.PRE_ACTION_PHASE, CombatPhase.ACTION_PHASE,
             CombatPhase.POST_ACTION_PHASE, CombatPhase.END_PHASE
         ]
+
+    # Dunder overrides
+
+    def __del__(self):
+        """
+        Purge the reference to this combat in the cache.
+        """
+        if from_cache("combat") is not None:
+            cache_element("combat", None)
 
     # State logic
 
