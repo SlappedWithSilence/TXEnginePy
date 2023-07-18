@@ -50,10 +50,10 @@ def test_self_cache():
 
     # Spawn a new combat session the check that it got cached
     engine = get_generic_combat_instance()
-    assert from_cache("combat") is engine
+    assert from_cache("combat") == engine
 
-    # Deleted the combat session and verify that it isn't cached anymore
-    del engine
+    # Terminate the combat session and verify that it isn't cached anymore
+    engine.state_data[engine.States.TERMINATE.value]['logic'](None)
     assert from_cache("combat") is None
 
 
