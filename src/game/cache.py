@@ -75,10 +75,11 @@ def cache_element(path: list[str] | str, element: any) -> None:
 
         else:
             depth[key] = {}
+            logger.debug(f"Creating sub-dict: {key}")
 
         depth = depth[key]
 
-    depth[path[-1]] = element
+    depth[true_path[-1]] = element
 
 
 def get_cache() -> dict:
@@ -130,6 +131,58 @@ def get_loader(cls: type | str) -> Callable:
         raise KeyError(
             f"No loader found for class {key}! Available loaders:\n{' '.join(list(get_cache()['loader'].keys()))}"
         )
+
+
+def delete_element(path: str | list[str], delete_branch: bool = False, force: bool = False):
+    """
+    Delete an element from the cache
+
+    If 'delete_branch' is True, attempt to delete the entire branch of sub-dicts that store the element. If other cached
+    elements depend on those sub-dicts, they will not be removed. If 'force' is True, all sub-dicts and all of their
+    contents will be removed.
+
+    args:
+        path: The path in the cache to delete. By default, only the final value (ie the leaf of the path) is removed.
+        delete_branch: If true, delete all the sub-dicts down to the root node.
+        force: If true, delete_branch will ignore any dependent branches and still delete the entire sub-dict tree
+    """
+
+    true_path: list[str] = decode_path(path)
+
+    is_clean = True  # Can the entire branch be deleted without breaking other cache values
+
+    depth = get_cache()
+
+    for key in true_path[:-1]:  # For each key except the last one
+
+        if key in depth:  # Check that the next sub-dict exists
+            depth = depth[key]  # Move to next sub-dict
+            if type(depth) != dict:  # Check that its actually a dict
+                logger.warning(f"Failed to delete {path} from cache! Invalid path. Key {key} is not a dict!")
+                break  # Stop executing logic
+
+            # If there's more than one element in the sub-dict, it cannot possibly be cleanly deleted
+            if len(depth) > 1:
+                is_clean = False
+
+        else:
+            logger.warning(f"Failed to delete {path} from cache! Invalid path. Missing key at {key}.")
+            break
+
+    # Handle deleting an entire branch of sub-dicts
+    if delete_branch:
+        if is_clean or force:  # If the branch is clean or force is True
+            depth = get_cache()
+            del depth[true_path[0]]  # Delete the connection between the root of the cache and the shallowest sub-dict
+        else:
+            logger.warning(f"Failed to delete {path} from cache! Path is not clean and Force == False")
+
+    # Handle standard deletion logic
+    else:
+        if true_path[-1] in depth:  # Check if the final key exists in the final sub-dict
+            del depth[true_path[-1]]  # Delete the key-pair value from the sub-dict
+        else:
+            logger.warning(f"Failed to delete {path} from cache! Invalid path. Missing key at {true_path[-1]}")
 
 
 def cached(path: list[str] | str) -> Callable:
