@@ -84,7 +84,6 @@ class CombatEngine(FiniteStateDevice):
         if from_cache("combat") is not None:
             raise RuntimeError("An active combat is already cached!")
 
-        logger.debug(f"Caching reference to new CombatEngine: {self}")
         cache_element("combat", self)
 
     # Private helper functions

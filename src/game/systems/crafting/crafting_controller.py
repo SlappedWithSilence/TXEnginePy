@@ -89,8 +89,6 @@ class CraftingController:
         has the lowest quantity_in_inventory / quantity_demand_from_recipe.
         """
 
-        logger.debug(f"Inventory: {str(self.owner.inventory.items)}")
-        logger.debug(f"Recipe: {recipe_manager[recipe_id].name}")
         min_crafts: int = 9999999
         for ingredient_id, ingredient_quantity in recipe_manager[recipe_id].items_in:  # For each ingredient bundle
             in_inv: int = self.owner.inventory.total_quantity(ingredient_id)  # Check amount the user has
