@@ -11,7 +11,7 @@ def get_test_allies() -> list[int]:
     """
 
     return [
-
+        -110
     ]
 
 
@@ -20,7 +20,7 @@ def get_test_enemies() -> list[int]:
     Get a default list of generic enemy CombatEntity objects.
     """
     return [
-
+        -111
     ]
 
 
@@ -65,3 +65,4 @@ def test_duplicate_combats():
     engine = get_generic_combat_instance()
     with pytest.raises(RuntimeError):
         engine2 = get_generic_combat_instance()
+

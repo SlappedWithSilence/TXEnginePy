@@ -3,8 +3,10 @@ from loguru import logger
 from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
+from game.systems.entity.entities import CombatEntity
 from game.systems.item import Item, item_manager, Equipment
 from game.systems.crafting import recipe_manager
+from game.systems.entity import entity_manager
 
 
 def pre_collect_setup():
@@ -68,7 +70,11 @@ def pre_collect_setup():
     # Set some abilities
 
     logger.info("Setting up test entities...")
-    # Set some entities
+    te_ally_1 = CombatEntity(name="Test Ally", id=-110)
+    te_enemy_1 = CombatEntity(name="Test Enemy", id=-111)
+
+    entity_manager.register_entity(te_ally_1)
+    entity_manager.register_entity(te_enemy_1)
 
 
 pre_collect_setup()
