@@ -70,8 +70,8 @@ def pre_collect_setup():
     # Set some abilities
 
     logger.info("Setting up test entities...")
-    te_ally_1 = CombatEntity(name="Test Ally", id=-110)
-    te_enemy_1 = CombatEntity(name="Test Enemy", id=-111)
+    te_ally_1 = CombatEntity(name="Test Ally", id=-110, turn_speed=2)
+    te_enemy_1 = CombatEntity(name="Test Enemy", id=-111, turn_speed=3)
 
     entity_manager.register_entity(te_ally_1)
     entity_manager.register_entity(te_enemy_1)
