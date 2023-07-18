@@ -1,6 +1,7 @@
 import pytest
+from loguru import logger
 
-from game.cache import cache_element, from_cache
+from game.cache import cache_element, from_cache, delete_element
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
 from game.systems.entity.entities import CombatEntity
 
@@ -66,3 +67,18 @@ def test_duplicate_combats():
     with pytest.raises(RuntimeError):
         engine2 = get_generic_combat_instance()
 
+
+def test_compute_turn_order():
+    """
+    Test that CombatEngine correctly determines turn order in a trivial case
+    """
+    delete_element("combat")
+
+    engine = get_generic_combat_instance()
+    engine._compute_turn_order()
+
+    logger.debug([ce.name for ce in engine._turn_order])
+
+    assert engine._turn_order[0].name == "Test Enemy"
+    assert engine._turn_order[1].name == "Test Ally"
+    assert engine._turn_order[2].name == "Player"
