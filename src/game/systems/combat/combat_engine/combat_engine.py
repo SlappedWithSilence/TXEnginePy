@@ -56,6 +56,9 @@ class CombatEngine(FiniteStateDevice):
                 "CombatEngine must have at least 1 win termination condition and 1 loss termination condition!"
             )
 
+        if len(enemy_entity_ids) < 1:
+            raise ValueError("Combat must have at least one enemy entity!")
+
         # Master collections
         entity_manager = from_cache("managers.EntityManager")
         self._allies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
