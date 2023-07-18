@@ -110,7 +110,7 @@ class CombatEngine(FiniteStateDevice):
             self._turn_order = [weakref.proxy(e) for e in self._allies + self._enemies]
 
         # Sort in place
-        self._turn_order.sort(key=lambda x: x.turn_speed)
+        self._turn_order.sort(key=lambda x: x.turn_speed, reverse=True)
 
     def _handle_use_item(self, item_id: int) -> None:
         """
