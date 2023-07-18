@@ -6,8 +6,9 @@ from enum import Enum
 
 from loguru import logger
 
+import game
 import game.systems.entity.entities as entities
-from game.cache import from_cache, cache_element
+from game.cache import from_cache, cache_element, delete_element
 from game.structures.enums import CombatPhase, InputType
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
@@ -81,7 +82,7 @@ class CombatEngine(FiniteStateDevice):
             raise RuntimeError("An active combat is already cached!")
 
         logger.debug(f"Caching reference to new CombatEngine: {self}")
-        cache_element("combat", weakref.proxy(self))
+        cache_element("combat", self)
 
     # Private helper functions
 
@@ -221,15 +222,6 @@ class CombatEngine(FiniteStateDevice):
             CombatPhase.POST_ACTION_PHASE, CombatPhase.END_PHASE
         ]
 
-    # Dunder overrides
-
-    def __del__(self):
-        """
-        Purge the reference to this combat in the cache.
-        """
-        if from_cache("combat") is not None:
-            cache_element("combat", None)
-
     # State logic
 
     def _build_states(self) -> None:
@@ -312,3 +304,8 @@ class CombatEngine(FiniteStateDevice):
         @FiniteStateDevice.state_content(self, self.States.NEXT_PHASE)
         def content() -> dict:
             return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT, override=True)
+        def logic(_: any) -> None:
+            delete_element("combat")  # Kill the global combat reference
+            game.state_device_controller.set_dead()  # Set self as dead to be removed from the stack
