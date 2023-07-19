@@ -241,8 +241,9 @@ class CombatEngine(FiniteStateDevice):
 
         @FiniteStateDevice.state_logic(self, self.States.START_TURN_CYCLE, InputType.SILENT)
         def logic(_: any) -> None:
+            self._compute_turn_order()
             self.total_turn_cycles += 1
-            self.current_turn = 0
+            self.current_turn = -1
             self.set_state(self.States.START_ENTITY_TURN)
 
         @FiniteStateDevice.state_content(self, self.States.START_TURN_CYCLE)
