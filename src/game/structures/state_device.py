@@ -10,6 +10,7 @@ from loguru import logger
 import game
 from game.structures import enums
 from game.structures.enums import InputType
+from game.structures.errors import StateDeviceInternalError
 from game.structures.messages import Frame, ComponentFactory
 from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
 
@@ -274,7 +275,7 @@ class FiniteStateDevice(StateDevice, ABC):
 
     def set_state(self, next_state) -> None:
         if next_state.value not in self.state_data:
-            raise ValueError(f"Unknown state {next_state}!")
+            raise StateDeviceInternalError(f"Unknown state {next_state}!")
 
         self.current_state = next_state
         self.input_type = self.state_data[next_state.value]['input_type']
@@ -323,22 +324,23 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Type and value checking
         if not isinstance(instance, FiniteStateDevice):
-            raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
+            raise StateDeviceInternalError(
+                f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
 
         if state not in instance.state_data and state.value not in instance.state_data:
-            raise ValueError(f"Unknown state {state}:{state.value}!")
+            raise StateDeviceInternalError(f"Unknown state {state}:{state.value}!")
 
         if not override and instance.state_data[state.value]['logic']:
-            raise ValueError(f"State.logic collision! {state} already has a logic function registered.")
+            raise StateDeviceInternalError(f"State.logic collision! {state} already has a logic function registered.")
 
         if input_min is not None and (not callable(input_min) and not type(input_min) == int):
-            raise TypeError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
+            raise StateDeviceInternalError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
 
         if input_max is not None and (not callable(input_max) and not type(input_max) == int):
-            raise TypeError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
+            raise StateDeviceInternalError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
 
         if input_len is not None and (not callable(input_len) and not type(input_len) == int):
-            raise TypeError(f"input_len must be an int or a callable! Got {type(input_len)} instead.")
+            raise StateDeviceInternalError(f"input_len must be an int or a callable! Got {type(input_len)} instead.")
 
         def decorate(fn):
             """
@@ -377,11 +379,13 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Check argument types and values
         if not isinstance(instance, FiniteStateDevice):
-            raise TypeError(f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
+            raise StateDeviceInternalError(
+                f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
         if state.value not in instance.state_data:
-            raise ValueError(f"Unknown state {state}!")
+            raise StateDeviceInternalError(f"Unknown state {state}!")
         if instance.state_data[state.value]['content'] and not override:
-            raise ValueError(f"State.content collision! {state} already has a content function registered.")
+            raise StateDeviceInternalError(
+                f"State.content collision! {state} already has a content function registered.")
 
         # Inner decorator that receives the function
         def decorate(fn):
@@ -401,8 +405,8 @@ class FiniteStateDevice(StateDevice, ABC):
 
         if 'logic' not in self.state_data[self.current_state.value] \
                 or not self.state_data[self.current_state.value]['logic']:
-            raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
-
+            raise StateDeviceInternalError(f"No logical provider has been registered for state {self.current_state}!",
+                                           {KeyError: ""})
         self.state_data[self.current_state.value]['logic'](user_input)
 
     @property
