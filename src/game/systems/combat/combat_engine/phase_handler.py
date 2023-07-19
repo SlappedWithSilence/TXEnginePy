@@ -2,6 +2,7 @@ from abc import ABC
 
 import game
 import game.systems.entity.entities as entities
+from loguru import logger
 
 
 class PhaseHandler(ABC):
@@ -19,6 +20,9 @@ class PhaseHandler(ABC):
         """
         Wrapper for _phase_logic that provides consistent stateless error checking against the combat_engine.
         """
+        logger.debug(f"current_turn: {combat_engine.current_turn}")
+        logger.debug(f"current_phase: {combat_engine.current_phase}")
+        logger.debug(f"turn_order: {combat_engine._turn_order}")
 
         if combat_engine.active_entity is None or not isinstance(combat_engine.active_entity, entities.CombatEntity):
             raise TypeError(
