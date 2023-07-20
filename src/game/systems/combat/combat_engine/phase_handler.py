@@ -4,6 +4,8 @@ import game
 import game.systems.entity.entities as entities
 from loguru import logger
 
+from game.structures.errors import CombatError
+
 
 class PhaseHandler(ABC):
 
@@ -25,8 +27,10 @@ class PhaseHandler(ABC):
         logger.debug(f"turn_order: {combat_engine._turn_order}")
 
         if combat_engine.active_entity is None or not isinstance(combat_engine.active_entity, entities.CombatEntity):
-            raise TypeError(
-                f"Active entity must be instance of CombatEntity! Got {type(combat_engine.active_entity)} instead!")
+            raise CombatError(
+                f"Active entity must be instance of CombatEntity! Got {type(combat_engine.active_entity)} instead!",
+                {TypeError: "Invalid active_entity type"}
+            )
 
         self._phase_logic(combat_engine)
 
@@ -60,19 +64,3 @@ class ChoiceActivator(PhaseHandler):
         combat_engine.handle_turn_action(combat_engine.active_entity.make_choice())
 
 
-class LossDetector(PhaseHandler):
-    """
-    Detect if the conditions for a loss have been met and inform the CombatEngine.
-    """
-
-    def _phase_logic(self, combat_engine) -> None:
-        pass
-
-
-class VictoryDetector(PhaseHandler):
-    """
-    Detect if the conditions for a win have been met and inform the CombatEngine.
-    """
-
-    def _phase_logic(self, combat_engine) -> None:
-        pass
