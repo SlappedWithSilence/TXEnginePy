@@ -10,9 +10,10 @@ import game
 import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element, delete_element
 from game.structures.enums import CombatPhase, InputType
+from game.structures.errors import CombatError
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
-from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator
+from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
 from game.systems.combat.combat_engine.termination_handler import TerminationHandler, PlayerResourceCondition, \
     EnemyResourceCondition
 
@@ -21,7 +22,7 @@ class CombatEngine(FiniteStateDevice):
     PHASE_HANDLERS: dict[CombatPhase, list[type[PhaseHandler]]] = {
         CombatPhase.START_PHASE: [EffectActivator],
         CombatPhase.PRE_ACTION_PHASE: [EffectActivator],
-        CombatPhase.ACTION_PHASE: [],
+        CombatPhase.ACTION_PHASE: [ChoiceActivator],
         CombatPhase.POST_ACTION_PHASE: [EffectActivator],
         CombatPhase.END_PHASE: [EffectActivator]
     }
@@ -159,6 +160,36 @@ class CombatEngine(FiniteStateDevice):
         pass
 
     # Public methods
+    def get_relative_allies(self, entity: entities.CombatEntity) -> list[entities.CombatEntity]:
+        """
+        Fetch a list of entities that are the allies of the given entity.
+
+        For example, an entity that is in the enemies list would return the enemeies list.
+        """
+        if entity in self.allies:
+            return self.allies
+
+        elif entity in self.enemies:
+            return self.enemies
+
+        else:
+            raise CombatError(f"Failed to get relative allies! Unknown entity: {entity}")
+
+    def get_relative_enemies(self, entity: entities.CombatEntity) -> list[entities.CombatEntity]:
+        """
+        Fetch a list of entities that are the enemies of the given entity.
+
+        For example, an entity that is in the enemies list would return the allies list.
+        """
+
+        if entity in self.allies:
+            return self.enemies
+
+        elif entity in self.enemies:
+            return self.allies
+
+        else:
+            raise CombatError(f"Failed to get relative enemies! Unknown entity: {entity}")
 
     def handle_turn_action(self, choice: int | str | None) -> None:
         """
