@@ -75,7 +75,6 @@ def cache_element(path: list[str] | str, element: any) -> None:
 
         else:
             depth[key] = {}
-            logger.debug(f"Creating sub-dict: {key}")
 
         depth = depth[key]
 
