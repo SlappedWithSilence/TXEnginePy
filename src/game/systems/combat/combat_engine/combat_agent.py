@@ -3,6 +3,9 @@ from __future__ import annotations
 import weakref
 from abc import ABC
 
+import game
+from game.cache import from_cache
+from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
 
 
@@ -34,7 +37,7 @@ class CombatAgentMixin(ABC):
         else:
             raise TypeError(f"Cannot set combat engine to object of type {type(element)}!")
 
-    def make_choice(self) -> str | int | None:
+    def _choice_logic(self) -> str | int | None:
         """
         Get an Entity's choice for its turn during Combat.
 
@@ -46,9 +49,18 @@ class CombatAgentMixin(ABC):
         To pass, return None.
         To use an item, return its ID
         To use an ability, return its name
+
+        To collect information about the combat's context, retrieve it via  from_cache("combat")
+        """
+        raise NotImplementedError()
+
+    def make_choice(self) -> None:
+        """
+        A wrapper for _choice_logic that performs instance checking and validation before submitting the entity choice
+        to the combat engine.
         """
 
-        raise NotImplementedError()
+        from_cache("combat").submit_entity_choice(self, self._choice_logic())
 
 
 class NaiveAgentMixin(CombatAgentMixin):
@@ -57,8 +69,8 @@ class NaiveAgentMixin(CombatAgentMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def make_choice(self) -> str | int | None:
-        pass
+    def _choice_logic(self) -> str | int | None:
+        return None  # TODO: Implement
 
 
 class IntelligentAgentMixin(CombatAgentMixin):
@@ -67,8 +79,8 @@ class IntelligentAgentMixin(CombatAgentMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def make_choice(self) -> str | int | None:
-        pass
+    def _choice_logic(self) -> str | int | None:
+        return None  # TODO: Implement
 
 
 class MultiAgentMixin(CombatAgentMixin):
@@ -79,5 +91,29 @@ class MultiAgentMixin(CombatAgentMixin):
         super().__init__(*args, **kwargs)
         self.choice_provider: CombatAgentMixin = MultiAgentMixin.AGENT_MAP[combat_provider]()
 
-    def make_choice(self) -> str | int | None:
+    def _choice_logic(self) -> str | int | None:
         return self.choice_provider.make_choice()
+
+
+class PlayerAgentMixin(CombatAgentMixin):
+    """
+    A CombatAgentMixin that makes the player choose what to do.
+    """
+
+    def _choice_logic(self) -> str | int | None:
+        """
+        Dead method. Ignore.
+        """
+        pass
+
+    def make_choice(self) -> None:
+        """
+        Spawn a 'PlayerCombatChoiceEvent' and let it handle submitting combat choices to the global combat instance.
+        """
+        if not from_cache("combat"):
+            raise CombatError("Unable to retrieve valid combat instance!")
+
+        # Spawn an event to handle player choice flow.
+        # Note that this method does not submit anything to the combat engine directly, all of that is handled within
+        # the PlayerCombatChoiceEvent's logic.
+        game.state_device_controller.add_state_device(PlayerCombatChoiceEvent(self))
