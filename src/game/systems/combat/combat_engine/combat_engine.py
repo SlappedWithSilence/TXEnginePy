@@ -36,6 +36,7 @@ class CombatEngine(FiniteStateDevice):
         DETECT_COMBAT_TERMINATION = 5  # Call all TerminationHandlers and end combat if triggered
         PLAYER_LOSS = 6  # Player sucks and has lost
         PLAYER_VICTORY = 7  # Player doesn't suck and has won
+        EXECUTE_ENTITY_CHOICE = 8
         TERMINATE = -1
 
     def __init__(self, ally_entity_ids: list[int], enemy_entity_ids: list[int],
@@ -78,6 +79,9 @@ class CombatEngine(FiniteStateDevice):
         self.total_turn_cycles: int = 0
         self.current_turn: int = -1  # Start at -1 so that when combat begins the index can be incremented to 0
         self.current_phase_index: int = 0  # Index of current phase against self._PHASE_ORDER
+
+        # The choice made by the active entity during the ACTION_PHASE combat phase
+        self.active_entity_choice: tuple[entities.CombatEntity, int | str | None] = None
 
         self._build_states()
 
@@ -190,6 +194,25 @@ class CombatEngine(FiniteStateDevice):
 
         else:
             raise CombatError(f"Failed to get relative enemies! Unknown entity: {entity}")
+
+    def submit_entity_choice(self, entity: entities.CombatEntity, choice: int | str | None) -> None:
+        """
+        Submit an entity's turn action to the combat engine from any context.
+        """
+
+        # Type and value checking
+        if not isinstance(entity, entities.CombatEntity):
+            raise TypeError("Cannot submit choice for non-CombatEntity object!")
+
+        if choice is not None and type(choice) not in [int, str]:
+            raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected int | str | None")
+
+        if entity != self.active_entity:
+            raise CombatError("Entity paired with choice does not match active_entity!",
+                              {ValueError: "Invalid 'entity' field"})
+
+        # Store choice for later
+        self.active_entity_choice = (entity, choice)
 
     def handle_turn_action(self, choice: int | str | None) -> None:
         """
@@ -304,8 +327,20 @@ class CombatEngine(FiniteStateDevice):
 
             self.set_state(self.States.DETECT_COMBAT_TERMINATION)
 
+            if self.current_phase == CombatPhase.ACTION_PHASE:
+                self.set_state(self.States.EXECUTE_ENTITY_CHOICE)
+
         @FiniteStateDevice.state_content(self, self.States.HANDLE_PHASE)
         def content():
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.EXECUTE_ENTITY_CHOICE, InputType.SILENT)
+        def logic(_: any):
+            self.handle_turn_action(self.active_entity_choice[1])
+            self.set_state(self.States.DETECT_COMBAT_TERMINATION)
+
+        @FiniteStateDevice.state_content(self, self.States.EXECUTE_ENTITY_CHOICE)
+        def content() -> dict:
             return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.DETECT_COMBAT_TERMINATION, InputType.SILENT)
