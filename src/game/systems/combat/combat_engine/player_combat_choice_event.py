@@ -39,6 +39,78 @@ class PlayerCombatChoiceEvent(Event):
         def content() -> dict:
             return ComponentFactory.get()
 
+        # SHOW_OPTIONS
+        @FiniteStateDevice.state_logic(self, self.States.SHOW_OPTIONS, InputType.INT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.SHOW_OPTIONS)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # CHOOSE_AN_ABILITY
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ABILITY)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # CHOOSE_ABILITY_TARGET
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CHOOSE_ABILITY_TARGET)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # CANNOT_USE_ABILITY
+        @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ABILITY, InputType.ANY)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CANNOT_USE_ABILITY)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # CHOOSE_AN_ITEM
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ITEM, InputType.INT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # CANNOT_USE_ITEM
+        @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ITEM, InputType.ANY)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.CANNOT_USE_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # SUBMIT_CHOICE
+        @FiniteStateDevice.state_logic(self, self.States.SUBMIT_CHOICE, InputType.SILENT)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.SUBMIT_CHOICE)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # PASS_TURN
+        @FiniteStateDevice.state_logic(self, self.States.PASS_TURN, InputType.ANY)
+        def logic(_: any) -> None:
+            pass
+
+        @FiniteStateDevice.state_content(self, self.States.PASS_TURN)
+        def content() -> dict:
+            return ComponentFactory.get()
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "PlayerCombatChoiceEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
