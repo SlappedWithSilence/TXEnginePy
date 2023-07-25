@@ -24,6 +24,28 @@ class Event(FiniteStateDevice, LoadableMixin, ABC):
         return f"{self.__class__}"
 
 
+class EntityTargetMixin(ABC):
+    """
+    Implements entity-target-related functionality, including init-param type-checking, getter and setter methods, and more.
+    """
+
+    def __init__(self, target: entities.Entity = None, **kwargs):
+        super().__init__(**kwargs)
+        if target is not None and not isinstance(target, entities.Entity):
+            raise TypeError(f"Invalid target of type {type(target)}")
+
+        self._target = target
+
+    @property
+    def target(self) -> entities.Entity:
+        return self._target or from_cache('player')
+
+    @target.setter
+    def target(self, entity) -> None:
+        if not isinstance(entity, entities.Entity):
+            raise TypeError(f"Invalid target entity type! Got type {type(entity)}, expected type Entity")
+
+
 class FlagEvent(Event):
     """ An event that sets a specific flag to a given value
 
@@ -412,7 +434,7 @@ class ReputationEvent(Event):
         return ReputationEvent(json['faction_id'], json['reputation_change'], **kwargs)
 
 
-class ResourceEvent(Event):
+class ResourceEvent(EntityTargetMixin, Event):
     """
     A ResourceEvent modifies the specified Resource for a given Entity.
     """
@@ -432,10 +454,10 @@ class ResourceEvent(Event):
         ]
 
     def __init__(self, resource_name: str, quantity: int | float, target=None, silent: bool = False):
-        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
+        super().__init__(target=target,
+                         default_input_type=InputType.ANY, states=self.States, default_state=self.States.DEFAULT)
         self.stat_name: str = resource_name
         self.amount: int | float = quantity
-        self.target = weakref.proxy(target) if target else None  # Weakref to an Entity object
         self._summary: list[str | StringContent] = None
         self._silent = silent
 
@@ -471,12 +493,6 @@ class ResourceEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.SUMMARY)
         def content():
             return ComponentFactory.get(self._summary)
-
-    def set_target(self, entity) -> None:
-        if not isinstance(entity, entities.Entity):
-            raise TypeError(f"Target Entity must be of type Entity! Got {type(entity)} instead.")
-
-        self.target = weakref.proxy(entity)
 
     def __copy__(self):
         return ResourceEvent(self.stat_name, self.amount, self.target, self._silent)
@@ -559,7 +575,7 @@ class TextEvent(Event):
         return TextEvent(json["text"])
 
 
-class SkillXPEvent(Event):
+class SkillXPEvent(EntityTargetMixin, Event):
     """
     An Event that gives a specific skill XP.
 
@@ -573,10 +589,10 @@ class SkillXPEvent(Event):
         TERMINATE = -1
 
     def __init__(self, skill_id: int, xp_gain: int, target=None):
-        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+        super().__init__(default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT,
+                         target=target)
         self._skill_id = skill_id
         self._xp_gained = xp_gain
-        self._target = target  # A skill-enabled entity
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
@@ -633,10 +649,11 @@ class SkillXPEvent(Event):
         return SkillXPEvent(json['skill_id'], json['xp_gained'])
 
 
-class ViewResourcesEvent(Event):
+class ViewResourcesEvent(EntityTargetMixin, Event):
 
     def __init__(self, target=None):
-        super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
+        super().__init__(target=target,
+                         default_input_type=InputType.ANY, states=self.States, default_state=self.States.DEFAULT)
         self._target = target  # The entity to read Resource values from
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
@@ -650,26 +667,6 @@ class ViewResourcesEvent(Event):
                 self.target.resource_controller.get_resources_as_options()
             )
 
-    @property
-    def target(self):
-        """
-        Returns the event's target. If no target is specified, return a reference to the player.
-        """
-        return self._target or from_cache('player')
-
-    @target.setter
-    def target(self, ce):
-        """
-        Set the target of the event to a combat entity
-        """
-        from game.systems.entity.entities import CombatEntity
-
-        if not isinstance(ce, CombatEntity):
-            raise TypeError(
-                f"ViewResourcesEvent target must be an instance of class CombatEntity! Got {type(ce)} instead!")
-
-        self._target = ce
-
     def __copy__(self):
         return ViewResourcesEvent(self.target)
 
@@ -680,5 +677,3 @@ class ViewResourcesEvent(Event):
     @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         return ViewResourcesEvent()
-
-
