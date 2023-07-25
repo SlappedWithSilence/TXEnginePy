@@ -1,8 +1,10 @@
-import weakref
+from __future__ import annotations
+
 from abc import ABC
 from enum import Enum
 
 import game.systems.currency as currency
+import game.systems.entity as entities
 import game.systems.flag as flag
 from game.cache import from_cache, cached
 from game.structures.enums import InputType
@@ -11,7 +13,6 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.crafting import recipe_manager
-from game.systems.entity import entities as entities
 from game.systems.entity.resource import ResourceController
 
 
