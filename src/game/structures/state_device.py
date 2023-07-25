@@ -110,6 +110,19 @@ class StateDevice(ABC):
     def reset(self) -> None:
         pass
 
+    def _link(self) -> dict[str, str]:
+        """
+        Internal link logic that is responsible for acquiring storage keys, creating the returned dict, and
+        storing the storage keys internally.
+        """
+        return {}
+
+    def link(self) -> dict[str, str]:
+        """
+        Reserve a set number of keys in storage and map them to a specific use case within the StateDevice
+        """
+        return self._link()
+
     @property
     @abstractmethod
     def components(self) -> dict[str, any]:
