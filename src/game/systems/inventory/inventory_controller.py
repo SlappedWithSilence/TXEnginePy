@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import weakref
+from typing import Callable
 
 import game.cache as cache
 import game.systems.item as item
@@ -195,10 +196,14 @@ class InventoryController(LoadableMixin):
     def __len__(self):
         return self.size
 
-    def to_options(self) -> list[list[str | StringContent]]:
+    def to_options(self, _filter: Callable) -> list[list[str | StringContent]]:
         results = []
 
         for stack in self.items:
+
+            if not _filter(stack.ref):
+                continue
+
             results.append(
                 [
                     StringContent(value=stack.ref.name, formatting="item_name"),
