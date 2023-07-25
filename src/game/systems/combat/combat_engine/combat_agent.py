@@ -7,6 +7,7 @@ import game
 from game.cache import from_cache
 from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
+from game.systems.combat.combat_engine.player_combat_choice_event import PlayerCombatChoiceEvent
 
 
 class CombatAgentMixin(ABC):
