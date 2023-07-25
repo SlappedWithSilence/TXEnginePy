@@ -2,11 +2,15 @@
 A utility python file that hosts a global cache, global config, and useful accessor/setter methods
 """
 from typing import Callable
+import string
+import random
 
 from loguru import logger
 
 config: dict[str, any] = None
-cache: dict[str, any] = {}
+cache: dict[str, any] = {}  # For objects that should have common access
+storage: dict[str, any] = {}  # For objects not intended to have general access
+store_key_length = 5
 
 
 def decode_path(path: list[str] | str) -> list[str]:
@@ -216,3 +220,65 @@ def cached(path: list[str] | str) -> Callable:
         return func
 
     return decorate
+
+
+"""
+Methods for managing storage.
+
+While the cache is a general purpose location to leave things for general access, storage is intended to be used 
+privately between StateDevices. As such, its usage is strictly moderated by the accessors defined here.
+"""
+
+
+def request_store() -> str:
+    """
+    Reserve a unique key in the storage system.
+    """
+    global storage, store_key_length
+
+    def get_store_key(length: int = 10) -> str:
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+    current_key: str = get_store_key(store_key_length)
+    iterations = 0
+    while current_key in storage:
+        iterations += 1
+        current_key = get_store_key()
+
+        # If there are multiple consecutive failed attempts to get a new key
+        if iterations > 3:
+            store_key_length += 1  # Increase length of key, thus guaranteeing a new key
+            logger.warning(f"Extended storage key length to {store_key_length}!")
+
+    # Once a new key is secured, add it to the storage and set it to None. Then, return the key
+    storage[current_key] = None
+    return current_key
+
+
+def from_storage(key: str, delete: bool = False) -> any:
+    """
+    Retrieve a value from storage.
+
+    If delete == True, delete the value from storage.
+    """
+    global storage
+
+    val = storage[key]
+
+    if delete:
+        del storage[key]
+
+    return val
+
+
+def store_element(key: str, value: any) -> None:
+    """
+    Store an element in the storage dict.
+    """
+
+    global storage
+
+    if key not in storage:
+        raise KeyError(f"No such storage key: {key}")
+
+    storage[key] = value
