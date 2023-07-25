@@ -1,12 +1,13 @@
 from enum import Enum
 
-from game.cache import cached, from_cache
+from game.cache import cached, from_cache, from_storage
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 import game.systems.item as items
+from game.systems.event.select_item_event import SelectItemEvent
 
 
 class PlayerCombatChoiceEvent(Event):
@@ -16,18 +17,20 @@ class PlayerCombatChoiceEvent(Event):
 
     class States(Enum):
         DEFAULT = 0  # Setup
-        SHOW_OPTIONS = 1  # Show the user which options are availbale
+        SHOW_OPTIONS = 1  # Show the user which options are available
         CHOOSE_AN_ABILITY = 2  # Show the user abilities and request a selection
         CHOOSE_ABILITY_TARGET = 3  # If the ability requires a target, show available targets and request an selection
         CANNOT_USE_ABILITY = 4  # If the ability cannot be user for some reason, say so
         CHOOSE_AN_ITEM = 5  # Show the user all available items and request a selection
-        CANNOT_USE_ITEM = 6  # If the item cannot be used for some reason, say so
-        SUBMIT_CHOICE = 7  # Once all choices have been finalized, submit them to the global combat instance
-        PASS_TURN = 8  # If the choice was to pass, do so
+        DETECT_ITEM_USABLE = 6  # Check if the user can use the item and go to the appropriate state
+        CANNOT_USE_ITEM = 7  # If the item cannot be used for some reason, say so
+        SUBMIT_CHOICE = 8  # Once all choices have been finalized, submit them to the global combat instance
+        PASS_TURN = 9  # If the choice was to pass, do so
         TERMINATE = -1  # Clean up
 
     def __init__(self, entity):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+        self._links: dict[str, dict[str, str]] = {}
         self._entity = entity  # The entity for which to make a choice
         self._choice: int | str | None = None  # The choice made
 
@@ -83,16 +86,30 @@ class PlayerCombatChoiceEvent(Event):
             return ComponentFactory.get()
 
         # CHOOSE_AN_ITEM
-        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ITEM, InputType.INT)
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ITEM, InputType.SILENT)
         def logic(_: any) -> None:
-            pass
+            from game.systems.item.item import Usable
+            select_usable_event = SelectItemEvent(self._entity, lambda item: isinstance(item, Usable))
+            self._links['CHOOSE_AN_ITEM'] = select_usable_event.link()
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
         def content() -> dict:
-            return ComponentFactory.get(
-                ["Select an item to use: "]
-                [self._entity.inventory.to_options(lambda item: isinstance(item, items.Usable))]
-            )
+            return ComponentFactory.get()
+
+        # DETECT_ITEM_USABLE
+        @FiniteStateDevice.state_logic(self, self.States.DETECT_ITEM_USABLE, InputType.SILENT)
+        def logic(_: any) -> None:
+            chosen_item_id = from_storage(self._links["CHOOSE_AN_ITEM"]['selected_item_id'])
+
+            if chosen_item_id is None:
+                self.set_state(self.States.SHOW_OPTIONS)
+                return
+
+
+
+        @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
+        def content():
+            return ComponentFactory.get()
 
         # CANNOT_USE_ITEM
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ITEM, InputType.ANY)

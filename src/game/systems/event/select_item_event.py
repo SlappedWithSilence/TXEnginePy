@@ -12,14 +12,16 @@ from game.systems.event.events import EntityTargetMixin
 
 class SelectItemEvent(EntityTargetMixin, Event):
     """
-    Select an item from an entity's inventory and return the selected item's ID
+    Select an item from an entity's inventory and return the selected item's ID.
+
+    Links:
+    - selected_item_id: int | None
     """
 
     class States(Enum):
         DEFAULT = 0
         SHOW_ITEMS = 1
-        STORE_CHOICE = 2
-        TERMINATE = 3
+        TERMINATE = -1
 
     def __init__(self, target, inventory_filter: Callable = None):
         super().__init__(target=target,
@@ -49,9 +51,15 @@ class SelectItemEvent(EntityTargetMixin, Event):
             if self._storage_keys['selected_item_id'] is None:
                 raise RuntimeError("SelectItemEvent was never linked!")
 
+            # If the user did not choose to exit the selection screen, handle the logic normally
+            if user_input > -1:
+                selected_item_id = self.target.inventory.filter_stacks(self._inventory_filter)[user_input].id
+            else:  # If the user chose to exit the screen, set the selected item to None
+                selected_item_id = None
+
             # Store the user's item choice in the storage via the key generated from `_link()`
-            store_element(self._storage_keys['selected_item_id'],
-                          self.target.inventory.filter_stacks(self._inventory_filter)[user_input].id)
+            store_element(self._storage_keys['selected_item_id'], selected_item_id)
+            self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.SHOW_ITEMS)
         def content():
