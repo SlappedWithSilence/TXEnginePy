@@ -101,6 +101,20 @@ class InventoryController(LoadableMixin):
 
         return sum([s.quantity for s in self._all_stacks(item_id)])
 
+    def filter_stacks(self, _filter: Callable) -> list[Stack]:
+        """
+        Returns a list of stacks that meet the conditions set in the _filter callable.
+
+        Args:
+            _filter: A callable that returns True or False based on the properties of an Item object
+
+        Returns: A list of all stacks whose ref satisfies the filter
+        """
+        if not callable(_filter):
+            return self.items
+
+        return [stack for stack in self.items if _filter(stack.ref)]
+
     # Public Methods
 
     @property
@@ -196,13 +210,10 @@ class InventoryController(LoadableMixin):
     def __len__(self):
         return self.size
 
-    def to_options(self, _filter: Callable) -> list[list[str | StringContent]]:
+    def to_options(self, _filter: Callable = None) -> list[list[str | StringContent]]:
         results = []
 
-        for stack in self.items:
-
-            if not _filter(stack.ref):
-                continue
+        for stack in self.filter_stacks(_filter):
 
             results.append(
                 [
