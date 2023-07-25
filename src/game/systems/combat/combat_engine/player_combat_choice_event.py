@@ -1,11 +1,12 @@
 from enum import Enum
 
-from game.cache import cached
+from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
-from game.structures.messages import ComponentFactory
+from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
+import game.systems.item as items
 
 
 class PlayerCombatChoiceEvent(Event):
@@ -25,15 +26,21 @@ class PlayerCombatChoiceEvent(Event):
         PASS_TURN = 8  # If the choice was to pass, do so
         TERMINATE = -1  # Clean up
 
-    def __init__(self):
+    def __init__(self, entity):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+        self._entity = entity  # The entity for which to make a choice
+        self._choice: int | str | None = None  # The choice made
+
+        from game.systems.entity.entities import CombatEntity
+        if not isinstance(self._entity, CombatEntity):
+            raise TypeError(f"Invalid type for field `entity`! Expected CombatEntity, got {type(entity)}")
 
         self._setup_states()
 
     def _setup_states(self) -> None:
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            pass
+            self.set_state(self.States.SHOW_OPTIONS)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
@@ -82,21 +89,34 @@ class PlayerCombatChoiceEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(
+                ["Select an item to use: "]
+                [self._entity.inventory.to_options(lambda item: isinstance(item, items.Usable))]
+            )
 
         # CANNOT_USE_ITEM
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ITEM, InputType.ANY)
         def logic(_: any) -> None:
-            pass
+            self.set_state(self.States.CHOOSE_AN_ITEM)
 
         @FiniteStateDevice.state_content(self, self.States.CANNOT_USE_ITEM)
         def content() -> dict:
-            return ComponentFactory.get()
+            item_instance = from_cache('managers.ItemManager').get_instance(self._choice)
+
+            return ComponentFactory.get(
+                [
+                    f"You cannot use ",
+                    StringContent(value=item_instance.name, formatting="item_name"),
+                    "!"
+                ],
+                item_instance.get_requirements_as_options()
+            )
 
         # SUBMIT_CHOICE
         @FiniteStateDevice.state_logic(self, self.States.SUBMIT_CHOICE, InputType.SILENT)
         def logic(_: any) -> None:
-            pass
+            from_cache("combat").submit_entity_choice(self._entity, self._choice)
+            self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.SUBMIT_CHOICE)
         def content() -> dict:
@@ -105,14 +125,15 @@ class PlayerCombatChoiceEvent(Event):
         # PASS_TURN
         @FiniteStateDevice.state_logic(self, self.States.PASS_TURN, InputType.ANY)
         def logic(_: any) -> None:
-            pass
+            self.set_state(self.States.SUBMIT_CHOICE)
 
         @FiniteStateDevice.state_content(self, self.States.PASS_TURN)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(
+                [StringContent(value=self._entity.name, formatting="entity_name"), " chose not to act."]
+            )
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "PlayerCombatChoiceEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         raise RuntimeError("Loading of PlayerCombatChoiceEvent from JSON is not supported!")
-
