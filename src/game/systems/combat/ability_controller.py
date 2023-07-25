@@ -1,7 +1,7 @@
 import game
 from game.cache import from_cache
 from game.structures.messages import StringContent
-from game.systems.event import ResourceEvent
+import game.systems.event as events
 
 
 class AbilityController:
@@ -74,7 +74,7 @@ class AbilityController:
         """
 
         for resource, quantity in from_cache("managers.AbilityManager").get_ability(ability_name).costs.items():
-            game.state_device_controller.add_state_device(ResourceEvent(resource, quantity, self.owner))
+            game.state_device_controller.add_state_device(events.ResourceEvent(resource, quantity, self.owner))
 
     def _get_ability_as_option(self, ability_name) -> list[str | StringContent]:
         """
