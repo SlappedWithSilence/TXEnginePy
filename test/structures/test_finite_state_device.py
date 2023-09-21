@@ -149,41 +149,51 @@ def test_state_logic_decorator_integration(state, input_type, i_min, i_max, i_le
     assert md.counter == 1  # Verify logic was executed
 
 
+# Generic branching FiniteStateDevice used for branching state tests
+class MockBranchingStateDevice(FiniteStateDevice):
+    class States(Enum):
+        DEFAULT = 0
+        A = 1
+        B = 2
+        C = 3
+        TERMINATE = -1
+
+    state_branch = {
+        "Go to B": States.B,
+        "Go to C": States.C,
+    }
+
+    def __init__(self):
+        super().__init__(InputType.SILENT, self.States)
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any):
+            self.set_state(self.States.A)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content():
+            return ComponentFactory.get()
+
+        FiniteStateDevice.user_branching_state(self, self.States.A, self.state_branch)
+
+        @FiniteStateDevice.state_logic(self, self.States.B, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.C)
+
+        @FiniteStateDevice.state_content(self, self.States.B)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.C, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.C)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+
 def test_user_branching_state_trivial():
-    class MockBranchingStateDevice(FiniteStateDevice):
-        class States(Enum):
-            DEFAULT = 0
-            A = 1
-            B = 2
-            C = 3
-            TERMINATE = -1
-
-        state_branch = {
-            "Go to B": States.B,
-            "Go to C": States.C,
-        }
-
-        def __init__(self):
-            super().__init__(InputType.SILENT, self.States)
-
-            FiniteStateDevice.user_branching_state(self, self.States.A, self.state_branch)
-
-            @FiniteStateDevice.state_logic(self, self.States.B, InputType.ANY)
-            def logic(_: any) -> None:
-                self.set_state(self.States.C)
-
-            @FiniteStateDevice.state_content(self, self.States.B)
-            def content() -> dict:
-                return ComponentFactory.get()
-
-            @FiniteStateDevice.state_logic(self, self.States.C, InputType.ANY)
-            def logic(_: any) -> None:
-                self.set_state(self.States.TERMINATE)
-
-            @FiniteStateDevice.state_content(self, self.States.C)
-            def content() -> dict:
-                return ComponentFactory.get()
-
     # Initialize FSD with a user_branching_state
     md = MockBranchingStateDevice()
 
@@ -206,3 +216,19 @@ def test_user_branching_state_trivial():
 
     for opt in MockBranchingStateDevice.state_branch:
         assert [opt] in dd["content"]()["options"]
+
+
+def test_user_branching_state_behavior():
+    md = MockBranchingStateDevice()
+
+    assert md.current_state.value == md.States.DEFAULT.value
+    md.input(None)
+    assert md.current_state.value == md.States.A.value
+    assert md.input_type == InputType.INT
+    md.input(0)
+    assert md.current_state.value == md.States.B.value
+
+    md = MockBranchingStateDevice()
+    md.input(None)
+    md.input(1)
+    assert md.current_state.value == md.States.C.value
