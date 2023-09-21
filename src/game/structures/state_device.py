@@ -467,7 +467,7 @@ class FiniteStateDevice(StateDevice, ABC):
         if instance is None:
             raise TypeError("Expected type of argument: instance to be FiniteStateDevice. Got None instead.")
 
-        if state not in instance.state_data:
+        if state.value not in instance.state_data:
             raise ValueError(f"Unknown state: {state} in FiniteStateDevice: {instance.name}")
 
         if len(branch_map.keys()) < 2:
