@@ -137,10 +137,72 @@ def test_state_logic_decorator_integration(state, input_type, i_min, i_max, i_le
 
     # Verify input domain has changed
     assert md.input_type == md.state_data[state.value]['input_type']
-    assert md.domain_min == md.state_data[state.value]['min'] if not callable(md.state_data[state.value]['min']) else md.state_data[state.value]['min']()
-    assert md.domain_max == md.state_data[state.value]['max'] if not callable(md.state_data[state.value]['max']) else md.state_data[state.value]['max']()
-    assert md.domain_length == md.state_data[state.value]['len'] if not callable(md.state_data[state.value]['len']) else md.state_data[state.value]['len'](), f"i_len:{md.domain_length}"
+    assert md.domain_min == md.state_data[state.value]['min'] if not callable(md.state_data[state.value]['min']) else \
+        md.state_data[state.value]['min']()
+    assert md.domain_max == md.state_data[state.value]['max'] if not callable(md.state_data[state.value]['max']) else \
+        md.state_data[state.value]['max']()
+    assert md.domain_length == md.state_data[state.value]['len'] if not callable(md.state_data[state.value]['len']) else \
+        md.state_data[state.value]['len'](), f"i_len:{md.domain_length}"
 
     # Assign a valid input
     assert md.input(payload)  # Verify accepted
     assert md.counter == 1  # Verify logic was executed
+
+
+def test_user_branching_state_trivial():
+    class MockBranchingStateDevice(FiniteStateDevice):
+        class States(Enum):
+            DEFAULT = 0
+            A = 1
+            B = 2
+            C = 3
+            TERMINATE = -1
+
+        state_branch = {
+            "Go to B": States.B,
+            "Go to C": States.C,
+        }
+
+        def __init__(self):
+            super().__init__(InputType.SILENT, self.States)
+
+            FiniteStateDevice.user_branching_state(self, self.States.A, self.state_branch)
+
+            @FiniteStateDevice.state_logic(self, self.States.B, InputType.ANY)
+            def logic(_: any) -> None:
+                self.set_state(self.States.C)
+
+            @FiniteStateDevice.state_content(self, self.States.B)
+            def content() -> dict:
+                return ComponentFactory.get()
+
+            @FiniteStateDevice.state_logic(self, self.States.C, InputType.ANY)
+            def logic(_: any) -> None:
+                self.set_state(self.States.TERMINATE)
+
+            @FiniteStateDevice.state_content(self, self.States.C)
+            def content() -> dict:
+                return ComponentFactory.get()
+
+    # Initialize FSD with a user_branching_state
+    md = MockBranchingStateDevice()
+
+    # Check that the code for setting the state was run
+    dd = md.state_data[MockBranchingStateDevice.States.A.value]
+    assert len(dd) == len(md.state_data_dict)
+
+    # domain values are set
+    assert dd["min"] is 0
+    assert dd["max"] is 1
+    assert dd["len"] is None
+
+    # Logic provider is set
+    assert dd["logic"] is not None
+    assert callable(dd["logic"])
+
+    # Content provider is set
+    assert dd["content"] is not None
+    assert callable(dd["content"])
+
+    for opt in MockBranchingStateDevice.state_branch:
+        assert [opt] in dd["content"]()["options"]
