@@ -446,3 +446,67 @@ class FiniteStateDevice(StateDevice, ABC):
         @FiniteStateDevice.state_content(self, self.States.TERMINATE)
         def content():
             return ComponentFactory.get()
+
+    @staticmethod
+    def user_branching_state(instance: "FiniteStateDevice", state, branch_map: dict[str, any],
+                             prompt: str = "Choose an option",
+                             back_out_state=None, cache_choice_in_attr: str = None):
+        """
+        Build a simple branching state. Uses the state map defined in branch_map to define a list of options for the
+        user to chose from, then updates the FiniteStateDevice's current state to the state mapped to the user's choice.
+
+        Args:
+            instance: An instance of a FiniteStateDevice to create the branching state.
+            state: The state that the branching-state should be created in
+            branch_map: A map of strings (Options to show in the choice-selection list) to states
+            prompt: The prompt that is shown to the user when asked to choose
+            back_out_state: The state that should be mapped to a choice of -1. If None, there is no -1 choice.
+            cache_choice_in_attr: If not set to none, attempt to store the choice in str form inside the given attr
+        """
+
+        if instance is None:
+            raise TypeError("Expected type of argument: instance to be FiniteStateDevice. Got None instead.")
+
+        if state.value not in instance.state_data:
+            raise ValueError(f"Unknown state: {state} in FiniteStateDevice: {instance.name}")
+
+        if len(branch_map.keys()) < 2:
+            raise ValueError("Branch map must be of size >= 2!")
+
+        if cache_choice_in_attr is not None:
+            if type(cache_choice_in_attr) is not str:
+                raise TypeError(
+                    f"cache_choice_in_attr must be of type str or None! Invalid type: {type(cache_choice_in_attr)}")
+            if not hasattr(instance, cache_choice_in_attr):
+                raise ValueError(f"instance: {instance.name} has to attr: {cache_choice_in_attr}!")
+
+        @FiniteStateDevice.state_logic(instance, state,
+                                       input_type=InputType.INT,
+                                       input_min=-1 if back_out_state is not None else 0,
+                                       input_max=len(branch_map.keys()) - 1)
+        def logic(user_input: int) -> None:
+
+            # If back_out_state is enabled and the user entered -1, set the state to the defined back-out state
+            if back_out_state is not None and user_input == -1:
+                instance.set_state(back_out_state)
+                return  # Terminate the function to prevent fall-through state setting.
+
+            choice_as_str = list(branch_map.keys())[user_input]  # Convert the user's choice from an index to a str
+
+            # If cache_choice_in_attr is enabled, store the user's choice (in str form) in that attr.
+            if cache_choice_in_attr:
+                setattr(instance, cache_choice_in_attr, choice_as_str)
+
+            # Using the converted choice, set the next state via the branch_map
+            instance.set_state(
+                branch_map[
+                    choice_as_str
+                ]
+            )
+
+        @FiniteStateDevice.state_content(instance, state)
+        def content():
+            return ComponentFactory.get(
+                [prompt],
+                [[s] for s in branch_map.keys()]
+            )
