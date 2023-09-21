@@ -17,7 +17,7 @@ class PlayerCombatChoiceEvent(Event):
 
     class States(Enum):
         DEFAULT = 0  # Setup
-        SHOW_OPTIONS = 1  # Show the user which options are available
+        CHOOSE_TURN_OPTION = 1  # Show the user which options are available
         CHOOSE_AN_ABILITY = 2  # Show the user abilities and request a selection
         CHOOSE_ABILITY_TARGET = 3  # If the ability requires a target, show available targets and request an selection
         CANNOT_USE_ABILITY = 4  # If the ability cannot be user for some reason, say so
@@ -26,13 +26,26 @@ class PlayerCombatChoiceEvent(Event):
         CANNOT_USE_ITEM = 7  # If the item cannot be used for some reason, say so
         SUBMIT_CHOICE = 8  # Once all choices have been finalized, submit them to the global combat instance
         PASS_TURN = 9  # If the choice was to pass, do so
+        LIST_ENEMIES = 10  # Show a list of enemies that can be inspected
+        LIST_ALLIES = 11  # SHow a list of allies that can be inspected
+        INSPECT_ENTITY = 12  # SHow details about a specific entity
         TERMINATE = -1  # Clean up
+
+    def _get_turn_choices(self) -> dict[str, States]:
+        return {
+            "Inspect enemies": self.States.LIST_ENEMIES,
+            "Inspect allies": self.States.LIST_ALLIES,
+            "Use an ability": self.States.CHOOSE_AN_ABILITY,
+            "Use an item": self.States.CHOOSE_AN_ITEM,
+            "Pass turn": self.States.PASS_TURN
+        }
 
     def __init__(self, entity):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._links: dict[str, dict[str, str]] = {}
         self._entity = entity  # The entity for which to make a choice
-        self._choice: int | str | None = None  # The choice made
+        self._choice: str | None = None  # The choice made
+        self._available_turn_choices: dict[str, PlayerCombatChoiceEvent.States] = self._get_turn_choices()
 
         from game.systems.entity.entities import CombatEntity
         if not isinstance(self._entity, CombatEntity):
@@ -43,20 +56,26 @@ class PlayerCombatChoiceEvent(Event):
     def _setup_states(self) -> None:
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            self.set_state(self.States.SHOW_OPTIONS)
+            self.set_state(self.States.CHOOSE_TURN_OPTION)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:
             return ComponentFactory.get()
 
         # SHOW_OPTIONS
-        @FiniteStateDevice.state_logic(self, self.States.SHOW_OPTIONS, InputType.INT)
-        def logic(_: any) -> None:
-            pass
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_TURN_OPTION, InputType.INT,
+                                       input_min=0, input_max=len(self._available_turn_choices) - 1)
+        def logic(user_input: int) -> None:
+            # Convert choice dict into list and fetch which str is related to the index given by the user.
+            self._choice = list(self._available_turn_choices.keys())[user_input]
+            self.set_state(self._available_turn_choices[self._choice])  # Transition to state mapped to choice
 
-        @FiniteStateDevice.state_content(self, self.States.SHOW_OPTIONS)
+        @FiniteStateDevice.state_content(self, self.States.CHOOSE_TURN_OPTION)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(
+                ["What would you like to do?"],
+                [[s] for s in self._available_turn_choices.keys()]  # Terrible conversion to satisfy type-checking
+            )
 
         # CHOOSE_AN_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
@@ -104,8 +123,6 @@ class PlayerCombatChoiceEvent(Event):
             if chosen_item_id is None:
                 self.set_state(self.States.SHOW_OPTIONS)
                 return
-
-
 
         @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
         def content():
