@@ -202,8 +202,8 @@ def test_user_branching_state_trivial():
     assert len(dd) == len(md.state_data_dict)
 
     # domain values are set
-    assert dd["min"] is 0
-    assert dd["max"] is 1
+    assert dd["min"] == 0
+    assert dd["max"] == 1
     assert dd["len"] is None
 
     # Logic provider is set
