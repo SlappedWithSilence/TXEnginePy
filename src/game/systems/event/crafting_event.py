@@ -32,8 +32,7 @@ class CraftingEvent(Event):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
         self._player_ref: entities.Player | None = None
-        self._main_menu_options = [["Craft something"], ["<Placeholder>"]]
-        self._main_menu_map = {0: self.States.DISPLAY_RECIPES, 1: self.States.TERMINATE}
+        self._main_menu_map = {"Craft something": self.States.DISPLAY_RECIPES}
 
         self._chosen_recipe: int | None = None
         self._chosen_num_crafts: int | None = None
@@ -57,25 +56,8 @@ class CraftingEvent(Event):
         def content():
             return ComponentFactory.get()
 
-        @FiniteStateDevice.state_logic(self, self.States.WHAT_DO_NOW, InputType.INT,
-                                       -1, lambda: len(self._main_menu_options) - 1)
-        def logic(user_input: int):
-            """
-            Handle the user's choice at the main menu. If -1 is chosen, terminate the event.
-            """
-            if user_input == -1:
-                self.set_state(self.States.TERMINATE)
-                return
-
-            else:
-                self.set_state(self._main_menu_map[user_input])
-
-        @FiniteStateDevice.state_content(self, self.States.WHAT_DO_NOW)
-        def content():
-            return ComponentFactory.get(
-                ["What would you like to do?"],
-                self._main_menu_options
-            )
+        FiniteStateDevice.user_branching_state(self, self.States.WHAT_DO_NOW, self._main_menu_map,
+                                               "What would you like to do?", self.States.TERMINATE)
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_RECIPES, InputType.INT,
                                        -1, lambda: len(self._player_ref.crafting_controller.learned_recipes) - 1)

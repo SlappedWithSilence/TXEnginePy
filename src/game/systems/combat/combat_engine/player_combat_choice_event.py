@@ -63,19 +63,8 @@ class PlayerCombatChoiceEvent(Event):
             return ComponentFactory.get()
 
         # SHOW_OPTIONS
-        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_TURN_OPTION, InputType.INT,
-                                       input_min=0, input_max=len(self._available_turn_choices) - 1)
-        def logic(user_input: int) -> None:
-            # Convert choice dict into list and fetch which str is related to the index given by the user.
-            self._choice = list(self._available_turn_choices.keys())[user_input]
-            self.set_state(self._available_turn_choices[self._choice])  # Transition to state mapped to choice
-
-        @FiniteStateDevice.state_content(self, self.States.CHOOSE_TURN_OPTION)
-        def content() -> dict:
-            return ComponentFactory.get(
-                ["What would you like to do?"],
-                [[s] for s in self._available_turn_choices.keys()]  # Terrible conversion to satisfy type-checking
-            )
+        FiniteStateDevice.user_branching_state(self, self.States.CHOOSE_TURN_OPTION, self._available_turn_choices,
+                                               "What would you like to do?")
 
         # CHOOSE_AN_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
