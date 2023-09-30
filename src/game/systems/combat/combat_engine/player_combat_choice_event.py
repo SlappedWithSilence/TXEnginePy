@@ -125,14 +125,13 @@ class PlayerCombatChoiceEvent(Event):
                 # Spawn an event to handle using the item.
                 game.state_device_controller.add_state_device(UseItemEvent(chosen_item_id))
 
-            # The user never selected an Item, so return the main selection screen
+            # Entity fails requirements checks
             elif not entity_can_use_item:
                 self.set_state(self.States.CANNOT_USE_ITEM)
 
-            else:  # Item is None, so User didn't choose anything
-
-                # Return to main state
-                self.set_state(self.States.CHOOSE_TURN_OPTION)
+            # Item is None, so User didn't choose anything
+            else:
+                self.set_state(self.States.CHOOSE_TURN_OPTION)  # Return to main state
 
         @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
         def content():
