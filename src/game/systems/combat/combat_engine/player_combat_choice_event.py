@@ -1,13 +1,15 @@
 from enum import Enum
 
+import game
 from game.cache import cached, from_cache, from_storage
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-from game.systems.event import Event
+from game.systems.event import Event, UseItemEvent
 import game.systems.item as items
 from game.systems.event.select_item_event import SelectItemEvent
+from game.systems.item import Usable
 
 
 class PlayerCombatChoiceEvent(Event):
@@ -97,7 +99,10 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ITEM, InputType.SILENT)
         def logic(_: any) -> None:
             from game.systems.item.item import Usable
+            # Generate a SelectItemEvent that only displays Usable Items
             select_usable_event = SelectItemEvent(self._entity, lambda item: isinstance(item, Usable))
+
+            # Generate a storage link and cache it in _links
             self._links['CHOOSE_AN_ITEM'] = select_usable_event.link()
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
@@ -107,11 +112,27 @@ class PlayerCombatChoiceEvent(Event):
         # DETECT_ITEM_USABLE
         @FiniteStateDevice.state_logic(self, self.States.DETECT_ITEM_USABLE, InputType.SILENT)
         def logic(_: any) -> None:
+
+            # Decode the linked storage ID to retrieve the ID of the item selected by the user
             chosen_item_id = from_storage(self._links["CHOOSE_AN_ITEM"]['selected_item_id'])
 
-            if chosen_item_id is None:
-                self.set_state(self.States.SHOW_OPTIONS)
-                return
+            instance_of_chosen_item: Usable = items.item_manager.get_instance(chosen_item_id)
+            entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(self._entity)  # Store to avoid re-computation
+
+            #  If the user actually chose an Item, transition to show options for using it
+            if chosen_item_id is not None and entity_can_use_item:
+
+                # Spawn an event to handle using the item.
+                game.state_device_controller.add_state_device(UseItemEvent(chosen_item_id))
+
+            # The user never selected an Item, so return the main selection screen
+            elif not entity_can_use_item:
+                self.set_state(self.States.CANNOT_USE_ITEM)
+
+            else:  # Item is None, so User didn't choose anything
+
+                # Return to main state
+                self.set_state(self.States.CHOOSE_TURN_OPTION)
 
         @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
         def content():
