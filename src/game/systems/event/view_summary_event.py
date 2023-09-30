@@ -24,10 +24,12 @@ class ViewSummaryEvent(Event):
         super().__init__(InputType.INT, self.States, self.States.DEFAULT)
 
         self._target: Entity = target
+
+        # Map user-selectable option text to a spawnable Event and the classes required
         self._options: dict[str, dict[str, any]] = {
-            "View Resources": {
-                "class": ViewResourcesEvent,
-                "required_classes": [ResourceMixin]
+            "View Resources": {  # Text shown to user
+                "class": ViewResourcesEvent,  # What event to spawn if options is selected
+                "required_classes": [ResourceMixin]  # Target must be an instance of these classes for option to show
             },
             "View Abilities": {
                 "class": ViewAbilitiesEvent,
@@ -43,10 +45,13 @@ class ViewSummaryEvent(Event):
 
     @property
     def options(self) -> list[list[str]]:
+        """
+        Compute available options based on the classes inherited by the Event's target
+        """
         available_options = []
-        for option in self._options:
-            if isinstance(self.target, tuple(self._options[option]["required_classes"])):
-                available_options.append([option])
+        for option in self._options:  # For all potential options
+            if isinstance(self.target, tuple(self._options[option]["required_classes"])):  # Filter by inheritance
+                available_options.append([option])  # Append option
 
         return available_options
 
