@@ -19,7 +19,6 @@ class CraftingEvent(Event):
 
     class States(Enum):
         DEFAULT = 0  # Pre-logic
-        WHAT_DO_NOW = 1  # Select crafting activity
         DISPLAY_RECIPES = 2  # Choose a recipe
         NUM_CRAFTS = 3  # How many times to execute recipe
         CONFIRM_RECIPE = 4  # Confirm usage
@@ -32,8 +31,6 @@ class CraftingEvent(Event):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
         self._player_ref: entities.Player | None = None
-        self._main_menu_map = {"Craft something": self.States.DISPLAY_RECIPES}
-
         self._chosen_recipe: int | None = None
         self._chosen_num_crafts: int | None = None
 
@@ -48,16 +45,12 @@ class CraftingEvent(Event):
                 self._player_ref = weakref.proxy(from_cache('player'))
 
             # Reset in case the event is visited more than once
-            self._main_menu_choice = self._chosen_recipe = self._chosen_num_crafts = None
-
-            self.set_state(self.States.WHAT_DO_NOW)
+            self._chosen_recipe = self._chosen_num_crafts = None
+            self.set_state(self.States.DISPLAY_RECIPES)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content():
             return ComponentFactory.get()
-
-        FiniteStateDevice.user_branching_state(self, self.States.WHAT_DO_NOW, self._main_menu_map,
-                                               "What would you like to do?", self.States.TERMINATE)
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_RECIPES, InputType.INT,
                                        -1, lambda: len(self._player_ref.crafting_controller.learned_recipes) - 1)
