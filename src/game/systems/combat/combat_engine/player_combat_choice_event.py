@@ -9,7 +9,6 @@ from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event, UseItemEvent
 import game.systems.item as items
 from game.systems.event.select_item_event import SelectItemEvent
-from game.systems.item import Usable
 
 
 class PlayerCombatChoiceEvent(Event):
@@ -116,7 +115,7 @@ class PlayerCombatChoiceEvent(Event):
             # Decode the linked storage ID to retrieve the ID of the item selected by the user
             chosen_item_id = from_storage(self._links["CHOOSE_AN_ITEM"]['selected_item_id'])
 
-            instance_of_chosen_item: Usable = items.item_manager.get_instance(chosen_item_id)
+            instance_of_chosen_item = items.item_manager.get_instance(chosen_item_id)  # Of type Usable
             entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(self._entity)  # Store to avoid re-computation
 
             #  If the user actually chose an Item, transition to show options for using it
