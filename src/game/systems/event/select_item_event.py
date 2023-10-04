@@ -39,6 +39,7 @@ class SelectItemEvent(EntityTargetMixin, Event):
     def _setup_states(self) -> None:
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+
             self.set_state(self.States.SHOW_ITEMS)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)

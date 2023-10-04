@@ -1,12 +1,14 @@
 from enum import Enum
 from typing import Callable, Iterable
 
-from game.cache import request_store, store_element
+from loguru import logger
+
+from game.cache import request_store, store_element, cached
 from game.structures.enums import InputType
+from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
-from game.systems.event.events import EntityTargetMixin
 
 
 class SelectElementEvent(Event):
@@ -20,6 +22,8 @@ class SelectElementEvent(Event):
                  to_listing: Callable = str, prompt: str = "Choose an element"):
         super().__init__(default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT)
         """
+        A generic Event that allows the user to select an element from a list of potential elements.
+        
         Args:
             - collection: The items from which to select an element
             - key: A callable that takes in the selected element and returns the key to store in storage
@@ -34,8 +38,10 @@ class SelectElementEvent(Event):
         self._prompt: str = prompt
         self._to_listing: Callable = to_listing
         # Temp values
-        self.__filtered_collection: Iterable | None = None
+        self.__filtered_collection: list | None = None
         self.__filtered_collection_len: int | None = None
+
+        self._setup_states()
 
     def _link(self) -> dict[str, str]:
         """
@@ -67,7 +73,9 @@ class SelectElementEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS, InputType.INT, input_min=0,
                                        input_max=lambda: int(self.__filtered_collection_len) - 1)
         def logic(user_input: int) -> None:
+            logger.debug("Stored user-choice!")
             store_element(self._storage_keys['selected_element'], self._key(self.__filtered_collection[user_input]))
+            self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.SHOW_ELEMENTS)
         def content():
@@ -84,5 +92,7 @@ class SelectElementEvent(Event):
             return ComponentFactory.get()
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "SelectElementEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        raise RuntimeError("Loading SelectElementEvent from JSON is not supported!")
+
