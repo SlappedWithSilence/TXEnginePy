@@ -274,6 +274,8 @@ def from_storage(key: str, delete: bool = False) -> any:
 def store_element(storage_key: str, value: any) -> None:
     """
     Store an element in the storage dict.
+
+    Since the storage dict is shallow (1D), there's no need for complex decoding like in the cache
     """
 
     global storage
