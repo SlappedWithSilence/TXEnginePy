@@ -230,7 +230,7 @@ privately between StateDevices. As such, its usage is strictly moderated by the 
 """
 
 
-def request_store() -> str:
+def request_storage_key() -> str:
     """
     Reserve a unique key in the storage system.
     """
@@ -271,14 +271,14 @@ def from_storage(key: str, delete: bool = False) -> any:
     return val
 
 
-def store_element(key: str, value: any) -> None:
+def store_element(storage_key: str, value: any) -> None:
     """
     Store an element in the storage dict.
     """
 
     global storage
 
-    if key not in storage:
-        raise KeyError(f"No such storage key: {key}")
+    if storage_key not in storage:
+        raise KeyError(f"No such storage key: {storage_key}")
 
-    storage[key] = value
+    storage[storage_key] = value

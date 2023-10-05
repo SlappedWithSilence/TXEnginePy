@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Callable
 
-from game.cache import cached, request_store, store_element
+from game.cache import cached, request_storage_key, store_element
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
@@ -33,7 +33,7 @@ class SelectItemEvent(EntityTargetMixin, Event):
         """
         Override default link logic to reserve a key for the item_id that was selected by the user
         """
-        self._storage_keys["selected_item_id"] = request_store()
+        self._storage_keys["selected_item_id"] = request_storage_key()
         return self._storage_keys
 
     def _setup_states(self) -> None:
