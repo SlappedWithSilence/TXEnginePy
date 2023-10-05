@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Callable
 
 from loguru import logger
 
-from game.cache import request_storage_key, store_element, cached
+from game.cache import request_storage_key, store_element, cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
+from game.systems.combat import Ability
+from game.systems.entity.entities import CombatEntity
 from game.systems.event import Event
 
 
@@ -18,8 +22,8 @@ class SelectElementEvent(Event):
         PROCESS_CHOICE = 2
         TERMINATE = -1
 
-    def __init__(self,  collection: list, key: Callable, element_filter: Callable = None,
-                 to_listing: Callable = str, prompt: str = "Choose an element"):
+    def __init__(self, collection: list, key: Callable, element_filter: Callable = None,
+                 to_listing: Callable = str, prompt: str = "Choose an element", must_select: bool = True):
         super().__init__(default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT)
         """
         A generic Event that allows the user to select an element from a list of potential elements.
@@ -30,6 +34,7 @@ class SelectElementEvent(Event):
             - element_filter: A callable that returns True if the element should be shown to the user, False otherwise
             - to_listing: A callable that takes in an element from the collection and returns a str to show the user
             - prompt: The text to show the user above the list of elements
+            - must_select: If True, the user must select an element. If False, a -1 -> terminate option will exist.
         """
         self._element_filter: Callable = element_filter
         self._collection: list = collection
@@ -37,6 +42,7 @@ class SelectElementEvent(Event):
         self._storage_keys: dict[str, any] = {"selected_element": None}  # A pre-built dict to hold storage keys
         self._prompt: str = prompt
         self._to_listing: Callable = to_listing
+        self._must_select: bool = must_select
 
         # Temp values
         self.__filtered_collection: list | None = None
@@ -83,11 +89,19 @@ class SelectElementEvent(Event):
             return ComponentFactory.get()
 
         # SHOW_ELEMENTS
-        @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS, InputType.INT, input_min=0,
+        @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS, InputType.INT,
+                                       input_min=0 if self._must_select else -1,
                                        input_max=lambda: int(self.__filtered_collection_len) - 1)
         def logic(user_input: int) -> None:
-            logger.debug("Stored user-choice!")
-            store_element(self._storage_keys['selected_element'], self._key(self.__filtered_collection[user_input]))
+            """
+            If the user chooses to 'go back' via entering -1, None will be stored. Otherwise, the _key transformation
+            will occur and the resulting value will be stored.
+            """
+            if user_input == -1 and not self._must_select:
+                store_element(self._storage_keys['selected_element'], None)
+            else:
+                store_element(self._storage_keys['selected_element'], self._key(self.__filtered_collection[user_input]))
+
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.SHOW_ELEMENTS)
@@ -109,3 +123,42 @@ class SelectElementEvent(Event):
     def from_json(json: dict[str, any]) -> any:
         raise RuntimeError("Loading SelectElementEvent from JSON is not supported!")
 
+
+class SelectItemEventFactory:
+
+    @classmethod
+    def get_select_ability_event(cls, entity: CombatEntity,
+                                 only_castable: bool = False,
+                                 must_select: bool = True) -> SelectElementEvent:
+        """
+        Get a SelectElementEvent that is configured to choose an Ability from a list of learned abilities of a given
+        CombatEntity.
+
+        args:
+            entity: The CombatEntity who's abilities to inspect
+            only_castable: If True, filter abilities based on which ones can actually be used
+            must_select: If True, force a selection. If false, allow an input of -1 to terminate the Event
+        """
+        ability_filter = None
+
+        # If only_castable is True, create an inner function to act as the filter.
+        if only_castable is True:
+            def test_for_usable_ability(ability_name) -> bool:
+                """
+                Access the AbilityManager to get an instance of the Ability, then test its requirements against the
+                given CombatEntity.
+                """
+                inst: Ability = from_cache("managers.AbilityManager").get_instance(ability_name)
+                return inst.is_requirements_fulfilled(entity)
+
+            ability_filter = test_for_usable_ability
+
+        event = SelectElementEvent(
+            collection=entity.ability_controller.abilities,
+            key=lambda x: str(x),
+            element_filter=ability_filter,
+            prompt="Select an ability:",
+            must_select=must_select
+        )
+
+        return event
