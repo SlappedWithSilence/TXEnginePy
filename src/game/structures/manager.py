@@ -13,6 +13,7 @@ class Manager(ABC):
     An interface for defining manager behavior. A manager must:
     - Define loading behavior
     - Define saving behavior
+    typically for an entire system.
     """
 
     def __init__(self):
@@ -27,7 +28,7 @@ class Manager(ABC):
         cache.get_cache()["managers"][self.name] = weakref.proxy(self)
 
         self.command_handlers: dict[str, typing.Callable] = {
-            "list": self.c_list
+            "list": self._command_list
         }
 
     def load(self) -> None:
@@ -36,7 +37,7 @@ class Manager(ABC):
     def save(self) -> None:
         raise NotImplementedError
 
-    def c_list(self, fields: str) -> list[str]:
+    def _command_list(self, fields: str) -> list[str]:
         """
         Return a list of strings where each line corresponds to the selected fields of
         a specific object in the manifest.
