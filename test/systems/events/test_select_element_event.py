@@ -58,15 +58,31 @@ def test_functional_filter():
 def test_empty_collection():
     """Test that a RuntimeError is correctly thrown when a collection of size 0 is found. """
     item_ids = []
+
+    # Error should be thrown on instantiation
+    with pytest.raises(RuntimeError):
+        e = SelectElementEvent(item_ids,
+                               lambda x: int(x),
+                               lambda item_id: item_id < -110,
+                               lambda item_id: from_cache("managers.ItemManager").get_instance(item_id).name,
+                               "Select an Item"
+                               )
+
+
+def test_empty_filtered_collection():
+    """Test that a RuntimeError is correctly thrown when a collection is filtered down to size of 0"""
+
+    item_ids = [-110, -111, -112]
     e = SelectElementEvent(item_ids,
                            lambda x: int(x),
-                           lambda item_id: item_id < -110,
+                           lambda item_id: item_id == 0,
                            lambda item_id: from_cache("managers.ItemManager").get_instance(item_id).name,
                            "Select an Item"
                            )
 
     links = e.link()
 
+    # The error should be thrown later than the previous test, this time during execution of state logic
     with pytest.raises(RuntimeError):
         tester = EventTester(e, [1], [])
         tester.run_tests()
