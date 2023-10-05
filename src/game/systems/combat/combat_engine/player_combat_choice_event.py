@@ -8,6 +8,7 @@ from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event, UseItemEvent
 import game.systems.item as items
+from game.systems.event.select_element_event import SelectItemEventFactory
 from game.systems.event.select_item_event import SelectItemEvent
 
 
@@ -70,7 +71,10 @@ class PlayerCombatChoiceEvent(Event):
         # CHOOSE_AN_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
         def logic(_: any) -> None:
-            pass
+            choose_ability_event = SelectItemEventFactory.get_select_ability_event(self._entity, False, False)
+            self._links["CHOOSE_AN_ABILITY"] = choose_ability_event.link()
+            game.state_device_controller.add_state_device(choose_ability_event)
+            self.set_state(self.States.CHECK_ABILITY_USABLE)
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ABILITY)
         def content() -> dict:
@@ -116,7 +120,8 @@ class PlayerCombatChoiceEvent(Event):
             chosen_item_id = from_storage(self._links["CHOOSE_AN_ITEM"]['selected_item_id'])
 
             instance_of_chosen_item = items.item_manager.get_instance(chosen_item_id)  # Of type Usable
-            entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(self._entity)  # Store to avoid re-computation
+            entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(
+                self._entity)  # Store to avoid re-computation
 
             #  If the user actually chose an Item, transition to show options for using it
             if chosen_item_id is not None and entity_can_use_item:
