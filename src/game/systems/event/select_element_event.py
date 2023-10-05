@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Callable, Iterable
+from typing import Callable
 
 from loguru import logger
 
-from game.cache import request_store, store_element, cached
+from game.cache import request_storage_key, store_element, cached
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
@@ -18,28 +18,32 @@ class SelectElementEvent(Event):
         PROCESS_CHOICE = 2
         TERMINATE = -1
 
-    def __init__(self,  collection: Iterable, key: Callable, element_filter: Callable = None,
+    def __init__(self,  collection: list, key: Callable, element_filter: Callable = None,
                  to_listing: Callable = str, prompt: str = "Choose an element"):
         super().__init__(default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT)
         """
         A generic Event that allows the user to select an element from a list of potential elements.
         
-        Args:
+        args:
             - collection: The items from which to select an element
             - key: A callable that takes in the selected element and returns the key to store in storage
-            - element_filter: A callable that returns True if the element should be shown to the user, False if it should be hidden
+            - element_filter: A callable that returns True if the element should be shown to the user, False otherwise
             - to_listing: A callable that takes in an element from the collection and returns a str to show the user
             - prompt: The text to show the user above the list of elements
         """
         self._element_filter: Callable = element_filter
-        self._collection: Iterable = collection
+        self._collection: list = collection
         self._key: Callable = key
         self._storage_keys: dict[str, any] = {"selected_element": None}  # A pre-built dict to hold storage keys
         self._prompt: str = prompt
         self._to_listing: Callable = to_listing
+
         # Temp values
         self.__filtered_collection: list | None = None
         self.__filtered_collection_len: int | None = None
+
+        if len(self._collection) < 1:
+            raise RuntimeError("Cannot instantiate a SelectElementEvent with a collection of size 0!")
 
         self._setup_states()
 
@@ -47,7 +51,7 @@ class SelectElementEvent(Event):
         """
         Override default link logic to store
         """
-        self._storage_keys["selected_element"] = request_store()
+        self._storage_keys["selected_element"] = request_storage_key()  # Storage key for the selected element data
         return self._storage_keys
 
     def _setup_states(self) -> None:
@@ -63,6 +67,15 @@ class SelectElementEvent(Event):
 
             # Pre-compute len of remaining items
             self.__filtered_collection_len = len(self.__filtered_collection)
+
+            # Check for broken collections
+            if self.__filtered_collection_len < 1:
+                logger.error("SelectElementEvent::__filtered_collection_len must be > 0!")
+                logger.debug(f"collection: {self._collection}")
+                logger.debug(f"key: {str(self._key)}")
+                logger.debug(f"to_listing: {str(self._to_listing)}")
+                logger.debug(f"element_filter: {str(self._element_filter)}")
+                raise RuntimeError("SelectElementEvent cannot have a filtered collection size of 0!")
             self.set_state(self.States.SHOW_ELEMENTS)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
