@@ -31,7 +31,7 @@ class AbilityController:
         Returns:
             True if the Requirements for the Ability are met by the owning CombatEntity, False otherwise.
         """
-        return from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(self.owner)
+        return from_cache("managers.AbilityManager").get_instance(ability_name).is_requirements_fulfilled(self.owner)
 
     def is_learned(self, ability_name: str) -> bool:
         """
@@ -73,7 +73,7 @@ class AbilityController:
         returns: None
         """
 
-        for resource, quantity in from_cache("managers.AbilityManager").get_ability(ability_name).costs.items():
+        for resource, quantity in from_cache("managers.AbilityManager").get_instance(ability_name).costs.items():
             game.state_device_controller.add_state_device(events.ResourceEvent(resource, quantity, self.owner))
 
     def _get_ability_as_option(self, ability_name) -> list[str | StringContent]:
@@ -88,7 +88,7 @@ class AbilityController:
         return [
             StringContent(value=ability_name,
                           formatting="ability_enabled" if
-                          from_cache("managers.AbilityManager").get_ability(ability_name).is_requirements_fulfilled(
+                          from_cache("managers.AbilityManager").get_instance(ability_name).is_requirements_fulfilled(
                               self.owner)
                           else "ability_disabled"
                           )

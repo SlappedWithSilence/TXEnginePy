@@ -186,7 +186,7 @@ class LearnAbilityEvent(Event):
                  StringContent(value=ability_name, formatting="ability_name"),
                  "."],
                 # Retrieve the requirements for this ability and pass them through the options argument
-                from_cache("managers.AbilityManager").get_ability(ability_name).get_requirements_as_options()
+                from_cache("managers.AbilityManager").get_instance(ability_name).get_requirements_as_options()
             )
 
     def __copy__(self):

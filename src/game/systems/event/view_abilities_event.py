@@ -68,9 +68,9 @@ class ViewAbilitiesEvent(Event):
             return ComponentFactory.get(
                 [
                     self.selected_ability + "\n",
-                    StringContent(value=from_cache("managers.AbilityManager").get_ability(self.selected_ability).description)
+                    StringContent(value=from_cache("managers.AbilityManager").get_instance(self.selected_ability).description)
                 ],
-                from_cache("managers.AbilityManager").get_ability(self.selected_ability).get_requirements_as_options()
+                from_cache("managers.AbilityManager").get_instance(self.selected_ability).get_requirements_as_options()
             )
 
         @FiniteStateDevice.state_logic(self, self.States.EMPTY, InputType.ANY)
