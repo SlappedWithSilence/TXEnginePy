@@ -139,7 +139,7 @@ class CombatEngine(FiniteStateDevice):
         The active entity has chosen to use an Ability. Handle its usage.
         """
 
-        ability = from_cache("managers.AbilityManager").get_ability(ability_name)
+        ability = from_cache("managers.AbilityManager").get_instance(ability_name)
 
         if not ability.is_requirements_fulfilled(self.active_entity):
             raise RuntimeError(

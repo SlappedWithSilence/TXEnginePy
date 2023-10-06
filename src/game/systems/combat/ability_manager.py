@@ -23,7 +23,7 @@ class AbilityManager(Manager):
     def is_ability(self, ability_name: str) -> bool:
         return ability_name in self._manifest
 
-    def get_ability(self, ability_name) -> Ability:
+    def get_instance(self, ability_name) -> Ability:
         if ability_name not in self._manifest:
             raise ValueError(f"{ability_name} is not a valid ability!")
 

@@ -1,5 +1,6 @@
 from loguru import logger
 
+from game.structures.enums import TargetMode
 from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
@@ -7,6 +8,7 @@ from game.systems.entity.entities import CombatEntity
 from game.systems.item import Item, item_manager, Equipment
 from game.systems.crafting import recipe_manager
 from game.systems.entity import entity_manager
+from game.systems.combat import ability_manager, Ability
 
 
 def pre_collect_setup():
@@ -67,10 +69,20 @@ def pre_collect_setup():
     resource_manager.register_resource(tr_health)
 
     logger.info("Setting up test abilities...")
-    # Set some abilities
+    ta_1 = Ability(name="Test Ability 1", description="ta_1", on_use="ta_1 used", target_mode=TargetMode.SINGLE)
+    ta_2 = Ability(name="Test Ability 2", description="ta_2", on_use="ta_2 used", target_mode=TargetMode.SINGLE,
+                   costs={"tr_health": 1})
+    ta_3 = Ability(name="Test Ability 3", description="ta_3", on_use="ta_3 used", target_mode=TargetMode.SINGLE,
+                   costs={"tr_stamina": 2})
+    ability_manager.register_ability(ta_1)
+    ability_manager.register_ability(ta_2)
+    ability_manager.register_ability(ta_3)
 
     logger.info("Setting up test entities...")
     te_ally_1 = CombatEntity(name="Test Ally", id=-110, turn_speed=2)
+    te_ally_1.ability_controller.learn("Test Ability 1")
+    te_ally_1.ability_controller.learn("Test Ability 2")
+    te_ally_1.ability_controller.learn("Test Ability 3")
     te_enemy_1 = CombatEntity(name="Test Enemy", id=-111, turn_speed=3)
 
     entity_manager.register_entity(te_ally_1)
