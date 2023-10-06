@@ -8,7 +8,7 @@ from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event, UseItemEvent
 import game.systems.item as items
-from game.systems.event.select_element_event import SelectItemEventFactory
+from game.systems.event.select_element_event import SelectElementEventFactory
 from game.systems.event.select_item_event import SelectItemEvent
 
 
@@ -71,7 +71,7 @@ class PlayerCombatChoiceEvent(Event):
         # CHOOSE_AN_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
         def logic(_: any) -> None:
-            choose_ability_event = SelectItemEventFactory.get_select_ability_event(self._entity, False, False)
+            choose_ability_event = SelectElementEventFactory.get_select_ability_event(self._entity, False, False)
             self._links["CHOOSE_AN_ABILITY"] = choose_ability_event.link()
             game.state_device_controller.add_state_device(choose_ability_event)
             self.set_state(self.States.CHECK_ABILITY_USABLE)

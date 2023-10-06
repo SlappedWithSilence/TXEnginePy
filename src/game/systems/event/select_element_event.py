@@ -10,8 +10,6 @@ from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
-from game.systems.combat import Ability
-from game.systems.entity.entities import CombatEntity
 from game.systems.event import Event
 
 
@@ -124,10 +122,10 @@ class SelectElementEvent(Event):
         raise RuntimeError("Loading SelectElementEvent from JSON is not supported!")
 
 
-class SelectItemEventFactory:
+class SelectElementEventFactory:
 
     @classmethod
-    def get_select_ability_event(cls, entity: CombatEntity,
+    def get_select_ability_event(cls, combat_entity,
                                  only_castable: bool = False,
                                  must_select: bool = True) -> SelectElementEvent:
         """
@@ -148,13 +146,15 @@ class SelectItemEventFactory:
                 Access the AbilityManager to get an instance of the Ability, then test its requirements against the
                 given CombatEntity.
                 """
-                inst: Ability = from_cache("managers.AbilityManager").get_instance(ability_name)
-                return inst.is_requirements_fulfilled(entity)
+                inst = from_cache("managers.AbilityManager").get_instance(ability_name)
+                return inst.is_requirements_fulfilled(combat_entity)
 
             ability_filter = test_for_usable_ability
 
+        abilities = list(combat_entity.ability_controller.abilities)
+        abilities.sort()
         event = SelectElementEvent(
-            collection=entity.ability_controller.abilities,
+            collection=abilities,
             key=lambda x: str(x),
             element_filter=ability_filter,
             prompt="Select an ability:",
