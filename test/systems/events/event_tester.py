@@ -8,10 +8,11 @@ from game.systems.event import Event
 
 class EventTester:
 
-    def __init__(self, event: Event, inputs: list[str | int], tests: list[Callable]):
+    def __init__(self, event: Event, inputs: list[str | int], tests: list[Callable], show_frames: bool = False):
         self._event: Event = event
         self._inputs: list[str | int] = inputs
         self._tests: list[Callable] = tests
+        self._show_frames: bool = show_frames
 
     def run_tests(self):
         """
@@ -34,6 +35,8 @@ class EventTester:
             assert game.state_device_controller.state_device_stack[0][0].current_state.value != previous_state
             previous_state = game.state_device_controller.state_device_stack[0][0].current_state.value
             logger.debug(f"Current_state: {previous_state}")
+            if self._show_frames:
+                logger.debug(self._event.to_frame())
             game.state_device_controller.deliver_input(user_input)
 
         for test in self._tests:
