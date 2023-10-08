@@ -112,7 +112,7 @@ def test_factory_ability_selection_functional_castable():
     assert entity.resource_controller.get_value("tr_health") == 0  # Verify health is now 0
     assert from_cache("managers.AbilityManager").get_instance("Test Ability 2").costs["tr_health"] > 0  # Verify ta_2 costs more than 0 health
 
-    event = SelectElementEventFactory.get_select_ability_event(entity, must_select=True, only_castable=True)
+    event = SelectElementEventFactory.get_select_ability_event(entity, must_select=True, only_requirements_met=True)
 
     links = event.link()
 

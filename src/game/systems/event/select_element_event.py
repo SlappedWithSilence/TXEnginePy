@@ -126,7 +126,7 @@ class SelectElementEventFactory:
 
     @classmethod
     def get_select_ability_event(cls, combat_entity,
-                                 only_castable: bool = False,
+                                 only_requirements_met: bool = False,
                                  must_select: bool = True) -> SelectElementEvent:
         """
         Get a SelectElementEvent that is configured to choose an Ability from a list of learned abilities of a given
@@ -134,13 +134,13 @@ class SelectElementEventFactory:
 
         args:
             entity: The CombatEntity who's abilities to inspect
-            only_castable: If True, filter abilities based on which ones can actually be used
+            only_requirements_met: If True, filter abilities based on which ones can actually be used
             must_select: If True, force a selection. If false, allow an input of -1 to terminate the Event
         """
         ability_filter = None
 
         # If only_castable is True, create an inner function to act as the filter.
-        if only_castable is True:
+        if only_requirements_met is True:
             def test_for_usable_ability(ability_name) -> bool:
                 """
                 Access the AbilityManager to get an instance of the Ability, then test its requirements against the
@@ -158,6 +158,79 @@ class SelectElementEventFactory:
             key=lambda x: str(x),
             element_filter=ability_filter,
             prompt="Select an ability:",
+            must_select=must_select
+        )
+
+        return event
+
+    def get_select_usable_item_event(self, combat_entity, collection_override: any = None,
+                                     only_requirements_met: bool = False,
+                                     must_select: bool = False):
+        """
+        Get a SelectElementEvent pre-configured to select an Usable (Item). The returned Event is configured to only
+        display items of type Usable, and can optionally be set to only display Usable items that have their
+        Requirements met by the combat_entity
+
+        args:
+            entity: The entity who's inventory the Usable should be selected from
+            collection: A list of item ids from which to select a Usable. When not None, this collection is selected
+                        from instead of the entity's inventory
+            only_requirements_met: If True, filter for Usable items that can be used by the entity
+            must_select: If True, do not allow for a -1 input that terminates the Event
+        """
+
+        if combat_entity is not None:
+            from game.systems.entity.entities import CombatEntity
+            if not isinstance(combat_entity, CombatEntity):
+                raise TypeError("combat_entity must be an instance of CombatEntity!")
+        else:
+            raise TypeError("combat_entity cannot be None!")
+
+        # If no collection override is supplied, used the inventory in the combat_entity
+        # In all cases, translate the passed data structure into a list of id-quantity tuples
+        collection: list[tuple[int, int]] = None
+
+        from game.systems.entity.entities import InventoryMixin
+        if collection_override is None:
+            collection = [(stack.id, stack.quantity) for stack in combat_entity.inventory.items]
+
+        # If a collection override with an inventory is passed, use its inventory instead
+        elif isinstance(collection_override, InventoryMixin):
+            collection = [(stack.id, stack.quantity) for stack in collection_override.inventory.items]
+
+        # If a list-tuple override is passed, check its contents and then use it
+        elif type(collection_override) == list:
+            if len(collection_override) < 1:
+                raise ValueError("list typed collection overrides must be of size > 0")
+            if type(collection_override[0]) != tuple or type(collection_override[0][0]) != int or type(
+                    collection_override[0][1]) != int:
+                raise ValueError("list typed collection overrides must only contain objects of type tuple[int, int]")
+            collection = collection_override
+
+        # Define an inner-function to handle translating the tuple to a str-listing
+        def to_listing(stack_tuple: tuple[int, int]) -> str:
+            """Translate an id-stack tuple into a string with item.name   xitem.quantity"""
+            return f"{from_cache('managers.ItemManager').get_instance(stack_tuple[0]).name}\tx{stack_tuple[1]}"
+
+        def usable_filter(stack_tuple: tuple[int, int], entity, force_requirements: bool):
+
+            instance = from_cache("managers.ItemManager").get_instance(stack_tuple[0])
+
+            from game.systems.item.item import Usable
+            if not isinstance(instance, Usable):
+                return False
+
+            if force_requirements == True and not instance.is_requirements_fulfilled(entity):
+                return False
+
+            return True
+
+        event = SelectElementEvent(
+            collection=collection,
+            key=lambda stack_tuple: stack_tuple[0],
+            element_filter=usable_filter,
+            prompt="Select an item to use:",
+            to_listing=to_listing,
             must_select=must_select
         )
 
