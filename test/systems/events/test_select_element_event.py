@@ -140,11 +140,90 @@ def test_factory_usable_selection_functional():
     # Check that test case dependencies are in place
     assert entity.resource_controller.get_value("tr_health") == 3
     assert entity.inventory.total_quantity(-120) == 1
+    assert entity.inventory.total_quantity(-121) == 1
 
     event = SelectElementEventFactory.get_select_usable_item_event(entity)
+    links = event.link()
+
+    tester = EventTester(event, [1], [])
+    tester.run_tests()
+
+    assert from_storage(links["selected_element"]) == -121
+
+
+def test_factory_usable_selection_filter():
+    """
+    Test that the SelectElementEventFactory's get_select_usable_event function returns a functional event
+    suitable to selecting Usable items from an entity's inventory when filtering is enabled
+    """
+
+    # Set up test-case dependencies
+    entity = from_cache("managers.EntityManager").get_instance(-110)  # Get a copy of the entity
+    entity.inventory.insert_item(-110, 2)
+    entity.inventory.insert_item(-111, 3)
+    entity.inventory.insert_item(-119, 1)
+    entity.inventory.insert_item(-120, 1)
+    entity.inventory.insert_item(-121, 1)
+    entity.resource_controller.get_instance("tr_health").value = 3
+
+    # Check that test case dependencies are in place
+    assert entity.resource_controller.get_value("tr_health") == 3
+    assert entity.inventory.total_quantity(-120) == 1
+
+    event = SelectElementEventFactory.get_select_usable_item_event(entity, only_requirements_met=True)
     links = event.link()
 
     tester = EventTester(event, [0], [])
     tester.run_tests()
 
     assert from_storage(links["selected_element"]) == -120
+
+
+def test_factory_usable_selection_override():
+    """
+    Test that the SelectElementEventFactory's get_select_usable_event function returns a functional event
+    suitable to selecting Usable items from an entity's inventory when filtering is enabled
+    """
+
+    # Set up test-case dependencies
+    entity = from_cache("managers.EntityManager").get_instance(-110)  # Get a copy of the entity
+    entity.resource_controller.get_instance("tr_health").value = 3
+
+    # Check that test case dependencies are in place
+    assert entity.resource_controller.get_value("tr_health") == 3
+
+    event = SelectElementEventFactory.get_select_usable_item_event(entity, [(-111, 3), (-118, 1), (-121, 1)])
+    links = event.link()
+
+    tester = EventTester(event, [0], [])
+    tester.run_tests()
+
+    assert from_storage(links["selected_element"]) == -121
+
+
+
+def test_factory_usable_selection_filter_size_zero():
+    """
+    Test that the SelectElementEventFactory's get_select_usable_event function returns a functional event
+    suitable to selecting Usable items from an entity's inventory when filtering is enabled
+    """
+
+    # Set up test-case dependencies
+    entity = from_cache("managers.EntityManager").get_instance(-110)  # Get a copy of the entity
+    entity.resource_controller.get_instance("tr_health").value = 1
+
+    entity.inventory.insert_item(-110, 2)
+    entity.inventory.insert_item(-111, 3)
+    entity.inventory.insert_item(-119, 1)
+    entity.inventory.insert_item(-120, 1)
+    entity.inventory.insert_item(-121, 1)
+
+    # Check that test case dependencies are in place
+    assert entity.resource_controller.get_value("tr_health") == 1
+
+    event = SelectElementEventFactory.get_select_usable_item_event(entity, only_requirements_met=True)
+    links = event.link()  # Link even though we wont be using it
+
+    tester = EventTester(event, [0], [])
+    with pytest.raises(RuntimeError):
+        tester.run_tests()
