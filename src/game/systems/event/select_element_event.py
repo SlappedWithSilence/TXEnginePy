@@ -163,6 +163,7 @@ class SelectElementEventFactory:
 
         return event
 
+    @classmethod
     def get_select_usable_item_event(self, combat_entity, collection_override: any = None,
                                      only_requirements_met: bool = False,
                                      must_select: bool = False):
@@ -212,7 +213,7 @@ class SelectElementEventFactory:
             """Translate an id-stack tuple into a string with item.name   xitem.quantity"""
             return f"{from_cache('managers.ItemManager').get_instance(stack_tuple[0]).name}\tx{stack_tuple[1]}"
 
-        def usable_filter(stack_tuple: tuple[int, int], entity, force_requirements: bool):
+        def usable_filter(stack_tuple: tuple[int, int]):
 
             instance = from_cache("managers.ItemManager").get_instance(stack_tuple[0])
 
@@ -220,14 +221,14 @@ class SelectElementEventFactory:
             if not isinstance(instance, Usable):
                 return False
 
-            if force_requirements == True and not instance.is_requirements_fulfilled(entity):
+            if only_requirements_met is True and not instance.is_requirements_fulfilled(combat_entity):
                 return False
 
             return True
 
         event = SelectElementEvent(
             collection=collection,
-            key=lambda stack_tuple: stack_tuple[0],
+            key=lambda stack_tuple: stack_tuple[0],  # Extract item.id from inventory stack
             element_filter=usable_filter,
             prompt="Select an item to use:",
             to_listing=to_listing,
