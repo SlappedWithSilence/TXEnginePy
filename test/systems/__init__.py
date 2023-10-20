@@ -5,10 +5,11 @@ from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
 from game.systems.entity.entities import CombatEntity
-from game.systems.item import Item, item_manager, Equipment
+from game.systems.item import Item, item_manager, Equipment, Usable
 from game.systems.crafting import recipe_manager
 from game.systems.entity import entity_manager
 from game.systems.combat import ability_manager, Ability
+from game.systems.requirement.requirements import ResourceRequirement
 
 
 def pre_collect_setup():
@@ -43,7 +44,10 @@ def pre_collect_setup():
     te9 = Equipment("Test Equipment 3", -118, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": -1})
     te10 = Equipment("Test Equipment 3", -119, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": -0.25})
 
-    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10])
+    te11 = Usable("Test Usable 1", -120, {-110: 2}, "", requirements=[ResourceRequirement("tr_health", 2)])
+    te12 = Usable("Test Usable 1", -121, {-110: 5}, "", requirements=[ResourceRequirement("tr_health", 5)])
+
+    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
