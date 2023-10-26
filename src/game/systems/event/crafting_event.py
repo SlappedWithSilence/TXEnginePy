@@ -58,7 +58,7 @@ class CraftingEvent(Event):
 
             # Go back to start
             if user_input == -1:
-                self.set_state(self.States.DEFAULT)
+                self.set_state(self.States.TERMINATE)
                 return
 
             self._chosen_recipe = self._player_ref.crafting_controller.learned_recipes[user_input]
