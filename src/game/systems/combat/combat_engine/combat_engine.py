@@ -63,14 +63,12 @@ class CombatEngine(FiniteStateDevice):
 
         # Master collections
         entity_manager = from_cache("managers.EntityManager")
-        self._allies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
-                                                     ally_entity_ids]  # Master list of allied entities
-        self._enemies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in
-                                                      enemy_entity_ids]  # Master list of opposed entities
+        self._allies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in ally_entity_ids]  # alies
+        self._enemies: list[entities.CombatEntity] = [entity_manager[e_id] for e_id in enemy_entity_ids]  # enemies
         self._player_ref: entities.Player = from_cache('player')
         self._allies.append(self._player_ref)
 
-        # Master ordered lists
+        # Ordered lists
         self._turn_order: list[
             entities.CombatEntity] = []  # Proxied list of all entities arranged by index via turn order
         self._PHASE_ORDER = tuple(CombatEngine.get_master_phase_order())  # Ordered immutable collection of phases

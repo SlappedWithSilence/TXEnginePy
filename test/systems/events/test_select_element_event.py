@@ -201,7 +201,6 @@ def test_factory_usable_selection_override():
     assert from_storage(links["selected_element"]) == -121
 
 
-
 def test_factory_usable_selection_filter_size_zero():
     """
     Test that the SelectElementEventFactory's get_select_usable_event function returns a functional event
