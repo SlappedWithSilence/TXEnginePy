@@ -126,3 +126,35 @@ def test_phase_handle_triggers():
     # Call the HANDLE_PHASE state logic by hand
     with pytest.raises(RuntimeError):
         engine.state_data[engine.States.HANDLE_PHASE.value]['logic']("")
+
+
+def test_get_relative_enemies():
+    delete_element("combat")
+
+    engine = get_generic_combat_instance()
+    allies = engine._allies
+    enemies = engine._enemies
+
+    # Check for each absolute enemy, they are included in a relative list of enemies to an absolute ally
+    for enemy in enemies:
+        assert enemy in engine.get_relative_enemies(allies[0])
+
+    # Check for each absolute ally, they are included in a relative list of enemies to an absolute enemy
+    for ally in allies:
+        assert ally in engine.get_relative_enemies(enemies[0])
+
+
+def test_get_relative_allies():
+    delete_element("combat")
+
+    engine = get_generic_combat_instance()
+    allies = engine._allies
+    enemies = engine._enemies
+
+    # Check for each absolute enemy, they are included in a relative list of allies to an absolute ally
+    for enemy in enemies:
+        assert enemy in engine.get_relative_allies(enemies[0])
+
+    # Check for each absolute ally, they are included in a relative list of allies to an absolute ally
+    for ally in allies:
+        assert ally in engine.get_relative_allies(allies[0])
