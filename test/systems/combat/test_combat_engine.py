@@ -148,8 +148,8 @@ def test_get_relative_allies():
     delete_element("combat")
 
     engine = get_generic_combat_instance()
-    allies = engine._allies
-    enemies = engine._enemies
+    allies = engine.allies
+    enemies = engine.enemies
 
     # Check for each absolute enemy, they are included in a relative list of allies to an absolute ally
     for enemy in enemies:
@@ -158,3 +158,7 @@ def test_get_relative_allies():
     # Check for each absolute ally, they are included in a relative list of allies to an absolute ally
     for ally in allies:
         assert ally in engine.get_relative_allies(allies[0])
+
+def test_next_entity():
+    pass
+
