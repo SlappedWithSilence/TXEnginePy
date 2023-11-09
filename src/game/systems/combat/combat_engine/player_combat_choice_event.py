@@ -31,6 +31,7 @@ class PlayerCombatChoiceEvent(Event):
         LIST_ENEMIES = 10  # Show a list of enemies that can be inspected
         LIST_ALLIES = 11  # SHow a list of allies that can be inspected
         INSPECT_ENTITY = 12  # SHow details about a specific entity
+        CHECK_ABILITY_USABLE = 13  # Verify that selected ability can be used
         TERMINATE = -1  # Clean up
 
     def _get_turn_choices(self) -> dict[str, States]:
@@ -79,6 +80,20 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ABILITY)
         def content() -> dict:
             return ComponentFactory.get()
+
+        # CHECK_ABILITY_USABLE
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.SILENT)
+        def logic(_: any) -> None:
+            selected_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
+
+            if selected_ability is None:
+                self.set_state(self.States.CHOOSE_TURN_OPTION)
+
+            elif not self._entity.ability_controller.is_ability_usable(selected_ability):
+                self.set_state(self.States.CANNOT_USE_ABILITY)
+
+            else:
+                self.set_state(self.States.CHOOSE_ABILITY_TARGET)
 
         # CHOOSE_ABILITY_TARGET
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT)
