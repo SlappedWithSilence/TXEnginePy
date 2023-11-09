@@ -63,6 +63,23 @@ class AbilityController:
 
         return False
 
+    def is_ability_usable(self, ability_name: str) -> bool:
+        """
+        Check if a given ability can be used.
+
+        args:
+            ability_name: The name of the Ability to check
+        """
+
+        if ability_name is None or type(ability_name) is not str:
+            raise TypeError(f"ability_name must be of type str! Got type {type(ability_name)} instead.")
+
+        if self.owner is None:
+            raise RuntimeError(f"AbilityController instance {self} has no owner set!")
+
+        return self.is_learned(ability_name) and \
+            from_cache("managers.AbilityManager").get_instance(ability_name).is_requirements_fulfilled(self.owner)
+
     def consume_ability_resources(self, ability_name) -> None:
         """
         Consume the required resources for a selected ability.
