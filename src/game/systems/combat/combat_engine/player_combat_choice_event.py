@@ -2,7 +2,7 @@ from enum import Enum
 
 import game
 from game.cache import cached, from_cache, from_storage
-from game.structures.enums import InputType
+from game.structures.enums import InputType, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
@@ -82,7 +82,7 @@ class PlayerCombatChoiceEvent(Event):
             return ComponentFactory.get()
 
         # CHECK_ABILITY_USABLE
-        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.CHECK_ABILITY_USABLE, InputType.SILENT)
         def logic(_: any) -> None:
             selected_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
 
@@ -95,10 +95,48 @@ class PlayerCombatChoiceEvent(Event):
             else:
                 self.set_state(self.States.CHOOSE_ABILITY_TARGET)
 
+        @FiniteStateDevice.state_content(self, self.States.CHECK_ABILITY_USABLE)
+        def content() -> dict:
+            return ComponentFactory.get()
+
         # CHOOSE_ABILITY_TARGET
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT)
-        def logic(_: any) -> None:
-            pass
+        def logic(entity_index: int) -> None:
+
+            relative_allies = None
+            relative_enemies = None
+
+            # Check if current entity is an ally or enemy
+            if self._entity in from_cache("combat").allies:
+                relative_allies = from_cache("combat").allies
+                relative_enemies = from_cache("combat").enemies
+
+            elif self._entity in from_cache("combat").enemies:
+                relative_enemies = from_cache("combat").allies
+                relative_allies = from_cache("combat").enemies
+
+            else:
+                raise RuntimeError("PlayerCombatChoiceEvent cannot determine if active entity is an ally or enemy!")
+            chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
+
+            match from_cache("managers.AbilityManager").get_instance(chosen_ability).target_mode:
+                case TargetMode.SINGLE:
+                    pass
+                case TargetMode.NOT_SELF:
+                    pass
+                case TargetMode.SINGLE_ALLY:
+                    pass
+                case TargetMode.SINGLE_ENEMY:
+                    pass
+                case TargetMode.ALL:
+                    pass
+                case TargetMode.ALL_ALLY:
+                    pass
+                case TargetMode.ALL_ENEMY:
+                    pass
+                case _:
+                    pass
+
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_ABILITY_TARGET)
         def content() -> dict:
