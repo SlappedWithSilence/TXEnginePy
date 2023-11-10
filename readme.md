@@ -39,8 +39,14 @@ I recommend using Jetbrains PyCharm as your IDE when developing for TXEngine. As
    - `cd TXEnginePy\src`
    - `Uvicorn main::app_server --reload`
    - For more info, [see here](https://fastapi.tiangolo.com/tutorial/first-steps/)
+- Run a TXEnginePY Client
+  - TXEnginePY comes bundled with a primitive client, suitable only for debugging. It implements the bare minimum features to simulate what a user of a proper client would see.
+  - To run, `cd` to the root of the TXEnginePy repo
+  - (optional) Activate your `venv`
+  - `python src\viewer\viewer.py`
+- You should now be connected to the TXEnginePY backend. Verify that your Client is correctly communicating with the backend by playing around a bit!
 
-## Aknowledgements
+## Acknowledgements
 
 [FastAPI](https://fastapi.tiangolo.com/)
 
