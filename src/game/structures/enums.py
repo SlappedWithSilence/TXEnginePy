@@ -44,13 +44,13 @@ class TargetMode(enum.Enum):
     def list(cls):
         return list(map(lambda c: c.value, cls))
 
-    ALL = "all"
-    SINGLE = "single"
-    SINGLE_ALLY = "single_ally"
-    SINGLE_ENEMY = "single_enemy"
-    ALL_ALLY = "all_allies"
-    ALL_ENEMY = "all_enemies"
-    NOT_SELF = "not_self"
-    SELF = "self"
+    ALL = "all"  # Targets every entity simultaneously
+    SINGLE = "single"  # Targets any single entity
+    SINGLE_ALLY = "single_ally"  # Targets a single ally
+    SINGLE_ENEMY = "single_enemy"  # Targets a single enemy
+    ALL_ALLY = "all_allies"  # Targets all allies simultaneously
+    ALL_ENEMY = "all_enemies"  # Targets all enemies simultaneously
+    NOT_SELF = "not_self"  # Targets any entity that isn't the caster
+    SELF = "self"  # Targets the caster
 
 
