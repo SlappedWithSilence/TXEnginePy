@@ -9,7 +9,7 @@ from loguru import logger
 import game
 import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element, delete_element
-from game.structures.enums import CombatPhase, InputType
+from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
@@ -192,6 +192,58 @@ class CombatEngine(FiniteStateDevice):
 
         else:
             raise CombatError(f"Failed to get relative enemies! Unknown entity: {entity}")
+
+    def get_ability_targets(self, entity: entities.CombatEntity, ability_name: str) -> list[entities.CombatEntity]:
+        """
+        Fetch a list of entities that can be targeted by a given ability.
+
+        Abilities that target groups (ie ALL_ALLIES, ALL_ENEMIES, ALL, etc) will return an empty list; there's no
+        targeting to be done.
+
+        args:
+            entity: The CombatEntity that is performing the targeting
+            ability_name: The name of the Ability that `entity` will be performing
+
+        returns:
+            A list of CombatEntities from among all participants in combat that are valid targets for `ability_name`
+        """
+
+        if not isinstance(entity, entities.CombatEntity):
+            raise TypeError(f"argument `entity` is not of type CombatEntity! Got {type(entity)} instead.")
+
+        if type(ability_name) is not str:
+            raise TypeError(f"argument `ability_name` is not of type str! Got {type(ability_name)} instead.")
+        target_mode: TargetMode = from_cache("managers.AbilityManager").get_instance(ability_name).target_mode
+
+        match target_mode:
+
+            # Return a list of all entities
+            case TargetMode.SINGLE:
+                return self.allies + self.enemies
+
+            # Return a list of all entities that are not `entity`
+            case TargetMode.NOT_SELF:
+                return [ally for ally in self.allies is not entity] + \
+                    [enemy for enemy in self.enemies if enemy is not entity]
+
+            # Return a list of all relative allies
+            case TargetMode.SINGLE_ALLY:
+                return self.get_relative_allies(entity)
+
+            # Return a list of all relative enemies
+            case TargetMode.SINGLE_ENEMY:
+                return self.get_relative_enemies(entity)
+
+            # Return an empty list -- no targeting to be done
+            case TargetMode.ALL:
+                pass
+            case TargetMode.ALL_ALLY:
+                pass
+            case TargetMode.ALL_ENEMY:
+                pass
+
+            case _:
+                raise CombatError(f'Unknown targeting mode: {target_mode}')
 
     def submit_entity_choice(self, entity: entities.CombatEntity, choice: int | str | None) -> None:
         """
