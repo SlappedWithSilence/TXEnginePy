@@ -1,13 +1,14 @@
 from enum import Enum
 
 import game
+import game.systems.item as items
 from game.cache import cached, from_cache, from_storage
-from game.structures.enums import InputType, TargetMode
+from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-from game.systems.event import Event, UseItemEvent
-import game.systems.item as items
+from game.systems.combat.combat_engine.choice_data import ChoiceData
+from game.systems.event import Event
 from game.systems.event.select_element_event import SelectElementEventFactory
 from game.systems.event.select_item_event import SelectItemEvent
 
@@ -47,8 +48,9 @@ class PlayerCombatChoiceEvent(Event):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._links: dict[str, dict[str, str]] = {}
         self._entity = entity  # The entity for which to make a choice
-        self._choice: str | None = None  # The choice made
+        self._choice_data: ChoiceData = None
         self._available_turn_choices: dict[str, PlayerCombatChoiceEvent.States] = self._get_turn_choices()
+
 
         from game.systems.entity.entities import CombatEntity
         if not isinstance(self._entity, CombatEntity):
@@ -103,53 +105,29 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT)
         def logic(entity_index: int) -> None:
 
-            relative_allies = None
-            relative_enemies = None
-
-            # Check if current entity is an ally or enemy
-            if self._entity in from_cache("combat").allies:
-                relative_allies = from_cache("combat").allies
-                relative_enemies = from_cache("combat").enemies
-
-            elif self._entity in from_cache("combat").enemies:
-                relative_enemies = from_cache("combat").allies
-                relative_allies = from_cache("combat").enemies
-
-            else:
-                raise RuntimeError("PlayerCombatChoiceEvent cannot determine if active entity is an ally or enemy!")
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
-
-            match from_cache("managers.AbilityManager").get_instance(chosen_ability).target_mode:
-                case TargetMode.SINGLE:
-                    pass
-                case TargetMode.NOT_SELF:
-                    pass
-                case TargetMode.SINGLE_ALLY:
-                    pass
-                case TargetMode.SINGLE_ENEMY:
-                    pass
-                case TargetMode.ALL:
-                    pass
-                case TargetMode.ALL_ALLY:
-                    pass
-                case TargetMode.ALL_ENEMY:
-                    pass
-                case _:
-                    pass
-
+            self._choice_data = ChoiceData(
+                ChoiceData.ChoiceType.ABILITY, ability_name= chosen_ability,
+                ability_target=from_cache("combat").get_ability_targets(self._entity, chosen_ability)[entity_index]
+            )
+            self.set_state(self.States.SUBMIT_CHOICE)
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_ABILITY_TARGET)
         def content() -> dict:
-            return ComponentFactory.get()
+            chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
+
+            return ComponentFactory.get(["Select a target:"],
+                                        from_cache("combat").get_ability_targets(self._entity, chosen_ability),
+                                        is_combat_frame=True)
 
         # CANNOT_USE_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ABILITY, InputType.ANY)
         def logic(_: any) -> None:
-            pass
+            self.set_state(self.States.CHOOSE_TURN_OPTION)
 
         @FiniteStateDevice.state_content(self, self.States.CANNOT_USE_ABILITY)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(["You cannot use that Ability."])
 
         # CHOOSE_AN_ITEM
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ITEM, InputType.SILENT)
@@ -160,6 +138,8 @@ class PlayerCombatChoiceEvent(Event):
 
             # Generate a storage link and cache it in _links
             self._links['CHOOSE_AN_ITEM'] = select_usable_event.link()
+
+            self.set_state(self.States.DETECT_ITEM_USABLE)
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
         def content() -> dict:
@@ -176,11 +156,10 @@ class PlayerCombatChoiceEvent(Event):
             entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(
                 self._entity)  # Store to avoid re-computation
 
-            #  If the user actually chose an Item, transition to show options for using it
+            #  If the user actually chose an Item, store that info in a choice_data and move on
             if chosen_item_id is not None and entity_can_use_item:
-
-                # Spawn an event to handle using the item.
-                game.state_device_controller.add_state_device(UseItemEvent(chosen_item_id))
+                self._choice_data = ChoiceData(ChoiceData.ChoiceType.ITEM, item_id=chosen_item_id)
+                self.set_state(self.States.SUBMIT_CHOICE)
 
             # Entity fails requirements checks
             elif not entity_can_use_item:
@@ -225,6 +204,7 @@ class PlayerCombatChoiceEvent(Event):
         # PASS_TURN
         @FiniteStateDevice.state_logic(self, self.States.PASS_TURN, InputType.ANY)
         def logic(_: any) -> None:
+            self._choice_data = ChoiceData(ChoiceData.ChoiceType.PASS)
             self.set_state(self.States.SUBMIT_CHOICE)
 
         @FiniteStateDevice.state_content(self, self.States.PASS_TURN)
