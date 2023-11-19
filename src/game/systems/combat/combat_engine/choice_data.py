@@ -24,11 +24,12 @@ class ChoiceData:
 
     def __init__(self, choice_type: ChoiceType,
                  item_id: int = None,
-                 ability_name: str = None, ability_target: entities.CombatEntity = None):
+                 ability_name: str = None, ability_target: list[entities.CombatEntity] = None):
 
         self.ability_name: str | None = None  # Name of selected ability
-        self.ability_target: entities.CombatEntity | None = None  # Target of selected ability
+        self.ability_target: list[entities.CombatEntity] | None = None  # Target of selected ability
         self.item_id: int | None = None  # ID of selected item
+        self.choice_type = choice_type
 
         if choice_type == ChoiceData.ChoiceType.ITEM:
             if ability_target is not None or ability_name is not None:
