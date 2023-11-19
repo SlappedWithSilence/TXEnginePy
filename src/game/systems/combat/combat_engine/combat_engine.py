@@ -13,6 +13,7 @@ from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
+from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
 from game.systems.combat.combat_engine.termination_handler import TerminationHandler, PlayerResourceCondition, \
     EnemyResourceCondition
@@ -234,18 +235,17 @@ class CombatEngine(FiniteStateDevice):
             case TargetMode.SINGLE_ENEMY:
                 return self.get_relative_enemies(entity)
 
-            # Return an empty list -- no targeting to be done
             case TargetMode.ALL:
-                pass
+                return self.enemies + self.allies
             case TargetMode.ALL_ALLY:
-                pass
+                return self.get_relative_allies(entity)
             case TargetMode.ALL_ENEMY:
-                pass
+                return self.get_relative_enemies(entity)
 
             case _:
                 raise CombatError(f'Unknown targeting mode: {target_mode}')
 
-    def submit_entity_choice(self, entity: entities.CombatEntity, choice: int | str | None) -> None:
+    def submit_entity_choice(self, entity: entities.CombatEntity, choice: ChoiceData) -> None:
         """
         Submit an entity's turn action to the combat engine from any context.
         """
@@ -254,8 +254,8 @@ class CombatEngine(FiniteStateDevice):
         if not isinstance(entity, entities.CombatEntity):
             raise TypeError("Cannot submit choice for non-CombatEntity object!")
 
-        if choice is not None and type(choice) not in [int, str]:
-            raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected int | str | None")
+        if choice is not None and type(choice) is not ChoiceData:
+            raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected type ChoiceData!")
 
         if entity != self.active_entity:
             raise CombatError("Entity paired with choice does not match active_entity!",
@@ -264,16 +264,16 @@ class CombatEngine(FiniteStateDevice):
         # Store choice for later
         self.active_entity_choice = (entity, choice)
 
-    def handle_turn_action(self, choice: int | str | None) -> None:
+    def handle_turn_action(self, choice: ChoiceData) -> None:
         """
         Perform the logic for executing the choice made by the active entity.
         """
 
-        if type(choice) == int:
-            self._handle_use_item(choice)
-        elif type(choice) == str:
-            self._handle_use_item(choice)
-        elif choice is None:
+        if choice.choice_type == ChoiceData.ChoiceType.ITEM:
+            self._handle_use_item(choice.item_id)
+        elif choice.choice_type == ChoiceData.ChoiceType.ABILITY:
+            self._handle_use_ability(choice.ability_name, choice.ability_target)
+        elif choice.choice_type.PASS:
             self._handle_pass_turn()
         else:
             raise TypeError(f"Unexpected type for choice! Expected str, int, None, got {type(choice)} instead!")
