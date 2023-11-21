@@ -12,6 +12,7 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
+from game.systems.combat.combat_engine.termination_handler import TerminationHandler
 from game.systems.crafting import recipe_manager
 from game.systems.entity.resource import ResourceController
 
@@ -678,3 +679,56 @@ class ViewResourcesEvent(EntityTargetMixin, Event):
     @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         return ViewResourcesEvent()
+
+
+class CombatEvent(Event):
+
+    class States(Enum):
+        DEFAULT = 0
+        LAUNCH_COMBAT_ENGINE = 1
+        TERMINATE = -1
+
+    def __init__(self, allies: list[int], enemies: list[int], termination_conditions: list[TerminationHandler] = None):
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
+
+        self._allies = allies
+        self._enemies = enemies
+        self._termination_conditions = termination_conditions
+
+        self._setup_states()
+
+    def _setup_states(self):
+        pass
+
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "CombatEvent", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Load a CombatEvent from a JSON blob.
+
+        Required JSON fields:
+        - allies: list[int]
+        - enemies: list[int]
+
+        Optional JSON fields:
+        - termination_conditions: list[dict[str, any]]
+        """
+        required_fields = [
+            ("allies", list), ("enemies", list)
+        ]
+
+        optional_fields = [
+            ("termination_conditions", list)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        kw = LoadableFactory.collect_optional_fields(optional_fields, json)
+        if "termination_conditions" in kw:
+            # Transform embedded raw JSON blobs into TerminationCondition objects by calling their JSON loaders
+            kw["termination_conditions"] = [
+                LoadableFactory.get(raw_condition) for raw_condition in kw["termination_conditions"]
+            ]
+
+        return CombatEvent(json["allies"], json["enemies"])
