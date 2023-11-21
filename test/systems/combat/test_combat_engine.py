@@ -13,7 +13,7 @@ def get_test_allies() -> list[int]:
     """
 
     return [
-        -110
+        -110, -111
     ]
 
 
@@ -22,7 +22,7 @@ def get_test_enemies() -> list[int]:
     Get a default list of generic enemy CombatEntity objects.
     """
     return [
-        -111
+        -112, -113
     ]
 
 
@@ -80,9 +80,11 @@ def test_compute_turn_order():
 
     logger.debug([ce.name for ce in engine._turn_order])
 
-    assert engine._turn_order[0].name == "Test Enemy"
-    assert engine._turn_order[1].name == "Test Ally"
-    assert engine._turn_order[2].name == "Player"
+    assert engine._turn_order[0].name == "Test Enemy 2"
+    assert engine._turn_order[1].name == "Test Enemy 1"
+    assert engine._turn_order[2].name == "Test Ally 2"
+    assert engine._turn_order[3].name == "Test Ally 1"
+    assert engine._turn_order[4].name == "Player"
 
 
 def test_active_entity():
@@ -159,6 +161,37 @@ def test_get_relative_allies():
     for ally in allies:
         assert ally in engine.get_relative_allies(allies[0])
 
-def test_next_entity():
-    pass
 
+test_get_target_single_cases = [
+    ["ABSOLUTE_ALLY", "Test Ability 1", "ANY"],
+    ["ABSOLUTE_ALLY", "Test Ability 2", "ABSOLUTE_ENEMY"],
+    ["ABSOLUTE_ALLY", "Test Ability 3", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", "Test Ability 1", "ANY"],
+    ["ABSOLUTE_ENEMY", "Test Ability 2", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", "Test Ability 3", "ABSOLUTE_ENEMY"],
+]
+
+
+@pytest.mark.parametrize("source_entity_type, ability, valid_targets", test_get_target_single_cases)
+def test_get_target_single(source_entity_type: str, ability: str, valid_targets: str):
+    delete_element("combat")
+
+    engine = get_generic_combat_instance()
+    allies: list[CombatEntity] = engine.allies
+    enemies: list[CombatEntity] = engine.enemies
+
+    def translate_target_str(target_type: str) -> list[CombatEntity]:
+        match target_type:
+            case "ABSOLUTE_ALLY":
+                return allies
+            case "ABSOLUTE_ENEMY":
+                return enemies
+            case "ANY":
+                return allies + enemies
+            case _:
+                raise RuntimeError("No such group")
+
+    for entity in engine.get_ability_targets(
+            translate_target_str(source_entity_type)[0],
+            ability):
+        assert entity in translate_target_str(valid_targets)
