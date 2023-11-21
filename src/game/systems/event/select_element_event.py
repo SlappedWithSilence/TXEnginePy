@@ -74,11 +74,6 @@ class SelectElementEvent(Event):
 
             # Check for broken collections
             if self.__filtered_collection_len < 1:
-                logger.error("SelectElementEvent::__filtered_collection_len must be > 0!")
-                logger.debug(f"collection: {self._collection}")
-                logger.debug(f"key: {str(self._key)}")
-                logger.debug(f"to_listing: {str(self._to_listing)}")
-                logger.debug(f"element_filter: {str(self._element_filter)}")
                 raise RuntimeError("SelectElementEvent cannot have a filtered collection size of 0!")
             self.set_state(self.States.SHOW_ELEMENTS)
 
@@ -147,6 +142,7 @@ class SelectElementEventFactory:
                 given CombatEntity.
                 """
                 inst = from_cache("managers.AbilityManager").get_instance(ability_name)
+                print(inst)
                 return inst.is_requirements_fulfilled(combat_entity)
 
             ability_filter = test_for_usable_ability
@@ -164,7 +160,7 @@ class SelectElementEventFactory:
         return event
 
     @classmethod
-    def get_select_usable_item_event(self, combat_entity, collection_override: any = None,
+    def get_select_usable_item_event(cls, combat_entity, collection_override: any = None,
                                      only_requirements_met: bool = False,
                                      must_select: bool = False):
         """
