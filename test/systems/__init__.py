@@ -89,9 +89,21 @@ def pre_collect_setup():
     ta_3 = Ability(name=f"{TEST_PREFIX}Ability 3", description="ta_3", on_use="ta_3 used",
                    target_mode=TargetMode.SINGLE_ALLY,
                    costs={f"{TEST_PREFIX}stamina": 2})
+    ta_4 = Ability(name=f"{TEST_PREFIX}Ability 4", description="ta_1", on_use="ta_1 used",
+                   target_mode=TargetMode.ALL)
+    ta_5 = Ability(name=f"{TEST_PREFIX}Ability 5", description="ta_2", on_use="ta_2 used",
+                   target_mode=TargetMode.ALL_ENEMY,
+                   costs={f"{TEST_PREFIX}health": 1})
+    ta_6 = Ability(name=f"{TEST_PREFIX}Ability 6", description="ta_3", on_use="ta_3 used",
+                   target_mode=TargetMode.ALL_ALLY,
+                   costs={f"{TEST_PREFIX}stamina": 2})
+
     ability_manager.register_ability(ta_1)
     ability_manager.register_ability(ta_2)
     ability_manager.register_ability(ta_3)
+    ability_manager.register_ability(ta_4)
+    ability_manager.register_ability(ta_5)
+    ability_manager.register_ability(ta_6)
 
     logger.info("Setting up test entities...")
     test_entity_no_abilities = CombatEntity(name="Entity: No Abilities", id=-109, turn_speed=0)
