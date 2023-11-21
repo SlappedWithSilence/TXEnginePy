@@ -11,6 +11,8 @@ from game.systems.entity import entity_manager
 from game.systems.combat import ability_manager, Ability
 from game.systems.requirement.requirements import ResourceRequirement
 
+TEST_PREFIX = "_tr_"
+
 
 def pre_collect_setup():
     """
@@ -32,20 +34,25 @@ def pre_collect_setup():
                                                 }))
 
     logger.info("Setting up test items...")
-    te1 = Item("Test Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)
-    te2 = Item("Test Item 2", -111, {-110: 2, -111: 3}, "A simple test item", 3)
-    te3 = Item("Test Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
-    te4 = Item("Test Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
+    te1 = Item(f"{TEST_PREFIX} Item 1", -110, {-110: 2, -111: 3}, "A simple test item", 3)
+    te2 = Item(f"{TEST_PREFIX} Item 2", -111, {-110: 2, -111: 3}, "A simple test item", 3)
+    te3 = Item(f"{TEST_PREFIX} Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
+    te4 = Item(f"{TEST_PREFIX} Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
-    te5 = Equipment("Test Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
-    te6 = Equipment("Test Equipment 2", -115, {-110: 1}, "", "chest", 0, 0, resource_modifiers={"tr_health": 3})
-    te7 = Equipment("Test Equipment 3", -116, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
-    te8 = Equipment("Test Equipment 3", -117, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": 0.1})
-    te9 = Equipment("Test Equipment 3", -118, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": -1})
-    te10 = Equipment("Test Equipment 3", -119, {-110: 1}, "", "legs", 0, 0, resource_modifiers={"tr_health": -0.25})
+    te5 = Equipment(f"{TEST_PREFIX} Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
+    te6 = Equipment(f"{TEST_PREFIX} Equipment 2", -115, {-110: 1}, "", "chest", 0, 0,
+                    resource_modifiers={f"{TEST_PREFIX}health": 3})
+    te7 = Equipment(f"{TEST_PREFIX} Equipment 3", -116, {-110: 1}, "", "legs", 0, 0,
+                    resource_modifiers={f"{TEST_PREFIX}health": 0.1})
+    te8 = Equipment(f"{TEST_PREFIX} Equipment 3", -117, {-110: 1}, "", "legs", 0, 0,
+                    resource_modifiers={f"{TEST_PREFIX}health": 0.1})
+    te9 = Equipment(f"{TEST_PREFIX} Equipment 3", -118, {-110: 1}, "", "legs", 0, 0,
+                    resource_modifiers={f"{TEST_PREFIX}health": -1})
+    te10 = Equipment(f"{TEST_PREFIX} Equipment 3", -119, {-110: 1}, "", "legs", 0, 0,
+                     resource_modifiers={f"{TEST_PREFIX}health": -0.25})
 
-    te11 = Usable("Test Usable 1", -120, {-110: 2}, "", requirements=[ResourceRequirement("tr_health", 2)])
-    te12 = Usable("Test Usable 1", -121, {-110: 5}, "", requirements=[ResourceRequirement("tr_health", 5)])
+    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
+    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
 
     item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
 
@@ -64,30 +71,34 @@ def pre_collect_setup():
 
     logger.info("Setting up resources...")
     from game.systems.entity import resource_manager
-    tr_health = Resource('tr_health', 40, 'Needed to live')
-    tr_sta = Resource('tr_stamina', 35, 'Tired without it')
-    tr_mana = Resource('tr_mana', 50, 'Magic-dependant')
+    tr_health = Resource(f'{TEST_PREFIX}health', 40, 'Needed to live')
+    tr_sta = Resource(f'{TEST_PREFIX}stamina', 35, 'Tired without it')
+    tr_mana = Resource(f'{TEST_PREFIX}mana', 50, 'Magic-dependant')
 
     resource_manager.register_resource(tr_sta)
     resource_manager.register_resource(tr_mana)
     resource_manager.register_resource(tr_health)
 
     logger.info("Setting up test abilities...")
-    ta_1 = Ability(name="Test Ability 1", description="ta_1", on_use="ta_1 used", target_mode=TargetMode.SINGLE)
-    ta_2 = Ability(name="Test Ability 2", description="ta_2", on_use="ta_2 used", target_mode=TargetMode.SINGLE_ENEMY,
-                   costs={"tr_health": 1})
-    ta_3 = Ability(name="Test Ability 3", description="ta_3", on_use="ta_3 used", target_mode=TargetMode.SINGLE_ALLY,
-                   costs={"tr_stamina": 2})
+
+    ta_1 = Ability(name=f"{TEST_PREFIX}Ability 1", description="ta_1", on_use="ta_1 used",
+                   target_mode=TargetMode.SINGLE)
+    ta_2 = Ability(name=f"{TEST_PREFIX}Ability 2", description="ta_2", on_use="ta_2 used",
+                   target_mode=TargetMode.SINGLE_ENEMY,
+                   costs={f"{TEST_PREFIX}health": 1})
+    ta_3 = Ability(name=f"{TEST_PREFIX}Ability 3", description="ta_3", on_use="ta_3 used",
+                   target_mode=TargetMode.SINGLE_ALLY,
+                   costs={f"{TEST_PREFIX}stamina": 2})
     ability_manager.register_ability(ta_1)
     ability_manager.register_ability(ta_2)
     ability_manager.register_ability(ta_3)
 
     logger.info("Setting up test entities...")
     test_entity_no_abilities = CombatEntity(name="Entity: No Abilities", id=-109, turn_speed=0)
-    te_ally_1 = CombatEntity(name="Test Ally 1", id=-110, turn_speed=2)
-    te_ally_2 = CombatEntity(name="Test Ally 2", id=-111, turn_speed=3)
-    te_enemy_1 = CombatEntity(name="Test Enemy 1", id=-112, turn_speed=4)
-    te_enemy_2 = CombatEntity(name="Test Enemy 2", id=-113, turn_speed=5)
+    te_ally_1 = CombatEntity(name=f"{TEST_PREFIX}Ally 1", id=-110, turn_speed=2)
+    te_ally_2 = CombatEntity(name=f"{TEST_PREFIX}Ally 2", id=-111, turn_speed=3)
+    te_enemy_1 = CombatEntity(name=f"{TEST_PREFIX}Enemy 1", id=-112, turn_speed=4)
+    te_enemy_2 = CombatEntity(name=f"{TEST_PREFIX}Enemy 2", id=-113, turn_speed=5)
 
     entity_manager.register_entity(te_ally_1)
     entity_manager.register_entity(te_ally_2)
@@ -97,6 +108,11 @@ def pre_collect_setup():
     # For each ability, teach it to each entity
     assert len(ability_manager._manifest) > 0
     for ability in ability_manager._manifest:
+
+        # Skip any non-testing abilities that might have gotten into the mix
+        if not ability.startswith(TEST_PREFIX):
+            continue
+
         for entity in entity_manager._manifest.values():
             if isinstance(entity, CombatEntity):
                 entity.ability_controller.learn(ability)

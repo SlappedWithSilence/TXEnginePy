@@ -5,6 +5,8 @@ import pytest
 from game.systems.combat.effect import ResourceEffect
 from game.systems.entity.entities import CombatEntity
 
+from .. import TEST_PREFIX
+
 dummy_entity = CombatEntity(
     id=-1,
     name='dummy'
@@ -13,23 +15,23 @@ dummy_entity = CombatEntity(
 
 def test_init_trivial():
     re = ResourceEffect(
-        "tr_health",
+        f"{TEST_PREFIX}health",
         -10,
         "Some text"
     )
 
-    assert re._resource_name == "tr_health"
+    assert re._resource_name == f"{TEST_PREFIX}health"
     assert re._adjust_quantity == -10
     assert re.trigger_message == "Some text"
 
 
 perform_cases_single_int = [
-    ResourceEffect("tr_health", -2),
-    ResourceEffect("tr_health", 3),
-    ResourceEffect("tr_stamina", -11),
-    ResourceEffect("tr_stamina", 4),
-    ResourceEffect("tr_mana", -100),
-    ResourceEffect("tr_mana", 600),
+    ResourceEffect(f"{TEST_PREFIX}health", -2),
+    ResourceEffect(f"{TEST_PREFIX}health", 3),
+    ResourceEffect(f"{TEST_PREFIX}stamina", -11),
+    ResourceEffect(f"{TEST_PREFIX}stamina", 4),
+    ResourceEffect(f"{TEST_PREFIX}mana", -100),
+    ResourceEffect(f"{TEST_PREFIX}mana", 600),
 ]
 
 
@@ -52,16 +54,16 @@ def test_perform_single_int(resource_effect: ResourceEffect):
 
 
 perform_cases_multiple_int = [
-    [[ResourceEffect("tr_health", -2), ResourceEffect("tr_health", 3)],
-     {"tr_health": 1}],
-    [[ResourceEffect("tr_stamina", -11), ResourceEffect("tr_stamina", 4)],
-     {"tr_stamina": -7}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_mana", 6)],
-     {"tr_mana": 2}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_health", 6)],
-     {"tr_mana": -4, "tr_health": 6}],
-    [[ResourceEffect("tr_mana", -4), ResourceEffect("tr_mana", 6), ResourceEffect("tr_stamina", 3)],
-     {"tr_mana": 2, "tr_stamina": 3}]
+    [[ResourceEffect(f"{TEST_PREFIX}health", -2), ResourceEffect(f"{TEST_PREFIX}health", 3)],
+     {f"{TEST_PREFIX}health": 1}],
+    [[ResourceEffect(f"{TEST_PREFIX}stamina", -11), ResourceEffect(f"{TEST_PREFIX}stamina", 4)],
+     {f"{TEST_PREFIX}stamina": -7}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}mana", 6)],
+     {f"{TEST_PREFIX}mana": 2}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}health", 6)],
+     {f"{TEST_PREFIX}mana": -4, f"{TEST_PREFIX}health": 6}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}mana", 6), ResourceEffect(f"{TEST_PREFIX}stamina", 3)],
+     {f"{TEST_PREFIX}mana": 2, f"{TEST_PREFIX}stamina": 3}]
 ]
 
 
@@ -97,12 +99,12 @@ def test_perform_multiple_int(resource_effects: list[ResourceEffect], net_res_ch
 
 
 perform_cases_single_float = [
-    ResourceEffect("tr_health", 0.1),  # +10%
-    ResourceEffect("tr_health", -0.1),  # -10%
-    ResourceEffect("tr_stamina", -0.33),  # -33%
-    ResourceEffect("tr_stamina", 0.3),  # +30%
-    ResourceEffect("tr_mana", -1.0),  # -100%  # Tests min enforcement
-    ResourceEffect("tr_mana", 1.0),  # + 100% : Tests max enforcement
+    ResourceEffect(f"{TEST_PREFIX}health", 0.1),  # +10%
+    ResourceEffect(f"{TEST_PREFIX}health", -0.1),  # -10%
+    ResourceEffect(f"{TEST_PREFIX}stamina", -0.33),  # -33%
+    ResourceEffect(f"{TEST_PREFIX}stamina", 0.3),  # +30%
+    ResourceEffect(f"{TEST_PREFIX}mana", -1.0),  # -100%  # Tests min enforcement
+    ResourceEffect(f"{TEST_PREFIX}mana", 1.0),  # + 100% : Tests max enforcement
 ]
 
 
@@ -131,16 +133,16 @@ def test_perform_single_float(resource_effect: ResourceEffect):
 
 
 perform_cases_multiple_float = [
-    [[ResourceEffect("tr_health", 0.33), ResourceEffect("tr_health", -0.2)],
-     {"tr_health": 1}],
-    [[ResourceEffect("tr_stamina", -0.33), ResourceEffect("tr_stamina", 0.5)],
-     {"tr_stamina": 0}],
-    [[ResourceEffect("tr_mana", -1.0), ResourceEffect("tr_mana", 1.0)],
-     {"tr_mana": -15}],
-    [[ResourceEffect("tr_mana", -0.5), ResourceEffect("tr_health", .2)],
-     {"tr_mana": -7, "tr_health": 3}],
-    [[ResourceEffect("tr_mana", -0.33), ResourceEffect("tr_mana", 0.2), ResourceEffect("tr_stamina", 0.33)],
-     {"tr_mana": -3, "tr_stamina": 5}]
+    [[ResourceEffect(f"{TEST_PREFIX}health", 0.33), ResourceEffect(f"{TEST_PREFIX}health", -0.2)],
+     {f"{TEST_PREFIX}health": 1}],
+    [[ResourceEffect(f"{TEST_PREFIX}stamina", -0.33), ResourceEffect(f"{TEST_PREFIX}stamina", 0.5)],
+     {f"{TEST_PREFIX}stamina": 0}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -1.0), ResourceEffect(f"{TEST_PREFIX}mana", 1.0)],
+     {f"{TEST_PREFIX}mana": -15}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -0.5), ResourceEffect(f"{TEST_PREFIX}health", .2)],
+     {f"{TEST_PREFIX}mana": -7, f"{TEST_PREFIX}health": 3}],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -0.33), ResourceEffect(f"{TEST_PREFIX}mana", 0.2), ResourceEffect(f"{TEST_PREFIX}stamina", 0.33)],
+     {f"{TEST_PREFIX}mana": -3, f"{TEST_PREFIX}stamina": 5}]
 ]
 
 

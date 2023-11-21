@@ -5,7 +5,7 @@ from game.cache import cache_element, from_cache, delete_element
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler
 from game.systems.entity.entities import CombatEntity
-
+from .. import TEST_PREFIX
 
 def get_test_allies() -> list[int]:
     """
@@ -80,10 +80,10 @@ def test_compute_turn_order():
 
     logger.debug([ce.name for ce in engine._turn_order])
 
-    assert engine._turn_order[0].name == "Test Enemy 2"
-    assert engine._turn_order[1].name == "Test Enemy 1"
-    assert engine._turn_order[2].name == "Test Ally 2"
-    assert engine._turn_order[3].name == "Test Ally 1"
+    assert engine._turn_order[0].name == f"{TEST_PREFIX}Enemy 2"
+    assert engine._turn_order[1].name == f"{TEST_PREFIX}Enemy 1"
+    assert engine._turn_order[2].name == f"{TEST_PREFIX}Ally 2"
+    assert engine._turn_order[3].name == f"{TEST_PREFIX}Ally 1"
     assert engine._turn_order[4].name == "Player"
 
 
@@ -163,12 +163,12 @@ def test_get_relative_allies():
 
 
 test_get_target_single_cases = [
-    ["ABSOLUTE_ALLY", "Test Ability 1", "ANY"],
-    ["ABSOLUTE_ALLY", "Test Ability 2", "ABSOLUTE_ENEMY"],
-    ["ABSOLUTE_ALLY", "Test Ability 3", "ABSOLUTE_ALLY"],
-    ["ABSOLUTE_ENEMY", "Test Ability 1", "ANY"],
-    ["ABSOLUTE_ENEMY", "Test Ability 2", "ABSOLUTE_ALLY"],
-    ["ABSOLUTE_ENEMY", "Test Ability 3", "ABSOLUTE_ENEMY"],
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 1", "ANY"],
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 2", "ABSOLUTE_ENEMY"],
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 3", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 1", "ANY"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 2", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 3", "ABSOLUTE_ENEMY"],
 ]
 
 
