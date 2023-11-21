@@ -74,23 +74,35 @@ def pre_collect_setup():
 
     logger.info("Setting up test abilities...")
     ta_1 = Ability(name="Test Ability 1", description="ta_1", on_use="ta_1 used", target_mode=TargetMode.SINGLE)
-    ta_2 = Ability(name="Test Ability 2", description="ta_2", on_use="ta_2 used", target_mode=TargetMode.SINGLE,
+    ta_2 = Ability(name="Test Ability 2", description="ta_2", on_use="ta_2 used", target_mode=TargetMode.SINGLE_ENEMY,
                    costs={"tr_health": 1})
-    ta_3 = Ability(name="Test Ability 3", description="ta_3", on_use="ta_3 used", target_mode=TargetMode.SINGLE,
+    ta_3 = Ability(name="Test Ability 3", description="ta_3", on_use="ta_3 used", target_mode=TargetMode.SINGLE_ALLY,
                    costs={"tr_stamina": 2})
     ability_manager.register_ability(ta_1)
     ability_manager.register_ability(ta_2)
     ability_manager.register_ability(ta_3)
 
     logger.info("Setting up test entities...")
-    te_ally_1 = CombatEntity(name="Test Ally", id=-110, turn_speed=2)
-    te_ally_1.ability_controller.learn("Test Ability 1")
-    te_ally_1.ability_controller.learn("Test Ability 2")
-    te_ally_1.ability_controller.learn("Test Ability 3")
-    te_enemy_1 = CombatEntity(name="Test Enemy", id=-111, turn_speed=3)
+    test_entity_no_abilities = CombatEntity(name="Entity: No Abilities", id=-109, turn_speed=0)
+    te_ally_1 = CombatEntity(name="Test Ally 1", id=-110, turn_speed=2)
+    te_ally_2 = CombatEntity(name="Test Ally 2", id=-111, turn_speed=3)
+    te_enemy_1 = CombatEntity(name="Test Enemy 1", id=-112, turn_speed=4)
+    te_enemy_2 = CombatEntity(name="Test Enemy 2", id=-113, turn_speed=5)
 
     entity_manager.register_entity(te_ally_1)
+    entity_manager.register_entity(te_ally_2)
     entity_manager.register_entity(te_enemy_1)
+    entity_manager.register_entity(te_enemy_2)
+
+    # For each ability, teach it to each entity
+    assert len(ability_manager._manifest) > 0
+    for ability in ability_manager._manifest:
+        for entity in entity_manager._manifest.values():
+            if isinstance(entity, CombatEntity):
+                entity.ability_controller.learn(ability)
+
+    # Register late to avoid giving it abilities
+    entity_manager.register_entity(test_entity_no_abilities)
 
 
 pre_collect_setup()
