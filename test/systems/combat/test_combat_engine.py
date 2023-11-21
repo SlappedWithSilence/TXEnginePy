@@ -7,6 +7,7 @@ from game.systems.combat.combat_engine.phase_handler import PhaseHandler
 from game.systems.entity.entities import CombatEntity
 from .. import TEST_PREFIX
 
+
 def get_test_allies() -> list[int]:
     """
     Get a default list of generic ally CombatEntity objects.
@@ -195,3 +196,46 @@ def test_get_target_single(source_entity_type: str, ability: str, valid_targets:
             translate_target_str(source_entity_type)[0],
             ability):
         assert entity in translate_target_str(valid_targets)
+
+
+test_get_target_group_cases = [
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 4", "ALL"],
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 5", "ABSOLUTE_ENEMY"],
+    ["ABSOLUTE_ALLY", f"{TEST_PREFIX}Ability 6", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 4", "ALL"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 5", "ABSOLUTE_ALLY"],
+    ["ABSOLUTE_ENEMY", f"{TEST_PREFIX}Ability 6", "ABSOLUTE_ENEMY"]
+]
+
+
+@pytest.mark.parametrize("source_entity_type, ability, valid_group", test_get_target_group_cases)
+def test_get_target_group(source_entity_type, ability, valid_group):
+    delete_element("combat")
+
+    engine = get_generic_combat_instance()
+    allies: list[CombatEntity] = engine.allies
+    enemies: list[CombatEntity] = engine.enemies
+
+    def translate_target_str(target_type: str) -> list[CombatEntity]:
+        match target_type:
+            case "ABSOLUTE_ALLY":
+                return allies
+            case "ABSOLUTE_ENEMY":
+                return enemies
+            case "ALL":
+                return allies + enemies
+            case _:
+                raise RuntimeError("No such group")
+
+    resulting_group = engine.get_ability_targets(
+        translate_target_str(source_entity_type)[0],
+        ability
+    )
+
+    expected_group = translate_target_str(valid_group)
+
+    # Check that all returned entities are in the expected group
+    assert all([(ent in expected_group) for ent in resulting_group])
+
+    # Check that all expected entities are in the returned group
+    assert all([(ent in resulting_group) for ent in expected_group])
