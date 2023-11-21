@@ -80,7 +80,7 @@ class CombatEngine(FiniteStateDevice):
         self.current_phase_index: int = 0  # Index of current phase against self._PHASE_ORDER
 
         # The choice made by the active entity during the ACTION_PHASE combat phase
-        self.active_entity_choice: tuple[entities.CombatEntity, int | str | None] = None
+        self.active_entity_choice: ChoiceData = None
 
         self._build_states()
 
@@ -245,24 +245,17 @@ class CombatEngine(FiniteStateDevice):
             case _:
                 raise CombatError(f'Unknown targeting mode: {target_mode}')
 
-    def submit_entity_choice(self, entity: entities.CombatEntity, choice: ChoiceData) -> None:
+    def submit_entity_choice(self, choice: ChoiceData) -> None:
         """
         Submit an entity's turn action to the combat engine from any context.
         """
 
         # Type and value checking
-        if not isinstance(entity, entities.CombatEntity):
-            raise TypeError("Cannot submit choice for non-CombatEntity object!")
-
         if choice is not None and type(choice) is not ChoiceData:
             raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected type ChoiceData!")
 
-        if entity != self.active_entity:
-            raise CombatError("Entity paired with choice does not match active_entity!",
-                              {ValueError: "Invalid 'entity' field"})
-
         # Store choice for later
-        self.active_entity_choice = (entity, choice)
+        self.active_entity_choice = choice
 
     def handle_turn_action(self, choice: ChoiceData) -> None:
         """
@@ -386,7 +379,7 @@ class CombatEngine(FiniteStateDevice):
 
         @FiniteStateDevice.state_logic(self, self.States.EXECUTE_ENTITY_CHOICE, InputType.SILENT)
         def logic(_: any):
-            self.handle_turn_action(self.active_entity_choice[1])
+            self.handle_turn_action(self.active_entity_choice)
             self.set_state(self.States.DETECT_COMBAT_TERMINATION)
 
         @FiniteStateDevice.state_content(self, self.States.EXECUTE_ENTITY_CHOICE)
