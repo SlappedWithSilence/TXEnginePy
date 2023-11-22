@@ -684,6 +684,11 @@ class ViewResourcesEvent(EntityTargetMixin, Event):
 
 
 class CombatEvent(Event):
+    """An Event that functions as a wrapper for an instance of a CombatEngine object.
+
+        Since only a single CombatEngine can go on the StateDeviceStack at once, the instantiation of the CombatEngine
+        is placed behind the Default state to avoid premature creation.
+    """
 
     class States(Enum):
         DEFAULT = 0
