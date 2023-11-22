@@ -2,8 +2,38 @@
   "content" : [
     {
       "class" : "Entity",
-      "id" : -1,
-      "name" : "SomeEntity",
+      "id" : 0,
+      "name" : "Entity A",
+      "inventory" : {
+          "class" : "InventoryController",
+          "manifest" : [
+            [0, 3],
+            [1, 2]
+          ]
+      }
+    },
+    {
+      "class" : "CombatEntity",
+      "id" : 1,
+      "name" : "CombatEntity A",
+      "xp_yield" : 1,
+      "turn_speed" : 1,
+      "abilities": ["Proto Ability", "Etchings of Iron"],
+      "inventory" : {
+          "class" : "InventoryController",
+          "manifest" : [
+            [0, 3],
+            [1, 2]
+          ]
+        }
+      },
+    {
+      "class" : "CombatEntity",
+      "id" : 2,
+      "name" : "Entity B",
+      "xp_yield": 1,
+      "turn_speed" : 1,
+      "abilities": ["Proto Ability", "Etchings of Iron"],
       "inventory" : {
           "class" : "InventoryController",
           "manifest" : [
@@ -12,5 +42,6 @@
           ]
         }
       }
+
   ]
 }

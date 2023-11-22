@@ -19,6 +19,16 @@
         "wrap" : {
           "class" : "ViewSummaryEvent"
         }
+      },
+      {
+        "class" : "WrapperAction",
+        "menu_name" : "Do Combat",
+        "activation_text" : "",
+        "wrap" : {
+          "class" : "CombatEvent",
+          "allies" : [1],
+          "enemies" : [2]
+        }
       }
     ]
   },
