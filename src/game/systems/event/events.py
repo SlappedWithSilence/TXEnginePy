@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from enum import Enum
 
+import game
 import game.systems.currency as currency
 import game.systems.entity as entities
 import game.systems.flag as flag
@@ -12,6 +13,7 @@ from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
+from game.systems.combat.combat_engine.combat_engine import CombatEngine
 from game.systems.combat.combat_engine.termination_handler import TerminationHandler
 from game.systems.crafting import recipe_manager
 from game.systems.entity.resource import ResourceController
@@ -691,14 +693,30 @@ class CombatEvent(Event):
     def __init__(self, allies: list[int], enemies: list[int], termination_conditions: list[TerminationHandler] = None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
-        self._allies = allies
-        self._enemies = enemies
-        self._termination_conditions = termination_conditions
+        self._allies: list[int] = allies
+        self._enemies: list[int] = enemies
+        self._termination_conditions: list[TerminationHandler] | None = termination_conditions
 
         self._setup_states()
 
     def _setup_states(self):
-        pass
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.set_state(self.States.LAUNCH_COMBAT_ENGINE)
+
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        @FiniteStateDevice.state_logic(self, self.States.LAUNCH_COMBAT_ENGINE, InputType.SILENT)
+        def logic(_: any) -> None:
+            combat = CombatEngine(self._allies, self._enemies, self._termination_conditions)
+            game.state_device_controller.add_state_device(combat)
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.LAUNCH_COMBAT_ENGINE)
+        def content() -> dict:
+            return ComponentFactory.get()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CombatEvent", LoadableMixin.ATTR_KEY])
