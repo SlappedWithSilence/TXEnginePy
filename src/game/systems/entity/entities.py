@@ -227,18 +227,19 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
     @cached([LoadableMixin.LOADER_KEY, "CombatEntity", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
-        Instantiate an Entity object from a JSON blob.
+        Instantiate a CombatEntity object from a JSON blob.
 
         Args:
             json: a dict-form representation of a json object
 
-        Returns: an Entity instance with the properties defined in the JSON
+        Returns: a CombatEntity instance with the properties defined in the JSON
 
         Required JSON fields:
         - name: str
         - id: int
         - xp_yield: int
         - turn_speed: int
+        - abilities: [str]
 
         Optional JSON fields:
         - combat_provider (str)
@@ -246,16 +247,16 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         - resource_controller: ResourceController
         - equipment_controller: EquipmentController
         - coin_purse: CoinPurse
-        - abilities: [str]
+
         """
 
         required_fields = [
-            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int)
+            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int), ("abilities", list)
         ]
 
         optional_fields = [
             ("combat_provider", str), ("inventory_controller", dict), ("resource_controller", dict),
-            ("equipment_controller", dict), ("coin_purse", dict), ("abilities", list)
+            ("equipment_controller", dict), ("coin_purse", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
