@@ -2,7 +2,7 @@
   "content" : [
     {
       "class" : "Entity",
-      "id" : 0,
+      "id" : 1,
       "name" : "Entity A",
       "inventory" : {
           "class" : "InventoryController",
@@ -14,7 +14,7 @@
     },
     {
       "class" : "CombatEntity",
-      "id" : 1,
+      "id" : 2,
       "name" : "CombatEntity A",
       "xp_yield" : 1,
       "turn_speed" : 1,
@@ -29,7 +29,7 @@
       },
     {
       "class" : "CombatEntity",
-      "id" : 2,
+      "id" : 3,
       "name" : "Entity B",
       "xp_yield": 1,
       "turn_speed" : 1,
