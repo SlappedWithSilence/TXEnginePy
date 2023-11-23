@@ -12,7 +12,8 @@ from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
-from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin
+from game.systems.combat.combat_engine.choice_data import ChoiceData
+from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin, PlayerAgentMixin
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
 from game.systems.skill.skill_controller import SkillController
@@ -286,7 +287,7 @@ class CraftingMixin:
         self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
 
 
-class Player(CraftingMixin, CombatEntity):
+class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Player", LoadableMixin.ATTR_KEY])
@@ -296,7 +297,7 @@ class Player(CraftingMixin, CombatEntity):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def make_choice(self) -> str | int | None:
+    def make_choice(self) -> ChoiceData:
         """
         Build a PlayerCombatChoiceEvent and place it onto the DeviceStack.
         """
