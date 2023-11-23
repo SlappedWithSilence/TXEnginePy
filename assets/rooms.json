@@ -26,8 +26,8 @@
         "activation_text" : "",
         "wrap" : {
           "class" : "CombatEvent",
-          "allies" : [1],
-          "enemies" : [2]
+          "allies" : [2],
+          "enemies" : [3]
         }
       }
     ]
