@@ -8,7 +8,7 @@ from loguru import logger
 
 import game
 import game.systems.entity.entities as entities
-from game.cache import from_cache, cache_element, delete_element
+from game.cache import from_cache, cache_element, delete_element, get_config
 from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
 from game.structures.messages import ComponentFactory
@@ -16,7 +16,7 @@ from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
 from game.systems.combat.combat_engine.termination_handler import TerminationHandler, PlayerResourceCondition, \
-    EnemyResourceCondition
+    EnemyResourceCondition, GroupResourceCondition
 
 
 class CombatEngine(FiniteStateDevice):
@@ -309,9 +309,13 @@ class CombatEngine(FiniteStateDevice):
         for a win condition.
         """
 
+        primary_resource = get_config()['resources']['primary_resource']
+
         return [
-            PlayerResourceCondition("Heath", 0, TerminationHandler.TerminationMode.WIN),
-            EnemyResourceCondition("Heath", 0, TerminationHandler.TerminationMode.LOSS),
+            PlayerResourceCondition(
+                primary_resource, 0, TerminationHandler.TerminationMode.WIN, GroupResourceCondition.Mode.LESS_THAN),
+            EnemyResourceCondition(
+                primary_resource, 0, TerminationHandler.TerminationMode.LOSS, GroupResourceCondition.Mode.LESS_THAN),
         ]
 
     @classmethod
@@ -391,11 +395,17 @@ class CombatEngine(FiniteStateDevice):
             loss = False
             win = False
             for termination_condition in self._termination_conditions:
-                if termination_condition.is_conditions_met():
-                    if termination_condition.mode == TerminationHandler.TerminationMode.WIN:
-                        win = True
-                    else:
-                        loss = True
+                try:
+                    if termination_condition.is_conditions_met():
+                        if termination_condition.mode == TerminationHandler.TerminationMode.WIN:
+                            win = True
+                        else:
+                            loss = True
+
+                except Exception as e:
+                    logger.error("An error was raised while running a TerminationHandler.")
+                    logger.error(f"class: {termination_condition.__class__}")
+                    raise e
 
             if loss:
                 self.set_state(self.States.PLAYER_LOSS)
