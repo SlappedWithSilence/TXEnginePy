@@ -61,6 +61,7 @@ class ChoiceActivator(PhaseHandler):
         Compute the choice made by the active entity and pass it back to the combat_engine instance to handle execution.
         """
 
+        logger.debug(f"Running ChoiceActivator logic for entity {combat_engine.active_entity}")
         combat_engine.active_entity.make_choice()
 
 

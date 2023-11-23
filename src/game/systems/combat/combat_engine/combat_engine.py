@@ -245,16 +245,25 @@ class CombatEngine(FiniteStateDevice):
             case _:
                 raise CombatError(f'Unknown targeting mode: {target_mode}')
 
-    def submit_entity_choice(self, choice: ChoiceData) -> None:
+    def submit_entity_choice(self, entity, choice: ChoiceData) -> None:
         """
         Submit an entity's turn action to the combat engine from any context.
         """
+
+        # Validate the entity that's submitted a choice
+        from game.systems.entity.entities import CombatEntity
+        if not isinstance(entity, CombatEntity):
+            raise TypeError(f"Entity's that submit choices must be of type CombatEntity! Got {type(entity)} instead.")
+
+        if entity != self.active_entity:
+            raise RuntimeError("An entity that is not the active entity has submitted a choice!")
 
         # Type and value checking
         if choice is not None and type(choice) is not ChoiceData:
             raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected type ChoiceData!")
 
         # Store choice for later
+        logger.debug(f"Storing choice {choice} for entity {entity}")
         self.active_entity_choice = choice
 
     def handle_turn_action(self, choice: ChoiceData) -> None:

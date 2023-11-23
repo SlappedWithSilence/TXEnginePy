@@ -3,9 +3,12 @@ from __future__ import annotations
 import weakref
 from abc import ABC
 
+from loguru import logger
+
 import game
 from game.cache import from_cache
 from game.structures.errors import CombatError
+from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
 from game.systems.combat.combat_engine.player_combat_choice_event import PlayerCombatChoiceEvent
 
@@ -38,7 +41,7 @@ class CombatAgentMixin(ABC):
         else:
             raise TypeError(f"Cannot set combat engine to object of type {type(element)}!")
 
-    def _choice_logic(self) -> str | int | None:
+    def _choice_logic(self) -> ChoiceData:
         """
         Get an Entity's choice for its turn during Combat.
 
@@ -46,10 +49,6 @@ class CombatAgentMixin(ABC):
         - Pass
         - Use an Item
         - Use an Ability
-
-        To pass, return None.
-        To use an item, return its ID
-        To use an ability, return its name
 
         To collect information about the combat's context, retrieve it via  from_cache("combat")
         """
@@ -61,6 +60,7 @@ class CombatAgentMixin(ABC):
         to the combat engine.
         """
 
+        logger.debug(f"Running make_choice for entity {self}")
         from_cache("combat").submit_entity_choice(self, self._choice_logic())
 
 
@@ -70,8 +70,8 @@ class NaiveAgentMixin(CombatAgentMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _choice_logic(self) -> str | int | None:
-        return None  # TODO: Implement
+    def _choice_logic(self) -> ChoiceData:
+        return ChoiceData(ChoiceData.ChoiceType.PASS)
 
 
 class IntelligentAgentMixin(CombatAgentMixin):
@@ -80,8 +80,8 @@ class IntelligentAgentMixin(CombatAgentMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _choice_logic(self) -> str | int | None:
-        return None  # TODO: Implement
+    def _choice_logic(self) -> ChoiceData:
+        return ChoiceData(ChoiceData.ChoiceType.PASS)
 
 
 class MultiAgentMixin(CombatAgentMixin):
@@ -92,8 +92,8 @@ class MultiAgentMixin(CombatAgentMixin):
         super().__init__(*args, **kwargs)
         self.choice_provider: CombatAgentMixin = MultiAgentMixin.AGENT_MAP[combat_provider]()
 
-    def _choice_logic(self) -> str | int | None:
-        return self.choice_provider.make_choice()
+    def _choice_logic(self) -> ChoiceData:
+        return self.choice_provider._choice_logic()
 
 
 class PlayerAgentMixin(CombatAgentMixin):
