@@ -1,8 +1,9 @@
 import copy
 import inspect
 
-import game.systems.entity as entity
-from game.cache import cached
+from loguru import logger
+
+from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
@@ -182,7 +183,7 @@ class ResourceController:
                     "int": [],
                     "float": [],
                 }
-            } for r in entity.resource_manager.all_resources
+            } for r in from_cache("managers.ResourceManager").all_resources
         }
 
         if resources:
@@ -223,7 +224,12 @@ class ResourceController:
         """
         Get a live-instance of the Resource object within the ResourceController
         """
-        return self.resources[resource_name]['instance']
+        try:
+            return self.resources[resource_name]['instance']
+        except KeyError as e:
+            logger.error(f"No resource {resource_name} found!")
+            logger.debug(f"Available resources: {self.resources.items()}")
+            raise e
 
     def set_instance(self, resource: Resource) -> None:
         """
