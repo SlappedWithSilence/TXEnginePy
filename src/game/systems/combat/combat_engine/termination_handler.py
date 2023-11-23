@@ -17,10 +17,10 @@ class TerminationHandler(LoadableMixin, ABC):
         WIN = 0
         LOSS = 1
 
-    def __init__(self, owner=None, *args, **kwargs):
+    def __init__(self, mode: TerminationMode, owner=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._owner = owner  # CombatEngine
-        self.mode: TerminationHandler.TerminationMode = None
+        self.mode: TerminationHandler.TerminationMode = mode
 
     @property
     def owner(self):
@@ -61,10 +61,12 @@ class GroupResourceCondition(TerminationHandler, ABC):
 
     def __init__(self, resource_name: str, resource_value: int | float,
                  termination_mode: TerminationHandler.TerminationMode,
+                 resource_mode: Mode,
                  owner=None):
         super().__init__(owner)
         self.resource_name: str = resource_name
         self.resource_value: int | float = resource_value
+        self.resource_mode: GroupResourceCondition.Mode = resource_mode
         self.termination_mode: TerminationHandler.TerminationMode = termination_mode
 
     @property
@@ -87,7 +89,7 @@ class GroupResourceCondition(TerminationHandler, ABC):
 
         resources = [entity.resource_controller[self.resource_name] for entity in self.group]
 
-        match self.mode:
+        match self.resource_mode:
             case self.Mode.EQUAL_TO:
                 if type(self.resource_value) != int:
                     raise TypeError(f"Invalid resource_value type! Expected float, got {type(self.resource_value)}")
@@ -131,6 +133,7 @@ class GroupResourceCondition(TerminationHandler, ABC):
         Required JSON fields:
         - resource_name: str
         - resource_value: str
+        - resource_mode: Mode
         - termination_mode: TerminationMode
 
         Optional JSON fields:
@@ -138,14 +141,15 @@ class GroupResourceCondition(TerminationHandler, ABC):
         """
 
         required_fields = [
-            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str), ("resource_mode", str))
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
         return GroupResourceCondition(
             json["resource_name"],
             json["resource_value"],
-            GroupResourceCondition.TerminationMode(json["termination_mode"])
+            GroupResourceCondition.TerminationMode(json["termination_mode"]),
+            GroupResourceCondition.Mode(json["resource_mode"])
         )
 
 
@@ -160,7 +164,7 @@ class AllyResourceCondition(GroupResourceCondition):
 
     @property
     def group(self) -> list:
-        return self.owner.allies
+        return from_cache("combat").allies
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "AllyResourceCondition", LoadableMixin.ATTR_KEY])
@@ -178,14 +182,15 @@ class AllyResourceCondition(GroupResourceCondition):
         """
 
         required_fields = [
-            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str), ("resource_mode", str))
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
         return AllyResourceCondition(
             json["resource_name"],
             json["resource_value"],
-            AllyResourceCondition.TerminationMode(json["termination_mode"])
+            AllyResourceCondition.TerminationMode(json["termination_mode"]),
+            GroupResourceCondition.Mode(json["resource_mode"])
         )
 
 
@@ -197,7 +202,7 @@ class EnemyResourceCondition(GroupResourceCondition):
 
     @property
     def group(self) -> list:
-        return self.owner.enemies
+        return from_cache("combat").enemies
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "EnemyResourceCondition", LoadableMixin.ATTR_KEY])
@@ -215,14 +220,15 @@ class EnemyResourceCondition(GroupResourceCondition):
         """
 
         required_fields = [
-            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str), ("resource_mode", str))
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
         return EnemyResourceCondition(
             json["resource_name"],
             json["resource_value"],
-            GroupResourceCondition.TerminationMode(json["termination_mode"])
+            GroupResourceCondition.TerminationMode(json["termination_mode"]),
+            GroupResourceCondition.Mode(json["resource_mode"])
         )
 
 
@@ -237,16 +243,7 @@ class PlayerResourceCondition(GroupResourceCondition):
 
     @property
     def group(self) -> list:
-        return from_cache("player")
-
-    class Mode(Enum):
-        """
-        Operational mode for PlayerResourceCondition.
-        """
-
-        EQUAL_TO = "equal_to"
-        GREATER_THAN = "greater_than"
-        LESS_THAN = "less_than"
+        return [from_cache("player")]  # GroupResourceCondition::is_conditions_met expects a list of entities
 
     @property
     def trigger_message(self) -> list[str | StringContent]:
@@ -271,12 +268,13 @@ class PlayerResourceCondition(GroupResourceCondition):
         """
 
         required_fields = [
-            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str))
+            ("resource_name", str), ("resource_value", (int, float), ("termination_mode", str), ("resource_mode", str))
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
         return PlayerResourceCondition(
             json["resource_name"],
             json["resource_value"],
-            PlayerResourceCondition.TerminationMode(json["termination_mode"])
+            PlayerResourceCondition.TerminationMode(json["termination_mode"]),
+            GroupResourceCondition.Mode(json["resource_mode"])
         )
