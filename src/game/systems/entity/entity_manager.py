@@ -12,6 +12,7 @@ class EntityManager(manager.Manager):
     """
 
     ENTITY_ASSET_PATH = "entities"
+    RESERVED_ENTITY_IDS = [0]
 
     def __init__(self):
         super().__init__()
@@ -24,12 +25,13 @@ class EntityManager(manager.Manager):
     def __contains__(self, item) -> bool:
         return self._manifest.__contains__(item)
 
-    def register_entity(self, entity: entities.Entity) -> None:
+    def register_entity(self, entity: entities.Entity, override_reserved_ids: bool = False) -> None:
         """
         Register the entity object with the EntityManager
 
         Args:
             entity (Entity): The object to register:
+            override_reserved_ids (bool): If true, can override a reserved entity ID
 
         Returns: None
         """
@@ -41,6 +43,9 @@ class EntityManager(manager.Manager):
         # Value Check
         if entity.id in self._manifest:
             raise ValueError(f"Cannot register entity with duplicate id:{entity.id}")
+
+        if entity.id in self.RESERVED_ENTITY_IDS and not override_reserved_ids:
+            raise ValueError(f"Cannot register entity with reserved ID {entity.id}!")
 
         self._manifest[entity.id] = entity
 
