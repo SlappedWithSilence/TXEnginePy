@@ -290,9 +290,3 @@ class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-    def make_choice(self) -> ChoiceData:
-        """
-        Build a PlayerCombatChoiceEvent and place it onto the DeviceStack.
-        """
-        pass
