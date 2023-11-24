@@ -193,12 +193,6 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         self.turn_speed = turn_speed
         self.active_effects: dict[CombatPhase, list[effects.CombatEffect]] = {phase: [] for phase in CombatPhase}
 
-    def make_choice(self) -> str | int | None:
-        """
-        Compute the next action that should be taken during combat.
-        """
-        pass
-
     def acquire_effect(self, effect: effects.CombatEffect, phase: CombatPhase) -> None:
         """
         Ingest an effect and store it in a phase's list.
