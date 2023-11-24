@@ -379,7 +379,7 @@ class CombatEngine(FiniteStateDevice):
                 return
 
             for handler_cls in self.PHASE_HANDLERS[self.current_phase]:
-                handler_cls().handle_phase(self)
+                handler_cls().handle_phase()
 
             self.set_state(self.States.DETECT_COMBAT_TERMINATION)
 
