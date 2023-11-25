@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from .enums import InputType
 from game.formatting import get_style
-from ..cache import from_cache
+from ..cache import from_cache, get_config
 
 
 def _to_style_args(form: list[str] | str) -> list[str]:
@@ -71,8 +71,8 @@ class ComponentFactory:
     @classmethod
     def get(cls,
             content: list[str | StringContent] | None = None,
-            options: list[list[str | StringContent]] | None = None,
-            is_combat_frame: bool = False) -> dict[str, list]:
+            options: list[list[str | StringContent]] | None = None
+            ) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
 
@@ -80,7 +80,6 @@ class ComponentFactory:
             content: A list of str or str-like objects. This is the main text the user sees.
             options: A list of lists of str or str-like objects. If there are options for the user to choose from within
                      a given frame, they are embedded inside 'options'.
-            is_combat_frame: If true, auto-include data from the active combat.
 
         Returns: A structured dict containing all the passed fields.
         """
@@ -92,15 +91,15 @@ class ComponentFactory:
 
             import game.systems.entity.entities as entities
 
-            if type(entity) != entities.CombatEntity:
+            if not isinstance(entity, entities.CombatEntity):
                 raise TypeError(f"scrape_entity expected object of type CombatEntity! Got {type(entity)} instead!")
-
+            primary_resource = get_config()["resources"]["primary_resource"]
             return {
                 "name": entity.name,
                 "id": entity.id,
-                "primary_resource_name": entity.resource_controller.primary_resource.name,
-                "primary_resource_val": entity.resource_controller.primary_resource.value,
-                "primary_resource_max": entity.resource_controller.primary_resource.max
+                "primary_resource_name": primary_resource,
+                "primary_resource_val": entity.resource_controller[primary_resource].value,
+                "primary_resource_max": entity.resource_controller[primary_resource].max
             }
 
         if content and type(content) != list:
@@ -113,6 +112,7 @@ class ComponentFactory:
             "content": content,
             "options": options,
         }
+        is_combat_frame = (from_cache("combat") is not None)
 
         if is_combat_frame:
             data["allies"] = [scrape_entity(e) for e in from_cache("combat").allies],
