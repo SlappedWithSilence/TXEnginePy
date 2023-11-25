@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 from loguru import logger
@@ -73,7 +75,7 @@ class PlayerCombatChoiceEvent(Event):
                                                "What would you like to do?")
 
         # CHOOSE_AN_ABILITY
-        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.INT)
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_AN_ABILITY, InputType.SILENT)
         def logic(_: any) -> None:
             choose_ability_event = SelectElementEventFactory.get_select_ability_event(self._entity, False, False)
             self._links["CHOOSE_AN_ABILITY"] = choose_ability_event.link()
@@ -140,6 +142,10 @@ class PlayerCombatChoiceEvent(Event):
             # Generate a storage link and cache it in _links
             self._links['CHOOSE_AN_ITEM'] = select_usable_event.link()
 
+            # Add s_u_e to event stack
+            game.state_device_controller.add_state_device(select_usable_event)
+
+            # Transition state
             self.set_state(self.States.DETECT_ITEM_USABLE)
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
@@ -149,16 +155,21 @@ class PlayerCombatChoiceEvent(Event):
         # DETECT_ITEM_USABLE
         @FiniteStateDevice.state_logic(self, self.States.DETECT_ITEM_USABLE, InputType.SILENT)
         def logic(_: any) -> None:
+            from game.systems.item import Usable
 
             # Decode the linked storage ID to retrieve the ID of the item selected by the user
             chosen_item_id = from_storage(self._links["CHOOSE_AN_ITEM"]['selected_item_id'])
 
-            instance_of_chosen_item = items.item_manager.get_instance(chosen_item_id)  # Of type Usable
+            if chosen_item_id is None:
+                self.set_state(self.States.CHOOSE_TURN_OPTION)  # Return to main state
+                return
+
+            instance_of_chosen_item: Usable = items.item_manager.get_instance(chosen_item_id)  # Of type Usable
             entity_can_use_item: bool = instance_of_chosen_item.is_requirements_fulfilled(
                 self._entity)  # Store to avoid re-computation
 
             #  If the user actually chose an Item, store that info in a choice_data and move on
-            if chosen_item_id is not None and entity_can_use_item:
+            if entity_can_use_item:
                 self._choice_data = ChoiceData(ChoiceData.ChoiceType.ITEM, item_id=chosen_item_id)
                 self.set_state(self.States.SUBMIT_CHOICE)
 
@@ -166,9 +177,8 @@ class PlayerCombatChoiceEvent(Event):
             elif not entity_can_use_item:
                 self.set_state(self.States.CANNOT_USE_ITEM)
 
-            # Item is None, so User didn't choose anything
             else:
-                self.set_state(self.States.CHOOSE_TURN_OPTION)  # Return to main state
+                raise RuntimeError("Something went wrong with PlayerCombatChoiceEvent")
 
         @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
         def content():
