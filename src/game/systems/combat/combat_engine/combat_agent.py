@@ -101,7 +101,7 @@ class PlayerAgentMixin(CombatAgentMixin):
     A CombatAgentMixin that makes the player choose what to do.
     """
 
-    def _choice_logic(self) -> str | int | None:
+    def _choice_logic(self) -> ChoiceData:
         """
         Dead method. Ignore.
         """

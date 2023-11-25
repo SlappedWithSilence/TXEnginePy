@@ -1,5 +1,7 @@
 from enum import Enum
 
+from loguru import logger
+
 import game
 import game.systems.item as items
 from game.cache import cached, from_cache, from_storage
@@ -50,7 +52,6 @@ class PlayerCombatChoiceEvent(Event):
         self._entity = entity  # The entity for which to make a choice
         self._choice_data: ChoiceData = None
         self._available_turn_choices: dict[str, PlayerCombatChoiceEvent.States] = self._get_turn_choices()
-
 
         from game.systems.entity.entities import CombatEntity
         if not isinstance(self._entity, CombatEntity):
@@ -107,7 +108,7 @@ class PlayerCombatChoiceEvent(Event):
 
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
             self._choice_data = ChoiceData(
-                ChoiceData.ChoiceType.ABILITY, ability_name= chosen_ability,
+                ChoiceData.ChoiceType.ABILITY, ability_name=chosen_ability,
                 ability_target=from_cache("combat").get_ability_targets(self._entity, chosen_ability)[entity_index]
             )
             self.set_state(self.States.SUBMIT_CHOICE)
