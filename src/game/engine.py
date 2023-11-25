@@ -131,17 +131,13 @@ class Engine:
 
         # Starting from lowest, for each priority load the managers at that level
         for priority_level in ordered_priorities:
-            logger.debug(f"Loading managers at [Priority {priority_level}]")
             for manager_key in self.manager_load_priority[priority_level]:
                 logger.debug(f"[{manager_key}] Loading assets")
                 from_cache(['managers', manager_key]).load()  # Fetch manager from cache and load
                 manager_keys.remove(manager_key)  # Remove it from the list of remaining managers
 
         # For each manager that has no priority, load it
-        if len(manager_keys) > 0:
-            logger.debug("Loading un-prioritized Managers")
         for leftover_key in manager_keys:
-            logger.debug(f"[{leftover_key}] Loading assets")
             from_cache(['managers', leftover_key]).load()  # Fetch from cache and load manager
 
     def _startup(self):
@@ -151,7 +147,6 @@ class Engine:
         Returns: None
         """
         self._debug_init_early()
-        logger.info("Engine::startup")
         logger.info("Loading config...")
         # Load config values from disk
         if os.path.exists(conf_path):
@@ -177,8 +172,6 @@ class Engine:
         get_cache()["player_location"] = get_config()["room"]["default_id"]
 
         self._load_assets()
-
-        logger.info("Engine::startup.done")
         self._debug_init_late()
 
     def _shutdown(self):
