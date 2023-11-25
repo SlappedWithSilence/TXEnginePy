@@ -114,8 +114,7 @@ def test_phase_handle_triggers():
             super().__init__()
 
         # Trigger a runtime error so it can be detected during testing
-        def _phase_logic(self, combat_engine) -> None:
-            logger.debug(f"PhaseHandler::{combat_engine.current_phase.name} called!")
+        def _phase_logic(self) -> None:
             raise RuntimeError("You should have expected this!")
 
     engine = get_generic_combat_instance()
