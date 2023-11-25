@@ -116,6 +116,7 @@ class Engine:
         p.inventory.new_stack(1, 1)
         p.inventory.new_stack(3, 15)
         p.crafting_controller.learn_recipe(1)
+        p.ability_controller.learn("Proto Ability")
 
     def _load_assets(self) -> None:
         """

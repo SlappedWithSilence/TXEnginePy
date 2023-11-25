@@ -28,6 +28,7 @@ class SelectItemEvent(EntityTargetMixin, Event):
                          default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT)
         self._storage_keys: dict[str, str | None] = {'selected_item_id': None}
         self._inventory_filter = inventory_filter
+        self._setup_states()
 
     def _link(self) -> dict[str, str]:
         """
