@@ -232,3 +232,58 @@ class SelectElementEventFactory:
         )
 
         return event
+
+    @classmethod
+    def get_select_entity_event(cls, collection: list, fields_of_interest: tuple[str] = None,
+                                allow_player: bool = False, must_select: bool = False):
+        """
+        Get a SelectElementEvent pre-configured to select an Entity.
+
+        Event may be optionally configured to dynamically inject variable values via `fields_of_interest` into the
+        internal `to_listing` function. For example, an entity's ID could be inserted by passing [`id`] to the
+        argument.
+
+        args:
+            collection: A list of Entity objects from which to select
+            fields_of_interest: tuple[str]: A collection of variable names to inject into the to_listing function
+            allow_player: bool: If False, filter out any objects of class Player
+            must_select: If True, do not allow for a -1 input that terminates the Event. If False, an input of -1
+                returns None
+        """
+
+        if not isinstance(collection, list):
+            raise TypeError()
+
+        if not isinstance(must_select, bool):
+            raise TypeError()
+
+        foi = fields_of_interest or tuple(["name"])
+
+        from game.systems.entity.entities import Entity, Player
+
+        # Define an inner-function to handle translating the entities to strings
+        def to_listing(entity: Entity) -> str:
+
+            if not isinstance(entity, Entity):
+                raise TypeError(f"Cannot translate object of type {type(entity)}, expecting object of type Entity!")
+
+            field_values = []
+
+            for field in foi:
+                if hasattr(entity, field):
+                    field_values.append(getattr(entity, field))
+                else:
+                    raise RuntimeError(f"Entity {entity} has no field {field}!")
+
+            return " ".join(field_values)
+
+        event = SelectElementEvent(
+            collection=collection,
+            key=lambda e: e,
+            element_filter=None if allow_player else lambda e: not isinstance(e, Player),
+            prompt="Select an Entity",
+            to_listing=to_listing,
+            must_select=must_select
+        )
+
+        return event
