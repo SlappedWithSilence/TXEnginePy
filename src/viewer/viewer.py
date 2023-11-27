@@ -62,7 +62,7 @@ class Viewer:
 
     def get_text_header(self, tx_engine_response: dict) -> str:
         input_type = tx_engine_response["input_type"] if type(tx_engine_response["input_type"]) == str else \
-        tx_engine_response["input_type"][0]
+            tx_engine_response["input_type"][0]
         input_range = tx_engine_response["input_range"]
 
         formatting = ['italic']
@@ -94,7 +94,11 @@ class Viewer:
         self.clear()
 
         def entity_to_str(entity_dict: dict[str, any]) -> str:
-            return f"{entity_dict['name']}\n{entity_dict['primary_resource_name']}: [{entity_dict['primary_resource_val']}/{entity_dict['primary_resource_max']}]"
+            entity_name = entity_dict['name']
+            primary_resource_name = entity_dict['primary_resource_name']
+            primary_resource_value = entity_dict['primary_resource_val']
+            primary_resource_max = entity_dict['primary_resource_max']
+            return f"{entity_name}\n{primary_resource_name}]: [{primary_resource_value}/{primary_resource_max}]"
 
         print(parse_content(tx_engine_response["components"]["content"]))
 
