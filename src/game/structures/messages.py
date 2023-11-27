@@ -92,6 +92,7 @@ class ComponentFactory:
             import game.systems.entity.entities as entities
 
             if not isinstance(entity, entities.CombatEntity):
+
                 raise TypeError(f"scrape_entity expected object of type CombatEntity! Got {type(entity)} instead!")
             primary_resource = get_config()["resources"]["primary_resource"]
             return {
@@ -115,7 +116,7 @@ class ComponentFactory:
         is_combat_frame = (from_cache("combat") is not None)
 
         if is_combat_frame:
-            data["allies"] = [scrape_entity(e) for e in from_cache("combat").allies],
+            data["allies"] = [scrape_entity(e) for e in from_cache("combat").allies]
             data["enemies"] = [scrape_entity(e) for e in from_cache("combat").enemies]
 
         return data
