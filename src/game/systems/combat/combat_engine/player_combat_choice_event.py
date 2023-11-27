@@ -120,8 +120,8 @@ class PlayerCombatChoiceEvent(Event):
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
 
             return ComponentFactory.get(["Select a target:"],
-                                        from_cache("combat").get_ability_targets(self._entity, chosen_ability),
-                                        is_combat_frame=True)
+                                        from_cache("combat").get_ability_targets(self._entity, chosen_ability)
+                                        )
 
         # CANNOT_USE_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ABILITY, InputType.ANY)
@@ -191,7 +191,7 @@ class PlayerCombatChoiceEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.CANNOT_USE_ITEM)
         def content() -> dict:
-            item_instance = from_cache('managers.ItemManager').get_instance(self._choice)
+            item_instance = from_cache('managers.ItemManager').get_instance(self._choice_data.item_id)
 
             return ComponentFactory.get(
                 [
@@ -205,7 +205,7 @@ class PlayerCombatChoiceEvent(Event):
         # SUBMIT_CHOICE
         @FiniteStateDevice.state_logic(self, self.States.SUBMIT_CHOICE, InputType.SILENT)
         def logic(_: any) -> None:
-            from_cache("combat").submit_entity_choice(self._entity, self._choice)
+            from_cache("combat").submit_entity_choice(self._entity, self._choice_data.ability_target)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.SUBMIT_CHOICE)
@@ -222,6 +222,37 @@ class PlayerCombatChoiceEvent(Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [StringContent(value=self._entity.name, formatting="entity_name"), " chose not to act."]
+            )
+
+        # INSPECT_ALLIES
+        @FiniteStateDevice.state_logic(self, self.States.LIST_ALLIES, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = SelectElementEventFactory.get_select_entity_event(from_cache("combat").allies)
+            self._links["INSPECT_ENTITY"] = event.link()
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.INSPECT_ENTITY)
+
+        @FiniteStateDevice.state_content(self, self.States.LIST_ALLIES)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # INSPECT_ENEMIES
+        @FiniteStateDevice.state_logic(self, self.States.LIST_ENEMIES, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = SelectElementEventFactory.get_select_entity_event(from_cache("combat").enemies)
+            self._links["INSPECT_ENTITY"] = event.link()
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.INSPECT_ENTITY)
+
+        @FiniteStateDevice.state_content(self, self.States.LIST_ALLIES)
+        def content() -> dict:
+            return ComponentFactory.get()
+
+        # INSPECT_ENTITY
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_ENTITY, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = InspectEntityEvent(
+                entity=self._links["INSPECT_ENTITY"]["selected_element"]
             )
 
     @staticmethod
