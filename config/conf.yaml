@@ -7,3 +7,8 @@ room:
   default_id: 0
 resources:
   primary_resource: Health
+combat:
+  inspection:
+    t0: [ABILITIES, INVENTORY, EQUIPMENT, RESOURCES]
+    t1: [RESOURCES, EQUIPMENT, ABILITIES]
+    t2: [RESOURCES]
