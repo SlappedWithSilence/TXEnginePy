@@ -48,10 +48,6 @@ class CraftingEvent(Event):
             self._chosen_recipe = self._chosen_num_crafts = None
             self.set_state(self.States.DISPLAY_RECIPES)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_RECIPES, InputType.INT,
                                        -1, lambda: len(self._player_ref.crafting_controller.learned_recipes) - 1)
         def logic(user_input: int):

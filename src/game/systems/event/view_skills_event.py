@@ -28,10 +28,6 @@ class ViewSkillsEvent(Event):
             self._selected_skill = None
             self.set_state(self.States.VIEW_SKILLS)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.VIEW_SKILLS, InputType.INT,
                                        -1, lambda: len(self.target.skill_controller.skills.keys()) - 1)
         def logic(user_input: int) -> None:

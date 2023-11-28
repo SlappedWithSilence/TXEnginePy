@@ -71,10 +71,6 @@ class ExitAction(Action):
             room.room_manager.visit_room(self.room.id)  # Inform the room manager that this room has been "visited"
             self.set_state(self.States.TERMINATE)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
     @property
     def menu_name(self) -> str:
         """
@@ -154,10 +150,6 @@ class ViewInventoryAction(Action):
                 self.set_state(self.States.EMPTY)
             else:
                 self.set_state(self.States.DISPLAY_INVENTORY)
-
-        @FiniteStateDevice.state_content(self, self.States.DETECT_EMPTY)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.EMPTY, InputType.ANY)
         def logic(_: any) -> None:
@@ -265,10 +257,6 @@ class ViewInventoryAction(Action):
             )
             self.set_state(self.States.DISPLAY_INVENTORY)
 
-        @FiniteStateDevice.state_content(self, self.States.USE_ITEM)
-        def content() -> dict:
-            return ComponentFactory.get()
-
     @staticmethod
     @cache.cached([LoadableMixin.LOADER_KEY, "ViewInventoryAction", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -312,10 +300,6 @@ class WrapperAction(Action):
                 raise TypeError(f"Invalid type of wrapped object: {type(self.wrapped_device)}!")
 
             self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
 
     @staticmethod
     @cache.cached([LoadableMixin.LOADER_KEY, "WrapperAction", LoadableMixin.ATTR_KEY])

@@ -50,10 +50,6 @@ class UseItemEvent(Event):
             else:
                 self.set_state(self.States.NOT_USABLE)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.NOT_REQUIREMENTS, InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)

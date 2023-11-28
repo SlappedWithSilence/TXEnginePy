@@ -345,20 +345,12 @@ class CombatEngine(FiniteStateDevice):
 
             self.set_state(self.States.START_TURN_CYCLE)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.START_TURN_CYCLE, InputType.SILENT)
         def logic(_: any) -> None:
             self._compute_turn_order()
             self.total_turn_cycles += 1
             self.current_turn = -1
             self.set_state(self.States.START_ENTITY_TURN)
-
-        @FiniteStateDevice.state_content(self, self.States.START_TURN_CYCLE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.START_ENTITY_TURN, InputType.SILENT)
         def logic(_: any) -> None:
@@ -386,18 +378,10 @@ class CombatEngine(FiniteStateDevice):
             if self.current_phase == CombatPhase.ACTION_PHASE:
                 self.set_state(self.States.EXECUTE_ENTITY_CHOICE)
 
-        @FiniteStateDevice.state_content(self, self.States.HANDLE_PHASE)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.EXECUTE_ENTITY_CHOICE, InputType.SILENT)
         def logic(_: any):
             self.handle_turn_action(self.active_entity_choice)
             self.set_state(self.States.DETECT_COMBAT_TERMINATION)
-
-        @FiniteStateDevice.state_content(self, self.States.EXECUTE_ENTITY_CHOICE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.DETECT_COMBAT_TERMINATION, InputType.SILENT)
         def logic(_: any) -> None:
@@ -423,18 +407,10 @@ class CombatEngine(FiniteStateDevice):
             else:
                 self.set_state(self.States.NEXT_PHASE)
 
-        @FiniteStateDevice.state_content(self, self.States.DETECT_COMBAT_TERMINATION)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.NEXT_PHASE, InputType.SILENT)
         def logic(_: any):
             self.current_phase_index += 1
             self.set_state(self.States.HANDLE_PHASE)
-
-        @FiniteStateDevice.state_content(self, self.States.NEXT_PHASE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT, override=True)
         def logic(_: any) -> None:

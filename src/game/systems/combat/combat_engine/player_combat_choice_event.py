@@ -66,10 +66,6 @@ class PlayerCombatChoiceEvent(Event):
         def logic(_: any) -> None:
             self.set_state(self.States.CHOOSE_TURN_OPTION)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         # SHOW_OPTIONS
         FiniteStateDevice.user_branching_state(self, self.States.CHOOSE_TURN_OPTION, self._available_turn_choices,
                                                "What would you like to do?")
@@ -81,10 +77,6 @@ class PlayerCombatChoiceEvent(Event):
             self._links["CHOOSE_AN_ABILITY"] = choose_ability_event.link()
             game.state_device_controller.add_state_device(choose_ability_event)
             self.set_state(self.States.CHECK_ABILITY_USABLE)
-
-        @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ABILITY)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         # CHECK_ABILITY_USABLE
         @FiniteStateDevice.state_logic(self, self.States.CHECK_ABILITY_USABLE, InputType.SILENT)
@@ -99,10 +91,6 @@ class PlayerCombatChoiceEvent(Event):
 
             else:
                 self.set_state(self.States.CHOOSE_ABILITY_TARGET)
-
-        @FiniteStateDevice.state_content(self, self.States.CHECK_ABILITY_USABLE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         # CHOOSE_ABILITY_TARGET
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT)
@@ -148,10 +136,6 @@ class PlayerCombatChoiceEvent(Event):
             # Transition state
             self.set_state(self.States.DETECT_ITEM_USABLE)
 
-        @FiniteStateDevice.state_content(self, self.States.CHOOSE_AN_ITEM)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         # DETECT_ITEM_USABLE
         @FiniteStateDevice.state_logic(self, self.States.DETECT_ITEM_USABLE, InputType.SILENT)
         def logic(_: any) -> None:
@@ -180,10 +164,6 @@ class PlayerCombatChoiceEvent(Event):
             else:
                 raise RuntimeError("Something went wrong with PlayerCombatChoiceEvent")
 
-        @FiniteStateDevice.state_content(self, self.States.DETECT_ITEM_USABLE)
-        def content():
-            return ComponentFactory.get()
-
         # CANNOT_USE_ITEM
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ITEM, InputType.ANY)
         def logic(_: any) -> None:
@@ -208,10 +188,6 @@ class PlayerCombatChoiceEvent(Event):
             from_cache("combat").submit_entity_choice(self._entity, self._choice_data.ability_target)
             self.set_state(self.States.TERMINATE)
 
-        @FiniteStateDevice.state_content(self, self.States.SUBMIT_CHOICE)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         # PASS_TURN
         @FiniteStateDevice.state_logic(self, self.States.PASS_TURN, InputType.ANY)
         def logic(_: any) -> None:
@@ -232,10 +208,6 @@ class PlayerCombatChoiceEvent(Event):
             game.state_device_controller.add_state_device(event)
             self.set_state(self.States.INSPECT_ENTITY)
 
-        @FiniteStateDevice.state_content(self, self.States.LIST_ALLIES)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         # INSPECT_ENEMIES
         @FiniteStateDevice.state_logic(self, self.States.LIST_ENEMIES, InputType.SILENT)
         def logic(_: any) -> None:
@@ -243,10 +215,6 @@ class PlayerCombatChoiceEvent(Event):
             self._links["INSPECT_ENTITY"] = event.link()
             game.state_device_controller.add_state_device(event)
             self.set_state(self.States.INSPECT_ENTITY)
-
-        @FiniteStateDevice.state_content(self, self.States.LIST_ALLIES)
-        def content() -> dict:
-            return ComponentFactory.get()
 
         # INSPECT_ENTITY
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_ENTITY, InputType.SILENT)

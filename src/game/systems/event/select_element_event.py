@@ -77,10 +77,6 @@ class SelectElementEvent(Event):
                 raise RuntimeError("SelectElementEvent cannot have a filtered collection size of 0!")
             self.set_state(self.States.SHOW_ELEMENTS)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         # SHOW_ELEMENTS
         @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS, InputType.INT,
                                        input_min=0 if self._must_select else -1,
@@ -106,10 +102,6 @@ class SelectElementEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.PROCESS_CHOICE, InputType.SILENT)
         def logic(_: any) -> None:
             pass
-
-        @FiniteStateDevice.state_content(self, self.States.PROCESS_CHOICE)
-        def content():
-            return ComponentFactory.get()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "SelectElementEvent", LoadableMixin.ATTR_KEY])

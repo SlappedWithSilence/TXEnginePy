@@ -43,10 +43,6 @@ class SelectItemEvent(EntityTargetMixin, Event):
 
             self.set_state(self.States.SHOW_ITEMS)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.SHOW_ITEMS, InputType.INT, -1,
                                        len(self.target.inventory.filter_stacks(self._inventory_filter)) - 1)
         def logic(user_input: int):

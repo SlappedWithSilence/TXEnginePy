@@ -37,10 +37,6 @@ class ViewAbilitiesEvent(Event):
 
             self.set_state(self.States.VIEW_ABILITIES)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         # This state is highly inefficient. TODO: Improve
         @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES, InputType.INT,
                                        -1, lambda: len(list(self.target.ability_controller.abilities)) - 1)

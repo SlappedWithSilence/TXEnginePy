@@ -72,10 +72,6 @@ class FlagEvent(Event):
             for f in self._flags:
                 flag.flag_manager.set_flag(*f)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
     def __copy__(self):
         return FlagEvent(self._flags)
 
@@ -128,10 +124,6 @@ class LearnAbilityEvent(Event):
         self.target_ability: str = ability_name
         self.player_ref = None
 
-        @FiniteStateDevice.state_content(instance=self, state=self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             if not self.player_ref:
@@ -149,10 +141,6 @@ class LearnAbilityEvent(Event):
 
             else:
                 self.set_state(self.States.REQUIREMENTS_NOT_MET)
-
-        @FiniteStateDevice.state_content(self, self.States.NOT_ALREADY_LEARNED)
-        def content():
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.ANY)
         def logic(_: any):
@@ -315,10 +303,6 @@ class LearnRecipeEvent(Event):
             else:
                 self.set_state(self.States.CANNOT_LEARN)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.CAN_LEARN, InputType.ANY)
         def logic(_: any) -> None:
             self._player_ref.crafting_controller.learn_recipe(recipe_id)
@@ -474,10 +458,6 @@ class ResourceEvent(EntityTargetMixin, Event):
 
             self.set_state(self.States.APPLY)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.SILENT)
         def logic(_):
             resource_controller: ResourceController = self.target.resource_controller
@@ -485,10 +465,6 @@ class ResourceEvent(EntityTargetMixin, Event):
                                 resource_controller.resources[self.stat_name]['instance'].adjust(
                                     self.amount))  # Post-adjust value
             self.set_state(self.States.SUMMARY)
-
-        @FiniteStateDevice.state_content(self, self.States.APPLY)
-        def content():
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.SUMMARY, InputType.SILENT if self._silent else InputType.ANY)
         def logic(_: any):
@@ -605,10 +581,6 @@ class SkillXPEvent(EntityTargetMixin, Event):
 
             self.set_state(self.States.GAIN_MESSAGE)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.GAIN_MESSAGE, InputType.ANY)
         def logic(_: any) -> None:
             self._target.skill_controller[self._skill_id].gain_xp(self._xp_gained)
@@ -709,19 +681,11 @@ class CombatEvent(Event):
         def logic(_: any) -> None:
             self.set_state(self.States.LAUNCH_COMBAT_ENGINE)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.LAUNCH_COMBAT_ENGINE, InputType.SILENT)
         def logic(_: any) -> None:
             combat = CombatEngine(self._allies, self._enemies, self._termination_conditions)
             game.state_device_controller.add_state_device(combat)
             self.set_state(self.States.TERMINATE)
-
-        @FiniteStateDevice.state_content(self, self.States.LAUNCH_COMBAT_ENGINE)
-        def content() -> dict:
-            return ComponentFactory.get()
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CombatEvent", LoadableMixin.ATTR_KEY])

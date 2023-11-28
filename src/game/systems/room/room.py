@@ -59,10 +59,6 @@ class Room(LoadableMixin, FiniteStateDevice):
         def logic(_: any) -> None:
             self.set_state(self.States.DISPLAY_OPTIONS)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_OPTIONS, InputType.INT, 0,
                                        lambda: len(self.options) - 1)
         def logic(user_input: int) -> None:
@@ -95,10 +91,6 @@ class Room(LoadableMixin, FiniteStateDevice):
                 self.set_state(self.States.LEAVE_ROOM)
             else:
                 self.set_state(self.States.DISPLAY_OPTIONS)
-
-        @FiniteStateDevice.state_content(self, self.States.REQ_MET)
-        def content():
-            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.REQ_NOT_MET, InputType.ANY)
         def logic(_) -> None:

@@ -70,10 +70,6 @@ class AddItemEvent(Event):
                 self.set_state(self.States.INSERT_ITEM)  # Insert items
                 logger.debug(f"{self.current_state}: {id(self)}")
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get()
-
         @FiniteStateDevice.state_logic(self, self.States.PROMPT_KEEP_NEW_ITEM, InputType.AFFIRMATIVE)
         def logic(user_input: bool) -> None:
             if user_input:

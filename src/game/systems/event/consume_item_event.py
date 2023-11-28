@@ -48,10 +48,6 @@ class ConsumeItemEvent(Event):
             else:
                 self.set_state(self.States.PROMPT_CONSUME)
 
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content():
-            return ComponentFactory.get()
-
         # INSUFFICIENT_QUANTITY
 
         @FiniteStateDevice.state_logic(self, self.States.INSUFFICIENT_QUANTITY, InputType.ANY)

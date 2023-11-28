@@ -428,9 +428,13 @@ class FiniteStateDevice(StateDevice, ABC):
         if self.current_state.value not in self.state_data:
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
 
+        # If the state is silent, simply return an empty component dict. This circumvents checks for silent states
+        if self.state_data[self.current_state.value]["input_type"] == InputType.SILENT:
+            return ComponentFactory.get()
+
         if 'content' not in self.state_data[self.current_state.value] \
                 or not self.state_data[self.current_state.value]['content']:
-            raise KeyError(f"No logical provider has been registered for state {self.current_state}!")
+            raise KeyError(f"No content provider has been registered for state {self.current_state}!")
 
         return self.state_data[self.current_state.value]['content']()
 
