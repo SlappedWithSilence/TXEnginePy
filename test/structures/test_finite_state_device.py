@@ -24,6 +24,10 @@ class MockFiniteStateDevice(FiniteStateDevice):
             self.set_state(self.States.A)
             self.counter += 1
 
+        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
+        def content() -> dict:
+            return ComponentFactory.get()
+
         @FiniteStateDevice.state_logic(self, self.States.A, InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.B)
