@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from pprint import pprint
 
 from loguru import logger
 
 from game.cache import get_config
 from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
-from game.systems.entity.entities import CombatEntity
 from game.systems.event import Event
 from game.systems.event.events import EntityTargetMixin
 
@@ -37,12 +35,19 @@ def get_all_inspection_tiers() -> dict[int, list[str]]:
 
     returns: A dict mapping a tier (int) to a list of config values (strings).
     """
+
+    inspection_data = get_config()["combat"]["inspection"]
     results = {}
 
-    for tier in get_config()["combat"]["inspection"]:
-        print(type(tier))
-        print(tier)
-        logger.warning("Tier logic has not been implemented!")
+    for tier in inspection_data:
+        if type(tier) != str or len(tier) != 2:
+            raise ValueError(f"Invalid Tier name! {tier}")
+
+        try:
+            results[int(tier[1])] = inspection_data[tier]
+        except Exception as e:
+            logger.error(f"Something went wrong while processing Inspection Tier {tier}!")
+            raise e
 
     return results
 
@@ -64,9 +69,15 @@ class InspectEntityEvent(EntityTargetMixin, Event):
         "ABILITIES": ("Inspect Abilities", States.INSPECT_ABILITIES)
     }
 
-    def __init__(self, target: CombatEntity, inspection_tier: int = 0):
+    def __init__(self, target, inspection_tier: int = 0):
         super().__init__(target=target, default_input_type=InputType.SILENT, states=self.States,
                          default_state=self.States.DEFAULT)
+
+        from game.systems.entity.entities import CombatEntity
+        if not isinstance(target, CombatEntity):
+            raise TypeError(
+                f"InspectEntityEvent target must be an instance of class CombatEntity! Got {type(target)} instead."
+            )
 
         # Map states to listed prompts for user_branching_state. Key-Value pairs are generated during __init__
         self.options_map: dict[str, any] = {}
@@ -86,13 +97,15 @@ class InspectEntityEvent(EntityTargetMixin, Event):
 
     def _setup_states(self):
 
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        def logic(_: any) -> None:
+            self.set_state(self.States.SHOW_OPTIONS)
+
         # SHOW_OPTIONS
         FiniteStateDevice.user_branching_state(self, self.States.SHOW_OPTIONS, self.options_map,
                                                back_out_state=self.States.TERMINATE)
 
         # INSPECT_ABILITIES
-
-
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
