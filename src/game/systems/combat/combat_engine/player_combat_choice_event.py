@@ -12,6 +12,7 @@ from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
+from game.systems.combat.combat_engine.inspect_entity_event import InspectEntityEvent
 from game.systems.event import Event
 from game.systems.event.select_element_event import SelectElementEventFactory
 from game.systems.event.select_item_event import SelectItemEvent
@@ -219,9 +220,19 @@ class PlayerCombatChoiceEvent(Event):
         # INSPECT_ENTITY
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_ENTITY, InputType.SILENT)
         def logic(_: any) -> None:
+
+            # Build an inspection event and add it to the stack
             event = InspectEntityEvent(
-                entity=self._links["INSPECT_ENTITY"]["selected_element"]
+                target=from_storage(self._links["INSPECT_ENTITY"]["selected_element"], delete=True)
             )
+            game.state_device_controller.add_state_device(event)
+
+            # Look back in the state history to the previous state (before this one). Use this to determine if the
+            # Inspected entity was an ally or enemy. Accordingly, set the NEXT state back to the correct listing state
+            if self.state_history[-2] in [self.States.LIST_ENEMIES, self.States.LIST_ALLIES]:
+                self.set_state(self.state_history[-2])
+            else:
+                raise RuntimeError(f"Unexpected state history! state_history[-2] is {self.state_history[-2]}!")
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "PlayerCombatChoiceEvent", LoadableMixin.ATTR_KEY])
