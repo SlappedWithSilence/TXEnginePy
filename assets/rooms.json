@@ -75,7 +75,7 @@
       "enter_text" : "You enter a dank cellar. Its non-euclidean geometry confuses you.",
       "actions" : [
         {
-          "class" : "ManageInventoryAction",
+          "class" : "ManageInventoryAction"
 
         },
         {

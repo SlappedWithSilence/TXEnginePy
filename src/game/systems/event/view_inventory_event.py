@@ -1,3 +1,5 @@
+from game.cache import cached
+from game.structures.loadable import LoadableMixin
 from game.systems.event.events import EntityTargetMixin, Event
 
 
@@ -7,5 +9,6 @@ class ViewInventoryEvent(EntityTargetMixin, Event):
         super().__init__(**kwargs)
 
     @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "ViewSkillsEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        raise NotImplementedError("ViewInventoryEvent does not support JSON loading!")
