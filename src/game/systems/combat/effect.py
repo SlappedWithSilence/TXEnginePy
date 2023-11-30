@@ -1,13 +1,13 @@
 import weakref
 from abc import ABC
 
-import game.systems.entity.entities as entities
 from game.cache import cached
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
+from game.systems.entity.entities import CombatEntity
 
 
 class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
@@ -35,14 +35,14 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     """
 
     def __init__(self,
-                 target_entity: entities.CombatEntity = None,
-                 source_entity: entities.CombatEntity = None,
+                 target_entity: CombatEntity = None,
+                 source_entity: CombatEntity = None,
                  duration: int | None = 1,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_states()
-        self._target_entity: entities.CombatEntity = target_entity  # The entity the effect is assigned
-        self._source_entity: entities.CombatEntity = source_entity  # The entity that spawned the Effect
+        self._target_entity: CombatEntity = target_entity  # The entity the effect is assigned
+        self._source_entity: CombatEntity = source_entity  # The entity that spawned the Effect
         self.duration: int | None = duration  # Number of remaining turns before Effect is removed
         self.tags: list[str] = []
 
@@ -53,14 +53,14 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
 
         return self._source_entity is not None and self._target_entity is not None
 
-    def assign(self, source_entity: entities.CombatEntity, target_entity: entities.CombatEntity) -> None:
+    def assign(self, source_entity: CombatEntity, target_entity: CombatEntity) -> None:
         """
         Assign a source and target to the Effect. This option should be exercised by the CombatEngine
         """
 
-        if not isinstance(source_entity, entities.CombatEntity):
+        if not isinstance(source_entity, CombatEntity):
             raise TypeError()
-        if not isinstance(target_entity, entities.CombatEntity):
+        if not isinstance(target_entity, CombatEntity):
             raise TypeError()
 
         self._target_entity = weakref.proxy(target_entity)
@@ -72,7 +72,7 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
 
         This method wraps the private abstract function _perform.
         """
-        if not isinstance(self._target_entity, entities.Entity):
+        if not isinstance(self._target_entity, CombatEntity):
             raise TypeError(
                 f"Cannot perform an effect on object of type {type(self._target_entity)}! Expected type Entity")
 
@@ -86,7 +86,7 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         """
         raise NotImplementedError
 
-    def _perform(self, target: entities.Entity):
+    def _perform(self, target: CombatEntity):
         """
         Execute the logic of the Effect
         """
@@ -125,7 +125,7 @@ class ResourceEffect(CombatEffect):
     def __repr__(self):
         return self.__str__()
 
-    def _perform(self, target: entities.Entity):
+    def _perform(self, target: CombatEntity):
         if self._resource_name not in target.resource_controller:
             raise ValueError(f"Cannot locate resource {self._resource_name} in entity {target.name}!")
 

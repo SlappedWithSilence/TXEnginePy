@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 from game.cache import cached, from_cache
@@ -5,7 +7,6 @@ from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-from game.systems.entity import Entity
 from game.systems.entity.entities import SkillMixin
 from game.systems.event.events import Event
 
@@ -89,4 +90,4 @@ class ViewSkillsEvent(Event):
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewSkillsEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        return ViewSkillsEvent()
+        return NotImplemented("ViewSkillsEvent does not support JSON loading!")

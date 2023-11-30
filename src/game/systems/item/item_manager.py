@@ -4,7 +4,7 @@ import weakref
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems import currency as currency
-from game.systems.item import Item
+from game.systems.item.item import Item
 from game.util.asset_utils import get_asset
 
 

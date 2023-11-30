@@ -10,6 +10,7 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.add_item_event import AddItemEvent
+from game.systems.item.item import Item
 from game.systems.room.action.actions import Action
 
 
@@ -56,7 +57,7 @@ class ShopAction(Action):
         super().__init__(menu_name, activation_text, ShopAction.States, ShopAction.States.DISPLAY_WARES,
                          InputType.INT, *args, **kwargs)
         self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
-        self._ware_of_interest: item.Item = None  # The tuple of the ware last selected by the user
+        self._ware_of_interest: Item = None  # The tuple of the ware last selected by the user
         self.default_currency: int = default_currency
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_WARES, InputType.INT, -1, len(self.wares) - 1)
@@ -162,15 +163,15 @@ class ShopAction(Action):
             return ComponentFactory.get(["You leave the shop."])
 
     @property
-    def ware_of_interest(self) -> item.Item:
+    def ware_of_interest(self) -> Item:
         return self._ware_of_interest
 
     @ware_of_interest.setter
-    def ware_of_interest(self, i: item.Item | int) -> None:
+    def ware_of_interest(self, i: Item | int) -> None:
 
         if type(i) == int:
             self._ware_of_interest = item.item_manager.get_instance(i)
-        elif isinstance(i, item.Item):
+        elif isinstance(i, Item):
             self._ware_of_interest = i
         else:
             raise TypeError(f"Ware of interest cannot be set to {type(i)}. Acceptable types are int, Item.")

@@ -22,9 +22,9 @@ class Stack:
     quantity: int
 
     def __post_init__(self):
-        from game.systems.item import Item, item_manager
+        from game.systems.item.item import Item
 
-        self.ref: Item = item_manager.get_ref(self.id)
+        self.ref: Item = cache.from_cache("managers.ItemManager").get_ref(self.id)
 
 
 class InventoryController(LoadableMixin):

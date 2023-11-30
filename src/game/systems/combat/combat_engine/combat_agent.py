@@ -10,7 +10,6 @@ from game.cache import from_cache
 from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
-from game.systems.combat.combat_engine.player_combat_choice_event import PlayerCombatChoiceEvent
 
 
 class CombatAgentMixin(ABC):
@@ -117,4 +116,5 @@ class PlayerAgentMixin(CombatAgentMixin):
         # Spawn an event to handle player choice flow.
         # Note that this method does not submit anything to the combat engine directly, all of that is handled within
         # the PlayerCombatChoiceEvent's logic.
+        from game.systems.combat.combat_engine.player_combat_choice_event import PlayerCombatChoiceEvent
         game.state_device_controller.add_state_device(PlayerCombatChoiceEvent(self))

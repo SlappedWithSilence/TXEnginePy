@@ -1,12 +1,12 @@
 import copy
 
 import game
-import game.systems.combat.effect as effect
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
 from game.cache import cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
+from game.systems.combat.effect import CombatEffect
 from game.systems.entity.resource import ResourceModifierMixin
 from game.systems.event.events import Event
 from game.systems.inventory import equipment_manager
@@ -156,10 +156,10 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str,
                  equipment_slot: str, damage_buff: int, damage_resist: int,
-                 start_of_combat_effects: list[effect.CombatEffect] = None, **kwargs):
+                 start_of_combat_effects: list[CombatEffect] = None, **kwargs):
         super().__init__(name=name, iid=iid, value=value, description=description, **kwargs)
         self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
-        self.start_of_combat_effects: list[effect.CombatEffect] = start_of_combat_effects or []
+        self.start_of_combat_effects: list[CombatEffect] = start_of_combat_effects or []
 
         self.damage_buff: int = damage_buff
         self.damage_resist: int = damage_resist
@@ -212,7 +212,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
         if 'start_of_combat_effects' in json:
             for effect_json in json['start_of_combat_effects']:
                 ef = LoadableFactory.get(effect_json)
-                if not isinstance(ef, effect.CombatEffect):
+                if not isinstance(ef, CombatEffect):
                     raise TypeError(f"Expected effect of type CombatEffect, got {type(ef)} instead!")
 
                 start_of_combat_effects.append(ef)
