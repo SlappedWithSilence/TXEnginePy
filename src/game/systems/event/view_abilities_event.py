@@ -5,7 +5,6 @@ from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
-from game.systems.entity.entities import AbilityMixin
 from game.systems.event import Event
 
 
@@ -17,9 +16,9 @@ class ViewAbilitiesEvent(Event):
         EMPTY = 3
         TERMINATE = -1
 
-    def __init__(self, target: AbilityMixin = None):
+    def __init__(self, target = None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
-        self.target: AbilityMixin = target  # Defaults to the player at runtime
+        self.target = target  # Defaults to the player at runtime
         self.selected_ability: str | None = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
@@ -28,6 +27,7 @@ class ViewAbilitiesEvent(Event):
             if self.target is None:
                 self.target = from_cache('player')
 
+            from game.systems.entity.entities import AbilityMixin
             if not isinstance(self.target, AbilityMixin):
                 raise TypeError(f"Cannot view Abilities for non-AbilityMixin entity! ({self.target})")
 
