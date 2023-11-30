@@ -8,6 +8,7 @@ room:
 resources:
   primary_resource: Health
 combat:
+  default_inspection_tier: 1
   inspection:
     t0: [ABILITIES, INVENTORY, EQUIPMENT, RESOURCES]
     t1: [RESOURCES, EQUIPMENT, ABILITIES]

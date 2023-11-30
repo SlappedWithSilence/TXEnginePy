@@ -4,11 +4,15 @@ from enum import Enum
 
 from loguru import logger
 
+import game
 from game.cache import get_config
 from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 from game.systems.event.events import EntityTargetMixin
+from game.systems.event.view_abilities_event import ViewAbilitiesEvent
+from game.systems.event.view_equipment_event import ViewEquipmentEvent
+from game.systems.event.view_inventory_event import ViewInventoryEvent
 
 
 def get_inspection_tier(tier: int) -> list[str]:
@@ -69,7 +73,7 @@ class InspectEntityEvent(EntityTargetMixin, Event):
         "ABILITIES": ("Inspect Abilities", States.INSPECT_ABILITIES)
     }
 
-    def __init__(self, target, inspection_tier: int = 0):
+    def __init__(self, target, inspection_tier: int = None):
         super().__init__(target=target, default_input_type=InputType.SILENT, states=self.States,
                          default_state=self.States.DEFAULT)
 
@@ -80,18 +84,19 @@ class InspectEntityEvent(EntityTargetMixin, Event):
             )
 
         # Map states to listed prompts for user_branching_state. Key-Value pairs are generated during __init__
-        self.options_map: dict[str, any] = {}
+        self._options_map: dict[str, any] = {}
+        self._inspection_tier = inspection_tier or get_config()["combat"]["default_inspection_tier"]
 
-        if inspection_tier not in get_all_inspection_tiers():
+        if self._inspection_tier not in get_all_inspection_tiers():
             logger.error(f"Unknown inspection tier {inspection_tier}! Available tiers: {get_all_inspection_tiers()}")
             raise RuntimeError(f"Unknown inspection tier {inspection_tier}!")
 
         # Check which options are available for the current inspection tier, then generate the options map from them
-        available_options = get_inspection_tier(inspection_tier)
+        available_options = get_inspection_tier(self._inspection_tier)
         for option in self.ALL_OPTIONS:
             if option in available_options:
                 option_listing, option_state = self.ALL_OPTIONS[option]
-                self.options_map[option_listing] = option_state
+                self._options_map[option_listing] = option_state
 
         self._setup_states()
 
@@ -102,10 +107,27 @@ class InspectEntityEvent(EntityTargetMixin, Event):
             self.set_state(self.States.SHOW_OPTIONS)
 
         # SHOW_OPTIONS
-        FiniteStateDevice.user_branching_state(self, self.States.SHOW_OPTIONS, self.options_map,
+        FiniteStateDevice.user_branching_state(self, self.States.SHOW_OPTIONS, self._options_map,
                                                back_out_state=self.States.TERMINATE)
 
         # INSPECT_ABILITIES
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_ABILITIES, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = ViewAbilitiesEvent(target=self.target)
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.SHOW_OPTIONS)
+
+        # INSPECT_EQUIPMENT
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_EQUIPMENT, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = ViewEquipmentEvent(target=self.target)
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.SHOW_OPTIONS)
+
+        # INSPECT_INVENTORY
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_INVENTORY, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = ViewInventoryEvent(target=self.target)
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
