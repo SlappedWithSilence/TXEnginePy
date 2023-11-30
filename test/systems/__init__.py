@@ -5,7 +5,8 @@ from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
 from game.systems.entity.entities import CombatEntity
-from game.systems.item import Item, item_manager, Equipment, Usable
+from game.systems.item.item import Item, Equipment, Usable
+from game.systems.item import item_manager
 from game.systems.crafting import recipe_manager
 from game.systems.entity import entity_manager
 from game.systems.combat import ability_manager, Ability

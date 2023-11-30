@@ -5,7 +5,6 @@ import weakref
 from typing import Callable
 
 import game.cache as cache
-import game.systems.item as item
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent
 
@@ -23,7 +22,6 @@ class Stack:
 
     def __post_init__(self):
         from game.systems.item.item import Item
-
         self.ref: Item = cache.from_cache("managers.ItemManager").get_ref(self.id)
 
 
@@ -193,9 +191,10 @@ class InventoryController(LoadableMixin):
 
         return buf
 
-    def __contains__(self, element: int | item.Item) -> bool:
+    def __contains__(self, element: int | any) -> bool:
+        from game.systems.item.item import Item
 
-        if type(element) != int and type(element) != item.Item:
+        if type(element) != int and type(element) != Item:
             logger.warning(f"Attempted to search inventory for object of type {type(element)}")
             return False
 
@@ -259,7 +258,7 @@ class InventoryController(LoadableMixin):
         Returns: True if the user needs to resolve a collision, False otherwise
         """
 
-        max_quantity = item.item_manager.get_ref(item_id).max_quantity
+        max_quantity = cache.from_cache("managers.ItemManager").get_ref(item_id).max_quantity
         remaining_cap: int = (self.capacity - len(self.items)) * max_quantity
 
         for stack in self._all_stacks(item_id):

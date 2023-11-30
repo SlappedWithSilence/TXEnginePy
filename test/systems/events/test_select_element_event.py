@@ -3,7 +3,7 @@ from loguru import logger
 
 from game.cache import from_cache, from_storage
 from game.systems.event.select_element_event import SelectElementEvent, SelectElementEventFactory
-from game.systems.item import Usable
+from game.systems.item.item import Usable
 from systems import TEST_PREFIX
 from systems.events.event_tester import EventTester
 
