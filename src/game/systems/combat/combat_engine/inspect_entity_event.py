@@ -9,10 +9,11 @@ from game.cache import get_config
 from game.structures.enums import InputType
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
-from game.systems.event.events import EntityTargetMixin
+from game.systems.event.events import EntityTargetMixin, ViewResourcesEvent
 from game.systems.event.view_abilities_event import ViewAbilitiesEvent
 from game.systems.event.view_equipment_event import ViewEquipmentEvent
 from game.systems.event.view_inventory_event import ViewInventoryEvent
+from game.systems.event.view_skills_event import ViewSkillsEvent
 
 
 def get_inspection_tier(tier: int) -> list[str]:
@@ -64,13 +65,15 @@ class InspectEntityEvent(EntityTargetMixin, Event):
         INSPECT_EQUIPMENT = 3
         INSPECT_INVENTORY = 4
         INSPECT_ABILITIES = 5
+        INSPECT_SKILLS = 6
         TERMINATE = -1
 
     ALL_OPTIONS: dict[str, tuple[str, States]] = {
         "INVENTORY": ("Inspect Inventory", States.INSPECT_INVENTORY),
         "RESOURCES": ("Inspect Resources", States.INSPECT_RESOURCES),
         "EQUIPMENT": ("Inspect Equipment", States.INSPECT_EQUIPMENT),
-        "ABILITIES": ("Inspect Abilities", States.INSPECT_ABILITIES)
+        "ABILITIES": ("Inspect Abilities", States.INSPECT_ABILITIES),
+        "SKILLS": ("Inspect Skills", States.INSPECT_ABILITIES)
     }
 
     def __init__(self, target, inspection_tier: int = None):
@@ -128,6 +131,22 @@ class InspectEntityEvent(EntityTargetMixin, Event):
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_INVENTORY, InputType.SILENT)
         def logic(_: any) -> None:
             event = ViewInventoryEvent(target=self.target)
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.SHOW_OPTIONS)
+
+        # INSPECT_SKILLS
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_RESOURCES, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = ViewSkillsEvent(target=self.target)
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.SHOW_OPTIONS)
+
+        # INSPECT_RESOURCES
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_SKILLS, InputType.SILENT)
+        def logic(_: any) -> None:
+            event = ViewResourcesEvent(target=self.target)
+            game.state_device_controller.add_state_device(event)
+            self.set_state(self.States.SHOW_OPTIONS)
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
