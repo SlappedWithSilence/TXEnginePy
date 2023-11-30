@@ -97,7 +97,7 @@ class ExitAction(Action):
         return ExitAction(json['target_room'], **kwargs)
 
 
-class ViewInventoryAction(Action):
+class ManageInventoryAction(Action):
     class States(Enum):
         DEFAULT = 0
         DISPLAY_INVENTORY = 1
@@ -133,7 +133,7 @@ class ViewInventoryAction(Action):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             if cache.from_cache('player') is None:
-                raise RuntimeError("Cannot launch ViewInventoryAction without a valid Player instance!")
+                raise RuntimeError("Cannot launch ManageInventoryAction without a valid Player instance!")
 
             if self.player_ref is None:
                 self.player_ref = cache.from_cache('player')
@@ -258,14 +258,14 @@ class ViewInventoryAction(Action):
             self.set_state(self.States.DISPLAY_INVENTORY)
 
     @staticmethod
-    @cache.cached([LoadableMixin.LOADER_KEY, "ViewInventoryAction", LoadableMixin.ATTR_KEY])
+    @cache.cached([LoadableMixin.LOADER_KEY, "ManageInventoryAction", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
 
         LoadableFactory.validate_fields([], json)
-        if json['class'] != 'ViewInventoryAction':
-            raise ValueError(f"Cannot load object of type {json['class']} via ViewInventoryAction.from_json!")
+        if json['class'] != 'ManageInventoryAction':
+            raise ValueError(f"Cannot load object of type {json['class']} via ManageInventoryAction.from_json!")
 
-        return ViewInventoryAction()
+        return ManageInventoryAction()
 
 
 class WrapperAction(Action):
