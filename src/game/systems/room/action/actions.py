@@ -108,7 +108,6 @@ class ManageInventoryAction(Action):
         DESC_ITEM = 6
         EQUIP_ITEM = 7
         EMPTY = 8,
-        DETECT_EMPTY = 9,
         TERMINATE = -1
 
     stack_inspect_options = {"Inspect": States.DESC_ITEM,
@@ -138,14 +137,6 @@ class ManageInventoryAction(Action):
             if self.player_ref is None:
                 self.player_ref = cache.from_cache('player')
 
-            self.set_state(self.States.DETECT_EMPTY)
-
-        @FiniteStateDevice.state_content(self, self.States.DEFAULT)
-        def content() -> dict:
-            return ComponentFactory.get([""])
-
-        @FiniteStateDevice.state_logic(self, self.States.DETECT_EMPTY, InputType.SILENT)
-        def logic(_: any):
             if self.player_ref.inventory.size == 0:
                 self.set_state(self.States.EMPTY)
             else:
