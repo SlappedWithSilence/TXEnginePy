@@ -3,7 +3,7 @@ from enum import Enum
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
-from game.structures.messages import ComponentFactory
+from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.events import EntityTargetMixin, Event
 
@@ -101,6 +101,36 @@ class ViewInventoryEvent(EntityTargetMixin, Event):
             FiniteStateDevice.user_branching_state(self, self.States.CHOOSE_ITEM_INSPECTION_OPTION, opt,
                                                    back_out_state=self.States.CHOOSE_ITEM)
             self.set_state(self.States.CHOOSE_ITEM_INSPECTION_OPTION)
+
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_DESC, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.CHOOSE_ITEM_INSPECTION_OPTION)
+
+        @FiniteStateDevice.state_content(self, self.States.VIEW_DESC)
+        def content() -> dict:
+            """
+            Return a content dict displaying the selected-item's name and description
+            """
+            return ComponentFactory.get([
+                StringContent(value=self.target.inventory.items[self.stack_index].ref.name, formatting="item_name"),
+                "\n",
+                self.target.inventory.items[self.stack_index].ref.description
+            ])
+
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_FUNCTIONAL_DESC, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.CHOOSE_ITEM_INSPECTION_OPTION)
+
+        @FiniteStateDevice.state_content(self, self.States.VIEW_FUNCTIONAL_DESC)
+        def content() -> dict:
+            """
+            Return a content dict displaying the selected-item's name and description
+            """
+            return ComponentFactory.get([
+                StringContent(value=self.target.inventory.items[self.stack_index].ref.name, formatting="item_name"),
+                "\n",
+                self.target.inventory.items[self.stack_index].ref.functional_description
+            ])
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewSkillsEvent", LoadableMixin.ATTR_KEY])

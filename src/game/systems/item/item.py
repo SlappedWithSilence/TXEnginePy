@@ -78,12 +78,13 @@ class Usable(Item, req.RequirementsMixin):
     triggered in sequence.
     """
 
-    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
-                 on_use_events: list[Event] = None, consumable: bool = False, **kwargs):
+    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, functional_description: str,
+                 max_quantity: int = 10, on_use_events: list[Event] = None, consumable: bool = False, **kwargs):
         super().__init__(name=name, iid=iid, value=value, description=description, max_quantity=max_quantity, **kwargs)
 
         self.on_use_events: list[Event] = on_use_events or []  # List of Events that trigger when item is used
         self.consumable: bool = consumable  # Determines if the item should decrement quantity after each use.
+        self.functional_description: str = functional_description
 
     def use(self, target) -> None:
 
@@ -120,6 +121,8 @@ class Usable(Item, req.RequirementsMixin):
         - id: int
         - value: {int, int}
         - description: str
+        - functional_description: str
+
 
         Optional JSON fields:
         - max_quantity: int (default value 10)
@@ -129,7 +132,7 @@ class Usable(Item, req.RequirementsMixin):
         """
 
         required_fields = [
-            ("name", str), ("id", int), ("value", dict), ("description", str)
+            ("name", str), ("id", int), ("value", dict), ("description", str), ("functional_description", str),
         ]
 
         optional_fields = [
@@ -148,16 +151,19 @@ class Usable(Item, req.RequirementsMixin):
                       json['id'],
                       {int(k): v for k, v in json['value'].items()},
                       json['description'],
+                      json['functional_description'],
                       **kwargs
                       )
 
 
 class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
 
-    def __init__(self, name: str, iid: int, value: dict[int, int], description: str,
+    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, functional_description: str,
                  equipment_slot: str, damage_buff: int, damage_resist: int,
-                 start_of_combat_effects: list[CombatEffect] = None, **kwargs):
+                 start_of_combat_effects: list[CombatEffect] = None,
+                 **kwargs):
         super().__init__(name=name, iid=iid, value=value, description=description, **kwargs)
+        self.functional_description: str = functional_description
         self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
         self.start_of_combat_effects: list[CombatEffect] = start_of_combat_effects or []
 
@@ -165,6 +171,37 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
         self.damage_resist: int = damage_resist
 
         self.resource_mods: dict[str, int | float] = {}
+
+    def get_stats(self) -> dict[str, str]:
+        """
+        Return all relevant 'stats' as a dict mapping their user-facing descriptions to their values in str-form
+        """
+
+        # Insert results from resource_mods first
+        results = {k: v for k, v in self.resource_mods}
+
+        for key, value in results:
+            if type(value) == int:
+                if value >= 0:
+                    results[key] = f"+{value}"
+                else:
+                    results[key] = f"{value}"
+
+            elif type(value) == float:
+                if value >= 0:
+                    results[key] = f"+{value}%"
+                else:
+                    results[key] = f"{value}%"
+            else:
+                raise TypeError(
+                    f"Unexpected type in resource_mods dict! Expected type int, float, got {type(value)} instead!"
+                )
+
+        # Insert secondary stats
+        results["Damage"] = str(self.damage_buff)
+        results["Resistance"] = str(self.damage_resist)
+
+        return results
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Equipment", LoadableMixin.ATTR_KEY])
@@ -182,6 +219,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
        - id: int
        - value: {int, int}
        - description: str
+       - functional_description: str
        - equipment_slot: str
        - damage_buff: int
        - damage_resist: int
@@ -194,7 +232,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
        """
 
         required_fields = [
-            ("name", str), ("id", int), ("value", dict), ("description", str),
+            ("name", str), ("id", int), ("value", dict), ("description", str), ("functional_description", str),
             ("equipment_slot", str), ("damage_buff", int), ("damage_resist", int)
         ]
         optional_fields = [
@@ -223,6 +261,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
                          json['id'],
                          {int(k): v for k, v in json['value'].items()},
                          json['description'],
+                         json['functional_description'],
                          json['equipment_slot'],
                          json['damage_buff'],
                          json['damage_resist'],

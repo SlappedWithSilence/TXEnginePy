@@ -44,6 +44,7 @@
       "id" : 5,
       "value" : {"0" : 3},
       "description" : "A volatile health potion, rejected by its maker for failing quality control.",
+      "functional_description" : "Restores 5 Health",
       "max_quantity" : 5,
       "consumable" : true,
       "on_use_events" : [
@@ -60,6 +61,7 @@
       "id" : 6,
       "value" : {"0": 100},
       "description" : "Grants invincibility and fame to its wearer, but only against edgy teens.",
+      "functional_description" : "Grants +10 dmg and +10 res. User receives +20 Health and -5 Mana",
       "max_quantity" : 1,
       "equipment_slot" : "chest",
       "damage_buff" : 10,
@@ -80,11 +82,12 @@
       "id" : 7,
       "value" : {"0" :  150},
       "description" : "A worn golden string, blessed by the gods.",
+      "functional_description" : "Wearer receives +10% faith and +10% mana.",
       "max_quantity" : 2,
       "equipment_slot" : "chest",
       "damage_buff" : 0,
       "damage_resist" : 0,
-      "resource_modifiers" : {"faith" : 0.1,"mana" : 0.1}
+      "resource_modifiers" : {"Faith" : 0.1,"Mana" : 0.1}
       },
     {
       "class" : "Usable",
@@ -92,6 +95,7 @@
       "id" : 8,
       "value" : {"0" : 7},
       "description" : "A crisp pint of ale, topped with a tantalizing cap of bubbling white foam.",
+      "functional_description" : "Restores 5 Health",
       "max_quantity" : 5,
       "consumable" : true,
       "on_use_events" : [
@@ -108,6 +112,7 @@
       "id" : 9,
       "value" : {"0" : 11},
       "description" : "A crudely-cut steak, coated in a variety of common spices, cooked over an open flame.",
+      "functional_description" : "Restores 5 Health and 10% Stamina",
       "max_quantity" : 3,
       "consumable" : true,
       "on_use_events" : [
@@ -145,6 +150,7 @@
       "id" : 13,
       "value" : {"0" :  1},
       "description" : "An inexpensive, but effective, pickaxe. Capable of extracting most common ores.",
+      "functional_description" : "Grants the user +1 damage.",
       "equipment_slot" : "weapon",
       "damage_buff" : 1,
       "damage_resist" : 0,
