@@ -53,7 +53,8 @@ def pre_collect_setup():
                      resource_modifiers={f"{TEST_PREFIX}health": -0.25})
 
     te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
-    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
+    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", ""
+                  , requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
 
     item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
 
