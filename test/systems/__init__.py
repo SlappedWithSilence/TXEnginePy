@@ -40,20 +40,20 @@ def pre_collect_setup():
     te3 = Item(f"{TEST_PREFIX} Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
     te4 = Item(f"{TEST_PREFIX} Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
-    te5 = Equipment(f"{TEST_PREFIX} Equipment 1", -114, {-110: 1}, "", "ring", 0, 0)
-    te6 = Equipment(f"{TEST_PREFIX} Equipment 2", -115, {-110: 1}, "", "chest", 0, 0,
+    te5 = Equipment(f"{TEST_PREFIX} Equipment 1", -114, {-110: 1}, "", "ring", "ring", 0, 0)
+    te6 = Equipment(f"{TEST_PREFIX} Equipment 2", -115, {-110: 1}, "", "chest", "chest", 0, 0,
                     resource_modifiers={f"{TEST_PREFIX}health": 3})
-    te7 = Equipment(f"{TEST_PREFIX} Equipment 3", -116, {-110: 1}, "", "legs", 0, 0,
+    te7 = Equipment(f"{TEST_PREFIX} Equipment 3", -116, {-110: 1}, "", "legs", "legs", 0, 0,
                     resource_modifiers={f"{TEST_PREFIX}health": 0.1})
-    te8 = Equipment(f"{TEST_PREFIX} Equipment 3", -117, {-110: 1}, "", "legs", 0, 0,
+    te8 = Equipment(f"{TEST_PREFIX} Equipment 4", -117, {-110: 1}, "", "legs", "legs", 0, 0,
                     resource_modifiers={f"{TEST_PREFIX}health": 0.1})
-    te9 = Equipment(f"{TEST_PREFIX} Equipment 3", -118, {-110: 1}, "", "legs", 0, 0,
+    te9 = Equipment(f"{TEST_PREFIX} Equipment 5", -118, {-110: 1}, "", "legs", "legs", 0, 0,
                     resource_modifiers={f"{TEST_PREFIX}health": -1})
-    te10 = Equipment(f"{TEST_PREFIX} Equipment 3", -119, {-110: 1}, "", "legs", 0, 0,
+    te10 = Equipment(f"{TEST_PREFIX} Equipment 6", -119, {-110: 1}, "", "legs", "legs", 0, 0,
                      resource_modifiers={f"{TEST_PREFIX}health": -0.25})
 
-    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
-    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
+    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
+    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
 
     item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
 
