@@ -235,7 +235,14 @@ class ManageInventoryAction(Action):
 
         @FiniteStateDevice.state_content(self, self.States.DESC_ITEM)
         def content() -> dict:
-            return ComponentFactory.get([self.player_ref.inventory.items[self.stack_index].ref.description])
+            ref = self.player_ref.inventory.items[self.stack_index].ref
+            return ComponentFactory.get(
+                [StringContent(value=ref.name, formatting="item_name"),
+                 StringContent(value=f"\n{ref.functional_description}", formatting="func_desc") if hasattr(ref, "functional_description") else "",
+                 "\n\n",
+                 ref.description
+                 ]
+            )
 
         # USE_ITEM
 
