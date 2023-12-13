@@ -197,7 +197,7 @@ class PlayerCombatChoiceEvent(Event):
         # SUBMIT_CHOICE
         @FiniteStateDevice.state_logic(self, self.States.SUBMIT_CHOICE, InputType.SILENT)
         def logic(_: any) -> None:
-            from_cache("combat").submit_entity_choice(self._choice_data)
+            from_cache("combat").submit_entity_choice(self._entity, self._choice_data)
             self.set_state(self.States.TERMINATE)
 
         # PASS_TURN
