@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from abc import ABC
 
-from loguru import logger
-
 import game.systems.combat.effect as effects
 import game.systems.entity.resource as resource
 import game.systems.inventory.inventory_controller as inv
@@ -12,7 +10,6 @@ from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
-from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin, PlayerAgentMixin
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
@@ -192,6 +189,8 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         self.xp_yield: int = xp_yield
         self.turn_speed = turn_speed
         self.active_effects: dict[CombatPhase, list[effects.CombatEffect]] = {phase: [] for phase in CombatPhase}
+        self.ability_controller.owner = self
+        self.equipment_controller.owner = self
 
     def acquire_effect(self, effect: effects.CombatEffect, phase: CombatPhase) -> None:
         """
