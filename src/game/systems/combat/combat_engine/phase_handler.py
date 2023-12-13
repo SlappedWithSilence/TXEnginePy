@@ -2,8 +2,6 @@ from abc import ABC
 
 import game
 import game.systems.entity.entities as entities
-from loguru import logger
-
 from game.cache import from_cache
 from game.structures.errors import CombatError
 
@@ -24,10 +22,6 @@ class PhaseHandler(ABC):
         Wrapper for _phase_logic that provides consistent stateless error checking against the combat_engine.
         """
         ce = from_cache("combat")
-
-        logger.debug(f"current_turn: {ce.current_turn}")
-        logger.debug(f"current_phase: {ce.current_phase}")
-        logger.debug(f"turn_order: {ce._turn_order}")
 
         if ce.active_entity is None or not isinstance(ce.active_entity, entities.CombatEntity):
             raise CombatError(
@@ -66,6 +60,5 @@ class ChoiceActivator(PhaseHandler):
         Compute the choice made by the active entity and pass it back to the combat_engine instance to handle execution.
         """
         ce = from_cache("combat")
-        logger.debug(f"Running ChoiceActivator logic for entity {ce.active_entity.name}")
         ce.active_entity.make_choice()
 
