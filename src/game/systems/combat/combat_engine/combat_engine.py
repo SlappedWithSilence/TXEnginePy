@@ -137,6 +137,9 @@ class CombatEngine(FiniteStateDevice):
         The active entity has chosen to use an Ability. Handle its usage.
         """
 
+        if type(ability_name) is not str:
+            raise TypeError()
+
         ability = from_cache("managers.AbilityManager").get_instance(ability_name)
 
         if not ability.is_requirements_fulfilled(self.active_entity):
@@ -144,14 +147,18 @@ class CombatEngine(FiniteStateDevice):
                 f"Cannot activate ability '{ability}! Requirements not met for entity: {self.active_entity}"
             )
 
-        for target in targets:  # For each selected target of the chosen ability
-            for phase, effects in ability.effects:  # Unpack the ability's effects into phases
+        _targets = targets if type(targets) == list else [targets]
+
+        for target in _targets:  # For each selected target of the chosen ability
+            for phase, effects in ability.effects.items():  # Unpack the ability's effects into phases
                 for effect in effects:  # Iterate through each effect and assign it to that phase on the target
                     effect_copy = copy.deepcopy(effect)  # Deepcopy may cause an issue
 
                     # Assign sources and targets from the deepcopy
                     effect_copy.assign(self.active_entity, target)
                     target.acquire_effect(effect_copy, phase)
+
+                target.resource_controller[get_config()["resources"]["primary_resource"]].adjust(ability.damage * -1)
 
         self.active_entity.ability_controller.consume_ability_resources(ability_name)
 
@@ -262,7 +269,6 @@ class CombatEngine(FiniteStateDevice):
             raise TypeError(f"Unknown type for entity choice: {type(choice)}. Expected type ChoiceData!")
 
         # Store choice for later
-        logger.debug(f"Storing choice {choice} for entity {entity}")
         self.active_entity_choice = choice
 
     def handle_turn_action(self, choice: ChoiceData) -> None:
