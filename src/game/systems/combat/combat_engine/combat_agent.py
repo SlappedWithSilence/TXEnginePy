@@ -10,6 +10,7 @@ from game.cache import from_cache
 from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
+from game.systems.event.events import TextEvent
 
 
 class CombatAgentMixin(ABC):
@@ -59,7 +60,6 @@ class CombatAgentMixin(ABC):
         to the combat engine.
         """
 
-        logger.debug(f"Running make_choice for entity {self}")
         from_cache("combat").submit_entity_choice(self, self._choice_logic())
 
 
@@ -70,6 +70,9 @@ class NaiveAgentMixin(CombatAgentMixin):
         super().__init__(**kwargs)
 
     def _choice_logic(self) -> ChoiceData:
+        game.state_device_controller.add_state_device(
+            TextEvent(f"{from_cache('combat').active_entity.name} passed the turn.")
+        )
         return ChoiceData(ChoiceData.ChoiceType.PASS)
 
 
