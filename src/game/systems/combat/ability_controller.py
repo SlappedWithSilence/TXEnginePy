@@ -1,7 +1,7 @@
 import game
+import game.systems.event as events
 from game.cache import from_cache
 from game.structures.messages import StringContent
-import game.systems.event as events
 
 
 class AbilityController:
@@ -77,8 +77,9 @@ class AbilityController:
         if self.owner is None:
             raise RuntimeError(f"AbilityController instance {self} has no owner set!")
 
-        return self.is_learned(ability_name) and \
-            from_cache("managers.AbilityManager").get_instance(ability_name).is_requirements_fulfilled(self.owner)
+        inst = from_cache("managers.AbilityManager").get_instance(ability_name)
+
+        return self.is_learned(ability_name) and inst.is_requirements_fulfilled(self.owner)
 
     def consume_ability_resources(self, ability_name) -> None:
         """

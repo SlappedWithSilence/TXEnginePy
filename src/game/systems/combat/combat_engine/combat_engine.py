@@ -11,7 +11,6 @@ import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element, delete_element, get_config
 from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
-from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
