@@ -56,7 +56,10 @@ class RequirementsMixin:
 
         """
 
-        return all([req.fulfilled(entity) for req in self.requirements]) if self.requirements is not None else True
+        if self.requirements is None or self.requirements == []:
+            return True
+
+        return all([req.fulfilled(entity) for req in self.requirements])
 
     def get_requirements_as_str(self) -> list[str]:
         """Get a list of strings that represent the conditions for the requirements associated with this object"""
