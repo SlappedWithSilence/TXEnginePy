@@ -13,3 +13,4 @@ combat:
     t0: [ABILITIES, INVENTORY, EQUIPMENT, RESOURCES]
     t1: [RESOURCES, EQUIPMENT, ABILITIES]
     t2: [RESOURCES]
+  death_message: "{entity} has fallen!"
