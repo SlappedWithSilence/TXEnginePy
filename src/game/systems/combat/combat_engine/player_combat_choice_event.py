@@ -152,11 +152,13 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.CONFIRM_GROUP_ABILITY_TARGET)
         def content() -> dict:
             ci = from_cache("combat")
+            chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
+            targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
 
             return ComponentFactory.get(
-                [f"{self._choice_data.ability_name} targets the following entities. Are you sure?"],
-                [[f"{target.name} ({'ENEMY' if target in ci.enemies else 'ALLY'})" for target in
-                  self._choice_data.ability_target]]
+                [f"{chosen_ability} targets the following entities. Are you sure?"],
+                [[f"{target.name} ({'ENEMY' if target in ci.enemies else 'ALLY'}), " for target in
+                  targets]]
             )
 
         # CANNOT_USE_ABILITY
