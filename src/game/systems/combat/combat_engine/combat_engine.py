@@ -11,6 +11,7 @@ import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element, delete_element, get_config
 from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
+from game.structures.messages import StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
@@ -161,6 +162,16 @@ class CombatEngine(FiniteStateDevice):
                 target.resource_controller[get_config()["resources"]["primary_resource"]].adjust(ability.damage * -1)
 
         self.active_entity.ability_controller.consume_ability_resources(ability_name)
+
+        from game.systems.event.events import TextEvent
+        game.state_device_controller.add_state_device(
+            TextEvent(
+                [
+                    self.active_entity.name, " used ", StringContent(value=ability_name, formatting="ability_name"),
+                    "\n",
+                    ability.on_use
+                ]
+            ))
 
     def _handle_pass_turn(self) -> None:
         """
@@ -345,6 +356,7 @@ class CombatEngine(FiniteStateDevice):
         """
         Build the state logic and content providers for the FiniteStateDevice functionality of the CombatEngine.
         """
+
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
 
