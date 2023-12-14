@@ -10,6 +10,14 @@
     },
     {
       "class" : "Ability",
+      "name" : "\"My Opinions on Facebook are Really Important",
+      "description" : "Does 1 mental damage to anyone around",
+      "on_use" : "Feelsbad",
+      "damage" : 1,
+      "target_mode": "all"
+    },
+    {
+      "class" : "Ability",
       "name" : "Etchings of Iron",
       "description" : "The might of your forefathers fills you, restoring your stamina",
       "on_use" : "The might of your forefathers fills you.",

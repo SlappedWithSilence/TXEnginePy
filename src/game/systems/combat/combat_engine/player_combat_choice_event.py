@@ -7,7 +7,7 @@ from loguru import logger
 import game
 import game.systems.item as items
 from game.cache import cached, from_cache, from_storage
-from game.structures.enums import InputType
+from game.structures.enums import InputType, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
@@ -27,17 +27,18 @@ class PlayerCombatChoiceEvent(Event):
         DEFAULT = 0  # Setup
         CHOOSE_TURN_OPTION = 1  # Show the user which options are available
         CHOOSE_AN_ABILITY = 2  # Show the user abilities and request a selection
-        CHOOSE_ABILITY_TARGET = 3  # If the ability requires a target, show available targets and request an selection
-        CANNOT_USE_ABILITY = 4  # If the ability cannot be user for some reason, say so
-        CHOOSE_AN_ITEM = 5  # Show the user all available items and request a selection
-        DETECT_ITEM_USABLE = 6  # Check if the user can use the item and go to the appropriate state
-        CANNOT_USE_ITEM = 7  # If the item cannot be used for some reason, say so
-        SUBMIT_CHOICE = 8  # Once all choices have been finalized, submit them to the global combat instance
-        PASS_TURN = 9  # If the choice was to pass, do so
-        LIST_ENEMIES = 10  # Show a list of enemies that can be inspected
-        LIST_ALLIES = 11  # SHow a list of allies that can be inspected
-        INSPECT_ENTITY = 12  # SHow details about a specific entity
-        CHECK_ABILITY_USABLE = 13  # Verify that selected ability can be used
+        CHOOSE_SINGLE_ABILITY_TARGET = 3  # If the ability requires a target, show available targets
+        CONFIRM_GROUP_ABILITY_TARGET = 4  # If the ability targets a group, confirm
+        CANNOT_USE_ABILITY = 5  # If the ability cannot be user for some reason, say so
+        CHOOSE_AN_ITEM = 6  # Show the user all available items and request a selection
+        DETECT_ITEM_USABLE = 7  # Check if the user can use the item and go to the appropriate state
+        CANNOT_USE_ITEM = 8  # If the item cannot be used for some reason, say so
+        SUBMIT_CHOICE = 9  # Once all choices have been finalized, submit them to the global combat instance
+        PASS_TURN = 10  # If the choice was to pass, do so
+        LIST_ENEMIES = 11  # Show a list of enemies that can be inspected
+        LIST_ALLIES = 12  # SHow a list of allies that can be inspected
+        INSPECT_ENTITY = 13  # SHow details about a specific entity
+        CHECK_ABILITY_USABLE = 14  # Verify that selected ability can be used
         TERMINATE = -1  # Clean up
 
     def _get_turn_choices(self) -> dict[str, States]:
@@ -84,17 +85,26 @@ class PlayerCombatChoiceEvent(Event):
         def logic(_: any) -> None:
             selected_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
 
+            # If selected_ability is None, then the player didn't select anything from the SelectAbilityEvent
             if selected_ability is None:
                 self.set_state(self.States.CHOOSE_TURN_OPTION)
 
+            # Check if the selected_ability is usable by the player
             elif not self._entity.ability_controller.is_ability_usable(selected_ability):
                 self.set_state(self.States.CANNOT_USE_ABILITY)
 
+            # Check if the ability targets a group. If so, go to the group target confirmation state
+            elif from_cache("managers.AbilityManager").get_instance(
+                    selected_ability).target_mode in [TargetMode.ALL, TargetMode.ALL_ALLY, TargetMode.ALL_ENEMY]:
+
+                self.set_state(self.States.CONFIRM_GROUP_ABILITY_TARGET)
+
+            # The ability must be valid, and must be targeting a single target. Go to single target selection state
             else:
-                self.set_state(self.States.CHOOSE_ABILITY_TARGET)
+                self.set_state(self.States.CHOOSE_SINGLE_ABILITY_TARGET)
 
         # CHOOSE_ABILITY_TARGET
-        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_ABILITY_TARGET, InputType.INT,
+        @FiniteStateDevice.state_logic(self, self.States.CHOOSE_SINGLE_ABILITY_TARGET, InputType.INT,
                                        input_min=-1,
                                        input_max=lambda: len(from_cache("combat").get_ability_targets(
                                            self._entity,
@@ -114,14 +124,40 @@ class PlayerCombatChoiceEvent(Event):
             )
             self.set_state(self.States.SUBMIT_CHOICE)
 
-        @FiniteStateDevice.state_content(self, self.States.CHOOSE_ABILITY_TARGET)
+        @FiniteStateDevice.state_content(self, self.States.CHOOSE_SINGLE_ABILITY_TARGET)
         def content() -> dict:
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
             targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
             ci = from_cache("combat")
 
             return ComponentFactory.get(["Select a target:"],
-                                        [[f"{target.name} ({'ENEMY' if target in ci.enemies else 'ALLY'})" for target in targets]])
+                                        [[f"{target.name} ({'ENEMY' if target in ci.enemies else 'ALLY'})" for target in
+                                          targets]])
+
+        @FiniteStateDevice.state_logic(self, self.States.CONFIRM_GROUP_ABILITY_TARGET, InputType.AFFIRMATIVE)
+        def logic(user_input: bool) -> None:
+            chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
+            targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
+
+            if user_input:
+                self._choice_data = ChoiceData(
+                    ChoiceData.ChoiceType.ABILITY,
+                    ability_name=chosen_ability,
+                    ability_target=targets
+                )
+                self.set_state(self.States.SUBMIT_CHOICE)
+            else:
+                self.set_state(self.States.CHOOSE_AN_ABILITY)
+
+        @FiniteStateDevice.state_content(self, self.States.CONFIRM_GROUP_ABILITY_TARGET)
+        def content() -> dict:
+            ci = from_cache("combat")
+
+            return ComponentFactory.get(
+                [f"{self._choice_data.ability_name} targets the following entities. Are you sure?"],
+                [[f"{target.name} ({'ENEMY' if target in ci.enemies else 'ALLY'})" for target in
+                  self._choice_data.ability_target]]
+            )
 
         # CANNOT_USE_ABILITY
         @FiniteStateDevice.state_logic(self, self.States.CANNOT_USE_ABILITY, InputType.ANY)
