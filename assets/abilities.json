@@ -10,11 +10,19 @@
     },
     {
       "class" : "Ability",
-      "name" : "\"My Opinions on Facebook are Really Important",
+      "name" : "My Opinions on Facebook are Really Important",
       "description" : "Does 1 mental damage to anyone around",
       "on_use" : "Feelsbad",
       "damage" : 1,
       "target_mode": "all"
+    },
+    {
+      "class" : "Ability",
+      "name" : "Shortcuts are Great",
+      "description" : "Ends combat, FAST",
+      "on_use" : "Its over already?",
+      "damage" : 100,
+      "target_mode": "all_enemies"
     },
     {
       "class" : "Ability",
