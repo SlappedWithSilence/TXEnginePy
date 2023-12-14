@@ -100,8 +100,6 @@ class Viewer:
             primary_resource_max = entity_dict['primary_resource_max']
             return f"{entity_name}\n{primary_resource_name}]: [{primary_resource_value}/{primary_resource_max}]"
 
-        print(parse_content(tx_engine_response["components"]["content"]))
-
         if "enemies" in tx_engine_response["components"]:
             print("ENEMIES")
             for enemy in tx_engine_response["components"]["enemies"]:
@@ -111,6 +109,8 @@ class Viewer:
             print("ALLIES")
             for ally in tx_engine_response["components"]["allies"]:
                 print(entity_to_str(ally))
+
+        print(parse_content(tx_engine_response["components"]["content"]))
 
         if "options" in tx_engine_response["components"] and type(tx_engine_response["components"]["options"]) == list:
             for idx, opt in enumerate(tx_engine_response["components"]["options"]):
