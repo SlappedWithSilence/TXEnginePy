@@ -30,13 +30,13 @@ class LootableMixin(ABC):
         """
         Generate a random number to determine how many drops should be generated
         """
-        return self._drop_table[randint(0, len(self._drop_table))]
+        return self._drop_table[randint(0, len(self._drop_table) - 1)]
 
     def _get_loot_instance(self) -> int:
         """
         Generate a random number to determine which item should drop
         """
-        return self._loot_table[randint(0, len(self._loot_table))]
+        return self._loot_table[randint(0, len(self._loot_table) - 1)]
 
     def get_loot(self) -> dict[int, int]:
         """
