@@ -11,7 +11,7 @@ import game.systems.entity.entities as entities
 from game.cache import from_cache, cache_element, delete_element, get_config
 from game.structures.enums import CombatPhase, InputType, TargetMode
 from game.structures.errors import CombatError
-from game.structures.messages import StringContent
+from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, EffectActivator, ChoiceActivator
@@ -334,13 +334,14 @@ class CombatEngine(FiniteStateDevice):
         for a win condition.
         """
 
+        logger.debug("Generating default termination conditions")
         primary_resource = get_config()['resources']['primary_resource']
 
         return [
             PlayerResourceCondition(
-                primary_resource, 0, TerminationHandler.TerminationMode.WIN, GroupResourceCondition.Mode.LESS_THAN),
+                primary_resource, 0, TerminationHandler.TerminationMode.LOSS, GroupResourceCondition.Mode.EQUAL_TO),
             EnemyResourceCondition(
-                primary_resource, 0, TerminationHandler.TerminationMode.LOSS, GroupResourceCondition.Mode.LESS_THAN),
+                primary_resource, 0, TerminationHandler.TerminationMode.WIN, GroupResourceCondition.Mode.EQUAL_TO),
         ]
 
     @classmethod
@@ -407,7 +408,7 @@ class CombatEngine(FiniteStateDevice):
             for termination_condition in self._termination_conditions:
                 try:
                     if termination_condition.is_conditions_met():
-                        if termination_condition.mode == TerminationHandler.TerminationMode.WIN:
+                        if termination_condition.termination_mode.value == TerminationHandler.TerminationMode.WIN.value:
                             win = True
                         else:
                             loss = True
@@ -423,6 +424,22 @@ class CombatEngine(FiniteStateDevice):
                 self.set_state(self.States.PLAYER_VICTORY)
             else:
                 self.set_state(self.States.NEXT_PHASE)
+
+        @FiniteStateDevice.state_logic(self, self.States.PLAYER_VICTORY, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.PLAYER_VICTORY)
+        def content() -> dict:
+            return ComponentFactory.get([get_config()['combat']['victory_message']])
+
+        @FiniteStateDevice.state_logic(self, self.States.PLAYER_LOSS, InputType.ANY)
+        def logic(_: any) -> None:
+            self.set_state(self.States.TERMINATE)
+
+        @FiniteStateDevice.state_content(self, self.States.PLAYER_LOSS)
+        def content() -> dict:
+            return ComponentFactory.get([get_config()['combat']['loss_message']])
 
         @FiniteStateDevice.state_logic(self, self.States.NEXT_PHASE, InputType.SILENT)
         def logic(_: any):
