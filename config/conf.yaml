@@ -14,3 +14,5 @@ combat:
     t1: [RESOURCES, EQUIPMENT, ABILITIES]
     t2: [RESOURCES]
   death_message: "{entity} has fallen!"
+  victory_message: "All enemies have fallen. Victory!"
+  loss_message: "You have fallen. Failure."
