@@ -1,17 +1,22 @@
 from abc import ABC
 from random import randint
 
-from game.cache import from_cache
+from game.cache import from_cache, cached
+from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 
 
-class LootTable:
+class LootTable(LoadableMixin):
     """
     LootTable objects store organized data about the types of items that can drop and how many of them should drop.
     """
+
     ITEM_TABLE_RESOLUTION = 1000  # The length of the loot table array
     DROP_TABLE_RESOLUTION = 1000  # The length of the drop table array
 
-    def __init__(self, item_probabilities: dict[int, float], drop_probabilities: dict[int, float]):
+    def __init__(self, id: int, item_probabilities: dict[int, float], drop_probabilities: dict[int, float], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.id = id
         self.item_table = self._generate_loot_table(item_probabilities)  # Probability a drop is a specific item
         self.drop_table = self._generate_drop_table(drop_probabilities)
 
@@ -37,6 +42,37 @@ class LootTable:
         if sum(drop_probabilities.values()) != 1.0:
             raise ValueError("The sum of probabilities in a drop table must be exactly 1.0!")
 
+    @staticmethod
+    @cached([LoadableMixin.LOADER_KEY, "LootTable", LoadableMixin.ATTR_KEY])
+    def from_json(json: dict[str, any]) -> any:
+        """
+        Instantiate a LootTable object from a JSON blob.
+
+        Args:
+        json: a dict-form representation of a JSON object
+
+        Returns: A LootTable instance with the properties defined in the JSON
+
+        Required JSON fields:
+        - id: int
+        - item_probabilities: dict[str (int), float]
+        - drop_probabilities: dict[str (int), float]
+
+        Optional JSON fields:
+        - None
+        """
+
+        required_fields = [
+            ("id", int), ("item_probabilities", dict), ("drop_probabilities", dict)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        item_probabilities = {int(k): v for k, v in json["item_probabilities"]}
+        drop_probabilities = {int(k): v for k, v in json["drop_probabilities"]}
+
+        return LootTable(json['id'], item_probabilities, drop_probabilities)
+
 
 class LootableMixin(ABC):
     """
@@ -49,9 +85,8 @@ class LootableMixin(ABC):
     """
 
     def __init__(self, loot_table_id: int = None, item_probabilities: dict[int, float] = None,
-                 drop_probabilities: dict[int, float] = None,
-                 **kwargs):
-        super(**kwargs)
+                 drop_probabilities: dict[int, float] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         if loot_table_id is not None and (item_probabilities or drop_probabilities):
             raise ValueError("A LootableMixin cannot specify both a loot_table_id and a custom loot table!")
@@ -65,7 +100,7 @@ class LootableMixin(ABC):
             self._loot_table_id = loot_table_id  # The ID of a pre-made re-usable loot table defined in assets folder
 
         else:
-            self._loot_table_instance = LootTable(item_probabilities, drop_probabilities)
+            self._loot_table_instance = LootTable(None, item_probabilities, drop_probabilities)
 
     @property
     def loot_table(self) -> LootTable:
