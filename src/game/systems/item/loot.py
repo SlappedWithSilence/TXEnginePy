@@ -14,22 +14,30 @@ class LootTable(LoadableMixin):
     ITEM_TABLE_RESOLUTION = 1000  # The length of the loot table array
     DROP_TABLE_RESOLUTION = 1000  # The length of the drop table array
 
-    def __init__(self, id: int, item_probabilities: dict[int, float], drop_probabilities: dict[int, float], *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, id: int, item_probabilities: dict[int, float], drop_probabilities: dict[int, float]):
+        super().__init__()
         self.id = id
-        self.item_table = self._generate_loot_table(item_probabilities)  # Probability a drop is a specific item
+        self.item_table = self._generate_item_table(item_probabilities)  # Probability a drop is a specific item
         self.drop_table = self._generate_drop_table(drop_probabilities)
 
     @classmethod
-    def _generate_loot_table(cls, loot_probabilities: dict[int, float]) -> list[int]:
+    def _generate_item_table(cls, item_probabilities: dict[int, float]) -> list[int]:
         """
         Transform a dict of item probabilities into a list of item IDs.
         """
-        if loot_probabilities is None:
+        if item_probabilities is None:
             return []
 
-        if sum(loot_probabilities.values()) != 1.0:
+        if sum(item_probabilities.values()) != 1.0:
             raise ValueError("The sum of probabilities in a loot table must be exactly 1.0!")
+
+        res = []
+
+        for item_id, prob in item_probabilities.items():
+            for i in range(int(prob * LootTable.ITEM_TABLE_RESOLUTION)):
+                res.append(item_id)
+
+        return res
 
     @classmethod
     def _generate_drop_table(cls, drop_probabilities: dict[int, float]) -> list[int]:
@@ -41,6 +49,14 @@ class LootTable(LoadableMixin):
 
         if sum(drop_probabilities.values()) != 1.0:
             raise ValueError("The sum of probabilities in a drop table must be exactly 1.0!")
+
+        res = []
+
+        for quantity, prob in drop_probabilities.items():
+            for i in range(int(prob * LootTable.DROP_TABLE_RESOLUTION)):
+                res.append(quantity)
+
+        return res
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "LootTable", LoadableMixin.ATTR_KEY])
@@ -82,23 +98,33 @@ class LootableMixin(ABC):
     - To use direct definition, provide a value to `item_probabilities` and `drop_probabilities`.
     - To use global referencing, provide a LootTable ID to `loot_table_id`. This should correspond to the ID of a
         LootTable that has been registered with the LootManager.
+    - To provide a pre-made instance of LootTable, pass it to `loot_table_instance`
+    Choose ONE method. Choosing more than one or none will result in an error being thrown.
     """
 
-    def __init__(self, loot_table_id: int = None, item_probabilities: dict[int, float] = None,
-                 drop_probabilities: dict[int, float] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, loot_table_id: int = None,
+                 item_probabilities: dict[int, float] = None, drop_probabilities: dict[int, float] = None,
+                 loot_table_instance: LootTable = None,
+                 **kwargs):
+        super().__init__(**kwargs)
 
-        if loot_table_id is not None and (item_probabilities or drop_probabilities):
+        if loot_table_id is not None and (item_probabilities or drop_probabilities or loot_table_instance):
             raise ValueError("A LootableMixin cannot specify both a loot_table_id and a custom loot table!")
 
-        if loot_table_id is None and not (item_probabilities and drop_probabilities):
+        if loot_table_id is None and not (item_probabilities and drop_probabilities) and not loot_table_instance:
             raise ValueError(
                 "A LootableMixin without a loot_table_id must provide both a loot_probabilities and drop_probabilities!"
             )
 
+        if loot_table_id is None and item_probabilities is None and drop_probabilities is None and loot_table_instance is None:
+            raise ValueError("At least one method for initialization must be provided to LootTableMixin!")
+
         if loot_table_id is not None:
             self._loot_table_id = loot_table_id  # The ID of a pre-made re-usable loot table defined in assets folder
 
+        if loot_table_instance is not None:
+            self._loot_table_id = None
+            self._loot_table_instance = loot_table_instance
         else:
             self._loot_table_instance = LootTable(None, item_probabilities, drop_probabilities)
 
