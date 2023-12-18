@@ -1,0 +1,16 @@
+{
+  "content" : [
+    {
+      "class" : "LootTable",
+      "id" : 0,
+      "item_probabilities" : {
+        "1" : 0.5,
+        "2" : 0.5
+      },
+      "drop_probabilities" : {
+        "1" : 0.66,
+        "2" : 0.34
+      }
+    }
+  ]
+}
