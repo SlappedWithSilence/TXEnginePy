@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from typing import Any
 
 import game.systems.combat.effect as effects
 import game.systems.entity.resource as resource
@@ -13,6 +14,7 @@ from game.systems.combat.ability_controller import AbilityController
 from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin, PlayerAgentMixin
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
+from game.systems.item.loot import LootableMixin, LootTable
 from game.systems.skill.skill_controller import SkillController
 
 
@@ -176,7 +178,7 @@ class AbilityMixin:
                 self.ability_controller.learn(ability)
 
 
-class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
+class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, LootableMixin, Entity):
     """
     A subclass of Entity that contains all the necessary components to participate in Combat.
     """
@@ -233,7 +235,8 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         - id: int
         - xp_yield: int
         - turn_speed: int
-        - abilities: [str]
+        - abilities: list[str]
+        - loot_table: int | LootTable
 
         Optional JSON fields:
         - combat_provider (str)
@@ -245,7 +248,7 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         """
 
         required_fields = [
-            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int), ("abilities", list)
+            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int), ("abilities", list), ("loot_table", Any)
         ]
 
         optional_fields = [
@@ -257,8 +260,27 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, Entity):
         LoadableFactory.validate_fields(optional_fields, json, False, False)
         kw = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        ce = CombatEntity(json['xp_yield'], json['turn_speed'], name=json['name'], id=json['id'],
-                          abilities=json['abilities'], **kw)
+        # Pre-process LootableMixin data. Determine if an ID or an instance is passed.
+        # If an ID is passed, simply pass it through. If a LootTable JSON blob is passed,
+        # transform it via LoadableFactory and pass it back to kw dict.
+        if type(json['loot_table']) == int:
+            kw['loot_table_id'] = json['loot_table']
+        elif type(json['loot_table']) == dict:
+            res = LoadableFactory.get(json['loot_table'])
+            if not isinstance(res, LootTable):
+                raise TypeError("Expected entity['loot_table'] to be of class LootTable!")
+
+            kw['loot_table_instance'] = res
+        else:
+            raise TypeError("Unexpected type for json['loot_table'] in CombatEntity JSON!")
+
+        ce = CombatEntity(
+            json['xp_yield'],
+            json['turn_speed'],
+            name=json['name'],
+            id=json['id'],
+            abilities=json['abilities'],
+            **kw)
 
         # Post-init fixing
         # Note: since the equipment_controller only gets assigned an owner assigned AFTER init, it cannot check equip
