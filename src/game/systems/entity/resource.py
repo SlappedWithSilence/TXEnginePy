@@ -3,7 +3,7 @@ import inspect
 
 from loguru import logger
 
-from game.cache import cached, from_cache
+from game.cache import cached, from_cache, get_config
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
@@ -219,6 +219,10 @@ class ResourceController:
             return self.get_instance(item)
         else:
             raise KeyError("resource_name must be str!")
+
+    @property
+    def primary_resource(self) -> "Resource":
+        return self[get_config()['resources']['primary_resource']]
 
     def get_instance(self, resource_name) -> Resource:
         """
