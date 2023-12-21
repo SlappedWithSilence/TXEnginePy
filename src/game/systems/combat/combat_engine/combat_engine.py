@@ -40,9 +40,27 @@ class CombatEngine(FiniteStateDevice):
         EXECUTE_ENTITY_CHOICE = 8
         TERMINATE = -1
 
+    @classmethod
+    def is_dead(cls, entity: entities.CombatEntity) -> bool:
+        """
+        Compute if the entity is dead. Check if the primary_resource has been depleted.
+        """
+        res: bool = entity.resource_controller.primary_resource.value < 1
+
+        if res:
+            logger.debug(f"Entity {entity.name} is dead!")
+            logger.debug(entity.resource_controller.primary_resource)
+        return res
+
     def __init__(self, ally_entity_ids: list[int], enemy_entity_ids: list[int],
-                 termination_conditions: list[TerminationHandler] = None):
+                 termination_conditions: list[TerminationHandler] = None, override_primary_resource: str = None):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
+
+        if override_primary_resource is not None:
+            self._backup_primary_resource = get_config()['resources']['primary_resource']
+            get_config()['resources']['primary_resource'] = override_primary_resource
+        else:
+            self._backup_primary_resource = None
 
         # Verify that there's at least one win and one loss condition
         self._termination_conditions = termination_conditions or self._get_default_termination_conditions()
@@ -115,6 +133,9 @@ class CombatEngine(FiniteStateDevice):
 
         # Sort in place
         self._turn_order.sort(key=lambda x: x.turn_speed, reverse=True)
+
+        # Remove any dead entities
+        self._turn_order = [e for e in self._turn_order if not self.is_dead(e)]
 
     def _handle_use_item(self, item_id: int) -> None:
         """
@@ -375,7 +396,12 @@ class CombatEngine(FiniteStateDevice):
             self.current_turn += 1  # Increment turn index
             self.current_phase_index = 0  # Reset phase index to 0 (Start phase)
 
-            if self.active_entity:  # If incremented position is in range, handle the turn's phase logic
+            if self.is_dead(self.active_entity):
+                # Skip this entity's turn and then check if combat should have ended.
+                self.current_phase_index = len(self.get_master_phase_order()) - 1
+                self.set_state(self.States.DETECT_COMBAT_TERMINATION)
+
+            elif self.active_entity:  # If incremented position is in range, handle the turn's phase logic
                 self.set_state(self.States.HANDLE_PHASE)
             else:  # If not, then all entities have had a turn, start a new turn cycle
                 self.set_state(self.States.START_TURN_CYCLE)
@@ -450,3 +476,7 @@ class CombatEngine(FiniteStateDevice):
         def logic(_: any) -> None:
             delete_element("combat")  # Kill the global combat reference
             game.state_device_controller.set_dead()  # Set self as dead to be removed from the stack
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._backup_primary_resource is not None:
+            get_config()['resources']['primary_resource'] = self._backup_primary_resource
