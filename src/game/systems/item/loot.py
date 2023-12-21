@@ -1,6 +1,8 @@
 from abc import ABC
 from random import randint
 
+from loguru import logger
+
 from game.cache import from_cache, cached
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
@@ -108,16 +110,16 @@ class LootableMixin(ABC):
                  **kwargs):
         super().__init__(**kwargs)
 
-        if loot_table_id is not None and (item_probabilities or drop_probabilities or loot_table_instance):
+        if not all([loot_table_instance, loot_table_id, drop_probabilities, item_probabilities]):
+            logger.warning(f"A LootableMixin was spawned without any loot: {self}")
+
+        elif loot_table_id is not None and (item_probabilities or drop_probabilities or loot_table_instance):
             raise ValueError("A LootableMixin cannot specify both a loot_table_id and a custom loot table!")
 
-        if loot_table_id is None and not (item_probabilities and drop_probabilities) and not loot_table_instance:
+        elif loot_table_id is None and not (item_probabilities and drop_probabilities) and not loot_table_instance:
             raise ValueError(
                 "A LootableMixin without a loot_table_id must provide both a loot_probabilities and drop_probabilities!"
             )
-
-        if loot_table_id is None and item_probabilities is None and drop_probabilities is None and loot_table_instance is None:
-            raise ValueError("At least one method for initialization must be provided to LootTableMixin!")
 
         if loot_table_id is not None:
             self._loot_table_id = loot_table_id  # The ID of a pre-made re-usable loot table defined in assets folder
@@ -126,6 +128,7 @@ class LootableMixin(ABC):
             self._loot_table_id = None
             self._loot_table_instance = loot_table_instance
         else:
+            self._loot_table_id = None
             self._loot_table_instance = LootTable(None, item_probabilities, drop_probabilities)
 
     @property
