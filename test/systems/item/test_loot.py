@@ -23,7 +23,14 @@ def test_loot_table_get_loot():
 
 
 def test_lootable_mixin_trivial():
-    sl = CombatEntity()
+    i_prob = {
+        -110: 0.33,
+        -111: 0.33,
+        -112: 0.34,
+    }
+
+    d_prob = {1: 1.0}
+    sl = CombatEntity(id=-1, name="TestEntity", item_probabilities=i_prob, drop_probabilities=d_prob)
 
     assert type(sl.loot_table) == LootTable
     assert len(sl.loot_table.item_table) == LootTable.ITEM_TABLE_RESOLUTION
