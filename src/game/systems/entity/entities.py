@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any
 
 import game.systems.combat.effect as effects
 import game.systems.entity.resource as resource
@@ -248,7 +247,8 @@ class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, LootableMixin,
         """
 
         required_fields = [
-            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int), ("abilities", list), ("loot_table", Any)
+            ("name", str), ("id", int), ("xp_yield", int), ("turn_speed", int), ("abilities", list),
+            ("loot_table", object)
         ]
 
         optional_fields = [
@@ -310,4 +310,4 @@ class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):
         pass
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs, loot_table_id=None)
