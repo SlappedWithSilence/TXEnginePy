@@ -3,8 +3,6 @@ import os
 import requests
 from loguru import logger
 from rich import print
-from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer
 
 
 def formatting_to_tags(tags: list[str], opening_tag: bool = None, closing_tag: bool = None) -> str:
@@ -119,25 +117,9 @@ class Viewer:
         print(self.get_text_header(tx_engine_response))
 
 
-class TextualViewer(App):
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
 
-    def __init__(self):
-        super().__init__()
-
-    def compose(self) -> ComposeResult:
-        """Create child widgets for the app."""
-        yield Header()
-        yield Footer()
-
-    def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
-        self.dark = not self.dark
 
 
 if __name__ == "__main__":
     viewer = Viewer()
     viewer.start_session()
-
-    # viewer = TextualViewer()
-    # viewer.run()
