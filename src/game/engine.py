@@ -30,7 +30,7 @@ class Engine:
     manager_load_priority = {
         0: ["CurrencyManager", "ResourceManager", "FlagManager"],
         1: ["EquipmentManager"],
-        2: ["ItemManager"],
+        2: ["ItemManager", "LootManager"],
         3: ["EntityManager"],
         4: ["RoomManager"]
     }
