@@ -310,4 +310,4 @@ class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):
         pass
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, loot_table_id=None)
+        super().__init__(**kwargs)
