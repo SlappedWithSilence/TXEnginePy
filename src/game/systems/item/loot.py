@@ -47,7 +47,7 @@ class LootTable(LoadableMixin):
         Transform a dict of item probabilities into a list of item quantities.
         """
         if drop_probabilities is None:
-            return dict[0:1.0]
+            return cls._generate_drop_table({0: 1.0})
 
         if sum(drop_probabilities.values()) != 1.0:
             raise ValueError("The sum of probabilities in a drop table must be exactly 1.0!")
@@ -57,7 +57,6 @@ class LootTable(LoadableMixin):
         for quantity, prob in drop_probabilities.items():
             for i in range(int(prob * LootTable.DROP_TABLE_RESOLUTION)):
                 res.append(quantity)
-
         return res
 
     @staticmethod
@@ -86,8 +85,8 @@ class LootTable(LoadableMixin):
 
         LoadableFactory.validate_fields(required_fields, json)
 
-        item_probabilities = {int(k): v for k, v in json["item_probabilities"]}
-        drop_probabilities = {int(k): v for k, v in json["drop_probabilities"]}
+        item_probabilities = {int(k): v for k, v in json["item_probabilities"].items()}
+        drop_probabilities = {int(k): v for k, v in json["drop_probabilities"].items()}
 
         return LootTable(json['id'], item_probabilities, drop_probabilities)
 
@@ -110,8 +109,9 @@ class LootableMixin(ABC):
                  **kwargs):
         super().__init__(**kwargs)
 
-        if not all([loot_table_instance, loot_table_id, drop_probabilities, item_probabilities]):
-            logger.warning(f"A LootableMixin was spawned without any loot: {self}")
+        if loot_table_id is None and item_probabilities is None and drop_probabilities is None and \
+                loot_table_instance is None:
+            pass
 
         elif loot_table_id is not None and (item_probabilities or drop_probabilities or loot_table_instance):
             raise ValueError("A LootableMixin cannot specify both a loot_table_id and a custom loot table!")
@@ -124,7 +124,7 @@ class LootableMixin(ABC):
         if loot_table_id is not None:
             self._loot_table_id = loot_table_id  # The ID of a pre-made re-usable loot table defined in assets folder
 
-        if loot_table_instance is not None:
+        elif loot_table_instance is not None:
             self._loot_table_id = None
             self._loot_table_instance = loot_table_instance
         else:
@@ -142,7 +142,8 @@ class LootableMixin(ABC):
         """
         Generate a random number to determine how many drops should be generated
         """
-        return self.loot_table.drop_table[randint(0, len(self.loot_table.drop_table) - 1)]
+        idx = randint(0, len(self.loot_table.drop_table) - 1)
+        return self.loot_table.drop_table[idx]
 
     def _get_item_from_pool(self) -> int:
         """
@@ -158,6 +159,9 @@ class LootableMixin(ABC):
         """
 
         drops: dict[int, int] = {}
+
+        if self.loot_table is None:
+            return drops
 
         for i in range(0, self._get_num_drops()):
             item_id = self._get_item_from_pool()
