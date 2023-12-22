@@ -36,6 +36,9 @@ class LootManager(Manager):
         else:
             self._manifest[loot_table_id] = LootTable(loot_table_id, item_probabilities, drop_probabilities)
 
+    def get_instance(self, loot_table_id: int) -> LootTable:
+        return self._manifest[loot_table_id]
+
     def load(self) -> None:
         """
        Load LootTable objects from disk and register them with the Manager.
