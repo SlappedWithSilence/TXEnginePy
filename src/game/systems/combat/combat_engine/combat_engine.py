@@ -470,7 +470,7 @@ class CombatEngine(FiniteStateDevice):
                 [f"{from_cache('managers.ItemManager').get_instance(i).name} x{q}" for i, q in loot.items()]
             )
 
-            game.state_device_controller.add_state_device(TextEvent(f"You looted: {loot_preview}"))
+            game.state_device_controller.add_state_device(TextEvent(f"You looted: \n{loot_preview}"))
 
         @FiniteStateDevice.state_content(self, self.States.PLAYER_VICTORY)
         def content() -> dict:
