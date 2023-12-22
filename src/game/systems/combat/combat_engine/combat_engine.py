@@ -120,7 +120,7 @@ class CombatEngine(FiniteStateDevice):
 
         for handler_class in self.PHASE_HANDLERS[self.current_phase]:
             handler: PhaseHandler = handler_class()
-            handler.handle_phase(self)
+            handler.handle_phase()
 
     def _compute_turn_order(self):
         """
@@ -454,6 +454,23 @@ class CombatEngine(FiniteStateDevice):
         @FiniteStateDevice.state_logic(self, self.States.PLAYER_VICTORY, InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)
+
+            loot = {}
+            for enemy in self.enemies:
+                logger.debug(f"Getting loot for {enemy.name}")
+                loot.update(enemy.get_loot())
+
+            from game.systems.event import AddItemEvent
+            from game.systems.event.events import TextEvent
+
+            for i, q in loot.items():
+                game.state_device_controller.add_state_device(AddItemEvent(i, q))
+
+            loot_preview = "\n".join(
+                [f"{from_cache('managers.ItemManager').get_instance(i).name} x{q}" for i, q in loot.items()]
+            )
+
+            game.state_device_controller.add_state_device(TextEvent(f"You looted: {loot_preview}"))
 
         @FiniteStateDevice.state_content(self, self.States.PLAYER_VICTORY)
         def content() -> dict:
