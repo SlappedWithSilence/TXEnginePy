@@ -117,9 +117,6 @@ class Viewer:
         print(self.get_text_header(tx_engine_response))
 
 
-
-
-
 if __name__ == "__main__":
     viewer = Viewer()
     viewer.start_session()

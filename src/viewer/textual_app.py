@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 
+import requests
+from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, DataTable, Input, Tabs, Tab, TabbedContent, TabPane, Label, Button
+from textual.scroll_view import ScrollView
+from textual.widgets import Header, Footer, Static, DataTable, Input, TabbedContent, TabPane, Label, Button, \
+    Pretty, TextLog
+from textual.widgets._tabbed_content import ContentTab
 
 
 # Global helper functions
@@ -62,6 +67,21 @@ def input_type_to_regex(input_type: str, input_range: dict = None) -> str | None
 
         case _:
             raise RuntimeError("Unknown Input Type!")
+
+
+def get_content_from_frame(frame: dict) -> str:
+    return parse_content(frame["components"]["content"])
+
+def get_options_from_frame(frame: dict) -> list[str] | None:
+    if "options" not in frame["components"]:
+        return None
+
+    res = []
+
+    for opt in frame["components"]["options"]:
+        res.append(parse_content(opt))
+
+    return res
 
 
 # Global helper classes
@@ -154,17 +174,19 @@ class MainScreen(Static):
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
-        with TabbedContent(initial="game_screen"):
-            with TabPane("Game", id="game_screen"):
-                yield Label("Game Content Goes Here", id="game_screen_content")
-            with TabPane("History", id="history_screen"):
+        with TabbedContent(initial="game_screen_tab", id="main_screen_tabs"):
+            with TabPane("Game", id="game_screen_tab"):
+                yield ScrollView(id="game_content_view")
+            with TabPane("History", id="history_screen_tab"):
                 yield HistoryWidget()
+            with TabPane("Debug Log", id="debug_log_tab"):
+                yield TextLog(name="Log", id="debug_log")
 
 
 class TextualViewer(App):
     BINDINGS = [
-        ("l", "show_tab('game_screen')", "Game"),
-        ("j", "show_tab('history_screen')", "History")
+        ("l", "show_tab('game_screen_tab')", "Game"),
+        ("j", "show_tab('history_screen_tab')", "History")
     ]
 
     def __init__(self):
@@ -172,6 +194,23 @@ class TextualViewer(App):
 
         self.frame_history: list[HistoryEntry] = []
         self.current_history_index: int | None = None
+        self._ip = 'http://localhost:8000'
+        self._session = requests.Session()
+
+    def _get_current_frame(self) -> dict:
+        """
+        Query the TXEnginePy server for the content for the current game frame
+        """
+        return self._session.get(self._ip, verify=False).json()
+
+    def _submit_user_input(self, user_input: str | int | None) -> None:
+        """
+        Submit user's current input to the TXEnginePy server
+        """
+        self._session.put(self._ip, params={"user_input": user_input}, verify=False)
+
+    def _write_log(self, message: str) -> None:
+        self.app.query_one("#debug_log", TextLog).write(message)
 
     @property
     def is_viewing_history(self) -> bool:
@@ -180,13 +219,34 @@ class TextualViewer(App):
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(name="TXEngine")
-        yield MainScreen(name="main_screen")
-        yield Input(name="primary_user_input")
+        yield MainScreen(id="main_screen")
+        yield Input(id="primary_user_input")
         yield Footer()
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
         self.get_child_by_type(MainScreen).get_child_by_type(TabbedContent).active = tab
+
+    @on(Input.Submitted)
+    def submit_input(self, event: Input.Submitted) -> None:
+        self._submit_user_input(self.app.get_child_by_id("primary_user_input").value)
+        self.app.get_child_by_id("primary_user_input").value = ""
+        frame = self._get_current_frame()
+        text = get_content_from_frame(
+                self._get_current_frame()
+            )
+        self._write_log(text)
+
+        for child in self.app.query_one("#game_content_view", ScrollView).children:
+            child.remove()
+
+        self.app.query_one("#game_content_view", ScrollView).mount(Label(text))
+
+        if get_options_from_frame(frame) is not None:
+            table = DataTable()
+            table.add_columns(*frame["components"]["options_format"]["cols"])
+            table.add_rows(enumerate(get_options_from_frame(frame)))
+            self.app.query_one("#game_content_view", ScrollView).mount(table)
 
 
 if __name__ == "__main__":

@@ -71,7 +71,9 @@ class ComponentFactory:
     @classmethod
     def get(cls,
             content: list[str | StringContent] | None = None,
-            options: list[list[str | StringContent]] | None = None
+            options: list[list[str | StringContent]] | None = None,
+            cols: list[str] | None = None,
+            listing_type: str | None = None,
             ) -> dict[str, list]:
         """
         A components dict only has two fields: content and options. 'content' is required while 'options' is not.
@@ -80,6 +82,10 @@ class ComponentFactory:
             content: A list of str or str-like objects. This is the main text the user sees.
             options: A list of lists of str or str-like objects. If there are options for the user to choose from within
                      a given frame, they are embedded inside 'options'.
+            cols: A list of strs. cols[0] is the name of the column of indexes, cols[1] is the name of the column of
+                    text.
+            listing_type: A str. Available options are "numbered" and "dashed". Informs the client of the prefered
+                    formatting choice.
 
         Returns: A structured dict containing all the passed fields.
         """
@@ -92,7 +98,6 @@ class ComponentFactory:
             import game.systems.entity.entities as entities
 
             if not isinstance(entity, entities.CombatEntity):
-
                 raise TypeError(f"scrape_entity expected object of type CombatEntity! Got {type(entity)} instead!")
             primary_resource = get_config()["resources"]["primary_resource"]
             return {
@@ -112,6 +117,11 @@ class ComponentFactory:
         data = {
             "content": content,
             "options": options,
+            "options_format": {
+                "cols": cols if cols is not None else ["index", "option"],
+                "listing_type": listing_type if listing_type is not None else "numbered"
+
+            }
         }
         is_combat_frame = (from_cache("combat") is not None)
 
