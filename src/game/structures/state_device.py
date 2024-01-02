@@ -154,19 +154,22 @@ class StateDevice(ABC):
 
         # Input must be an int that is below the maximum and above the minimum
         elif self.input_type == InputType.INT:
-            if type(input_value) == int:
-                if self.domain_min is not None and input_value < self.domain_min:
+            try:
+                true_input = int(input_value)
+
+                if self.domain_min is not None and true_input < self.domain_min:
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {input_value} must be >= {self._input_range['min']}")
+                        f"[{self}]: Failed to validate input! {true_input} must be >= {self._input_range['min']}")
                     return False
 
-                if self.domain_max is not None and (input_value > self.domain_max):
+                if self.domain_max is not None and (true_input > self.domain_max):
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {input_value} must be <= {self._input_range['max']}")
+                        f"[{self}]: Failed to validate input! {true_input} must be <= {self._input_range['max']}")
                     return False
 
                 return True
-            else:
+
+            except Exception as e:
                 logger.warning(f"input_type.INT requires int, not type: {type(input_value)}!")
 
         # Input must be a str shorter than length
@@ -216,6 +219,9 @@ class StateDevice(ABC):
 
             if self.input_type == enums.InputType.AFFIRMATIVE:  # Intercept affirmative input values and transform them
                 self._logic(affirmative_to_bool(user_input))
+
+            elif self.input_type == enums.InputType.INT:
+                self._logic(int(user_input))
             else:  # Handle all other input values normally
                 self._logic(user_input)
             return True
