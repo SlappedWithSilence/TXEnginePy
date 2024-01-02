@@ -3,10 +3,7 @@ from dataclasses import dataclass
 import requests
 from textual import on
 from textual.app import App, ComposeResult
-from textual.scroll_view import ScrollView
-from textual.widgets import Header, Footer, Static, DataTable, Input, TabbedContent, TabPane, Label, Button, \
-    Pretty, TextLog
-from textual.widgets._tabbed_content import ContentTab
+from textual.widgets import Header, Footer, Static, DataTable, Input, TabbedContent, TabPane, Label, Button, RichLog
 
 
 # Global helper functions
@@ -71,6 +68,7 @@ def input_type_to_regex(input_type: str, input_range: dict = None) -> str | None
 
 def get_content_from_frame(frame: dict) -> str:
     return parse_content(frame["components"]["content"])
+
 
 def get_options_from_frame(frame: dict) -> list[str] | None:
     if "options" not in frame["components"]:
@@ -176,11 +174,11 @@ class MainScreen(Static):
     def compose(self) -> ComposeResult:
         with TabbedContent(initial="game_screen_tab", id="main_screen_tabs"):
             with TabPane("Game", id="game_screen_tab"):
-                yield ScrollView(id="game_content_view")
+                yield RichLog(id="game_content_view")
             with TabPane("History", id="history_screen_tab"):
                 yield HistoryWidget()
             with TabPane("Debug Log", id="debug_log_tab"):
-                yield TextLog(name="Log", id="debug_log")
+                yield RichLog(name="Log", id="debug_log")
 
 
 class TextualViewer(App):
@@ -207,10 +205,20 @@ class TextualViewer(App):
         """
         Submit user's current input to the TXEnginePy server
         """
-        self._session.put(self._ip, params={"user_input": user_input}, verify=False)
+        true_input = user_input
+        try:
+            true_input = int(user_input)
+        except:
+            pass
+
+        self._session.put(self._ip, params={"user_input": true_input}, verify=False)
 
     def _write_log(self, message: str) -> None:
-        self.app.query_one("#debug_log", TextLog).write(message)
+        self.app.query_one("#debug_log", RichLog).write(message)
+
+    @property
+    def game_screen(self) -> RichLog:
+        return self.query_one("#game_content_view", RichLog)
 
     @property
     def is_viewing_history(self) -> bool:
@@ -229,24 +237,23 @@ class TextualViewer(App):
 
     @on(Input.Submitted)
     def submit_input(self, event: Input.Submitted) -> None:
-        self._submit_user_input(self.app.get_child_by_id("primary_user_input").value)
+        text = self.app.get_child_by_id("primary_user_input").value
+        self._submit_user_input(text)
+        self._write_log(f"Sent input: {text}")
         self.app.get_child_by_id("primary_user_input").value = ""
         frame = self._get_current_frame()
         text = get_content_from_frame(
-                self._get_current_frame()
-            )
-        self._write_log(text)
+            self._get_current_frame()
+        )
 
-        for child in self.app.query_one("#game_content_view", ScrollView).children:
-            child.remove()
-
-        self.app.query_one("#game_content_view", ScrollView).mount(Label(text))
+        self.game_screen.clear()
+        self.game_screen.write(text)
 
         if get_options_from_frame(frame) is not None:
             table = DataTable()
             table.add_columns(*frame["components"]["options_format"]["cols"])
             table.add_rows(enumerate(get_options_from_frame(frame)))
-            self.app.query_one("#game_content_view", ScrollView).mount(table)
+            self.game_screen.write(table)
 
 
 if __name__ == "__main__":
