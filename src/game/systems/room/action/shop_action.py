@@ -182,7 +182,7 @@ class ShopAction(Action):
                 "Purchase ",
                 StringContent(value=self.ware_of_interest.name, formatting="item_name"),
                 " for ",
-                StringContent(value=self.ware_of_interest.value[self.default_currency], formatting="item_cost")
+                StringContent(value=str(self.ware_of_interest.value[self.default_currency]), formatting="item_cost")
             ],
             [
                 "Read ",
