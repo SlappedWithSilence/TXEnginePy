@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import requests
+from rich.table import Table
 from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static, DataTable, Input, TabbedContent, TabPane, Label, Button, RichLog
@@ -71,7 +72,7 @@ def get_content_from_frame(frame: dict) -> str:
 
 
 def get_options_from_frame(frame: dict) -> list[str] | None:
-    if "options" not in frame["components"]:
+    if "options" not in frame["components"] or frame["components"]["options"] is None:
         return None
 
     res = []
@@ -93,63 +94,6 @@ class HistoryEntry:
     user_input: int | str
 
 
-class OptionsTableFactory:
-    """
-    A factory class that reads a frame_type context and returns a pre-configured DataTable to display
-    a list of choices to the user
-    """
-    IDX_COL_NAME = "Selection"
-    CHOICE_COL_NAME = "Choice"
-
-    context_map: dict[str, dict[str, any]] = {
-        "Room": {
-            "columns": [IDX_COL_NAME, "Action"]
-        },
-        "default": {
-            "columns": [IDX_COL_NAME, CHOICE_COL_NAME]
-        }
-    }
-
-    @classmethod
-    def get(cls, options: list[list[str | dict]], context: str) -> DataTable:
-        if type(options) != dict:
-            raise TypeError()
-
-        if type(context) != str:
-            raise TypeError()
-
-        dt = DataTable()
-
-        # Configure column names
-        if context in cls.context_map:
-            dt.add_columns(*cls.context_map[context]["columns"])
-        else:
-            dt.add_columns(*cls.context_map["default"]["columns"])
-
-        # Add row data
-        dt.add_rows([parse_content(opt) for opt in options])
-
-        return dt
-
-
-class OptionsTable(Static):
-    """
-    A pre-configured table widget that cleanly displays the available options to the user
-    """
-
-    def __init__(self, options_data: list[list[str | dict]], frame_type: str, **kwargs):
-        super().__init__(**kwargs)
-
-        self._options_data = options_data
-        self._frame_type = frame_type
-
-    def compose(self) -> ComposeResult:
-        """
-        Create the child widgets of an OptionsTable.
-        """
-        yield OptionsTableFactory.get(self._options_data, self._frame_type)
-
-
 class HistoryWidget(Static):
 
     def __init__(self, **kwargs):
@@ -163,7 +107,7 @@ class HistoryWidget(Static):
         yield Button("Forward")
 
 
-class MainScreen(Static):
+class MainView(Static):
     """
     The main screen content for the app. Handles app switching and populating with elements
     """
@@ -172,20 +116,16 @@ class MainScreen(Static):
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
-        with TabbedContent(initial="game_screen_tab", id="main_screen_tabs"):
-            with TabPane("Game", id="game_screen_tab"):
-                yield RichLog(id="game_content_view")
-            with TabPane("History", id="history_screen_tab"):
-                yield HistoryWidget()
+        with TabbedContent(initial="game_view_tab", id="main_view_tabs"):
+            with TabPane("Game", id="game_view_tab"):
+                yield RichLog(id="game_view")
+            with TabPane("History", id="history_tab"):
+                yield HistoryWidget(id="history_view")
             with TabPane("Debug Log", id="debug_log_tab"):
                 yield RichLog(name="Log", id="debug_log")
 
 
 class TextualViewer(App):
-    BINDINGS = [
-        ("l", "show_tab('game_screen_tab')", "Game"),
-        ("j", "show_tab('history_screen_tab')", "History")
-    ]
 
     def __init__(self):
         super().__init__()
@@ -218,7 +158,7 @@ class TextualViewer(App):
 
     @property
     def game_screen(self) -> RichLog:
-        return self.query_one("#game_content_view", RichLog)
+        return self.query_one("#game_view", RichLog)
 
     @property
     def is_viewing_history(self) -> bool:
@@ -227,13 +167,13 @@ class TextualViewer(App):
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(name="TXEngine")
-        yield MainScreen(id="main_screen")
+        yield MainView(id="main_view")
         yield Input(id="primary_user_input")
         yield Footer()
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
-        self.get_child_by_type(MainScreen).get_child_by_type(TabbedContent).active = tab
+        self.get_child_by_type(MainView).get_child_by_type(TabbedContent).active = tab
 
     @on(Input.Submitted)
     def submit_input(self, event: Input.Submitted) -> None:
@@ -250,9 +190,12 @@ class TextualViewer(App):
         self.game_screen.write(text)
 
         if get_options_from_frame(frame) is not None:
-            table = DataTable()
-            table.add_columns(*frame["components"]["options_format"]["cols"])
-            table.add_rows(enumerate(get_options_from_frame(frame)))
+            table = Table()
+            for col in frame["components"]["options_format"]["cols"]:
+                table.add_column(col)
+
+            for idx, row in enumerate(get_options_from_frame(frame)):
+                table.add_row(str(idx), row)
             self.game_screen.write(table)
 
 
