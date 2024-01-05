@@ -16,7 +16,7 @@ class ViewAbilitiesEvent(Event):
         EMPTY = 3
         TERMINATE = -1
 
-    def __init__(self, target = None):
+    def __init__(self, target=None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.target = target  # Defaults to the player at runtime
         self.selected_ability: str | None = None
@@ -64,7 +64,8 @@ class ViewAbilitiesEvent(Event):
             return ComponentFactory.get(
                 [
                     self.selected_ability + "\n",
-                    StringContent(value=from_cache("managers.AbilityManager").get_instance(self.selected_ability).description)
+                    StringContent(
+                        value=from_cache("managers.AbilityManager").get_instance(self.selected_ability).description)
                 ],
                 from_cache("managers.AbilityManager").get_instance(self.selected_ability).get_requirements_as_options()
             )
