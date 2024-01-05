@@ -1,7 +1,8 @@
 import game
-import game.systems.item as item
+import game.systems.item.item as it
 from game.cache import get_cache, cached
 from game.structures.loadable import LoadableMixin
+from game.structures.messages import StringContent
 from game.systems.event.add_item_event import AddItemEvent
 from game.systems.inventory.equipment_manager import SlotProperties
 
@@ -10,28 +11,11 @@ class EquipmentController(LoadableMixin):
     """
     An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling
     the equipping and unequipping processes, validating that an item is allowed to fit into a slot.
+
+    An instance of EquipmentController can behave in one of two ways: PlayerMode and EntityMode. While in PlayerMode,
+    all attempts to equip equipment are checked against that item's Requirements. While in EntityMode, Requirements are
+    ignored.
     """
-
-    @property
-    def owner(self) -> any:
-        return self._owner
-
-    @owner.setter
-    def owner(self, entity) -> None:
-        from game.systems.entity import Entity, Player
-        if entity is not None and not isinstance(entity, Entity):
-            raise TypeError(f"Cannot assign an owner of type {type(entity)}, owner must of type entities.Entity")
-
-        elif entity is None:
-            self._owner = None
-
-        elif isinstance(entity, Player):
-            self._owner = entity
-            self.player_mode = True
-
-        else:
-            self._owner = entity
-            self.player_mode = False
 
     def __init__(self, owner=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,7 +50,7 @@ class EquipmentController(LoadableMixin):
             from game.systems.item import item_manager
 
             ref = item_manager.get_ref(value)
-            if not isinstance(ref, item.Equipment):
+            if not isinstance(ref, it.Equipment):
                 raise ValueError(f"Cannot assign item {str(ref)} to slot {key}! Item {str(ref)} is not an Equipment!")
 
             if ref.slot != key:
@@ -91,13 +75,14 @@ class EquipmentController(LoadableMixin):
 
         returns: True if the slot is enabled, false otherwise
         """
-        from game.systems.item import item_manager, Equipment
+        from game.systems.item import item_manager
 
         item_ref = item_manager.get_ref(item_id)
 
-        if isinstance(item_ref, Equipment):
+        if isinstance(item_ref, it.Equipment):
             if not self._slots[item_ref.slot].enabled:
-                raise RuntimeError(f"Cannot equip {item_ref.name} to slot {item_ref.slot} since slot {item_ref.slot} is disabled.")
+                raise RuntimeError(
+                    f"Cannot equip {item_ref.name} to slot {item_ref.slot} since slot {item_ref.slot} is disabled.")
 
             # Do not check requirements if the equipment_controller is not in player mode
             if not (self.player_mode and item_ref.is_requirements_fulfilled(self._owner)):
@@ -135,6 +120,41 @@ class EquipmentController(LoadableMixin):
 
         self[slot] = None
         return True
+
+    def get_equipment_as_options(self) -> list[list[str | StringContent]]:
+        """
+        Get a list of lists intended to be passed as an `options` JSON field in a Frame. Content of the lists describes
+        each Equipment.
+        """
+
+        return [self._slots[slot].as_option() for slot in self._slots]
+
+
+    @property
+    def owner(self) -> any:
+        return self._owner
+
+    @owner.setter
+    def owner(self, entity) -> None:
+        """
+        The Entity instance that encapsulates this object. Check if the Entity is an instance of Player and set
+        player_mode accordingly.
+        """
+        from game.systems.entity import Entity, Player
+        if entity is not None and not isinstance(entity, Entity):
+            raise TypeError(f"Cannot assign an owner of type {type(entity)}, owner must of type entities.Entity")
+
+        elif isinstance(entity, Player):
+            self._owner = entity
+            self.player_mode = True
+
+        else:
+            self._owner = entity
+            self.player_mode = False
+
+    @property
+    def enabled_slots(self) -> list[str]:
+        return [slot for slot in self._slots if self._slots[slot].enabled]
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "EquipmentController", LoadableMixin.ATTR_KEY])
