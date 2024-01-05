@@ -1,9 +1,12 @@
 import copy
 from dataclasses import dataclass
 
+from game.cache import from_cache
 from game.structures.enums import EquipmentType
 from game.structures.manager import Manager
 from loguru import logger
+
+from game.structures.messages import StringContent
 
 
 @dataclass
@@ -22,6 +25,16 @@ class SlotProperties:
         if self.enabled:
             logger.warning(f"Slot {self.name} was already enabled!")
         self.enabled = True
+
+    def as_option(self) -> list[str | StringContent]:
+        """
+        Return a list of strings intended to be included in the `options` field of a Frame. Includes the slot's name
+        and the name of the item in the slot.
+        """
+        return [
+            self.name, ": ",
+            from_cache("managers.ItemManager").get_instance(self.item_id).name if self.item_id is not None else "Empty"
+        ]
 
 
 class EquipmentManager(Manager):
