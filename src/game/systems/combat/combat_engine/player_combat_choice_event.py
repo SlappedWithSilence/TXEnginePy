@@ -273,8 +273,9 @@ class PlayerCombatChoiceEvent(Event):
 
             entity = from_storage(self._links["INSPECT_ENTITY"]["selected_element"], delete=True)
 
+            # Make sure that an entity was selected in the previous state
             if entity is None:
-                self.set_state(self.States.DEFAULT)
+                self.set_state(self.States.DEFAULT)  # If no entity was selected, go back to the default state
                 return
 
             # Build an inspection event and add it to the stack
