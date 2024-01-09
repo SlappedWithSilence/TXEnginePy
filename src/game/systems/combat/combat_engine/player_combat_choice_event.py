@@ -255,6 +255,7 @@ class PlayerCombatChoiceEvent(Event):
         def logic(_: any) -> None:
             event = SelectElementEventFactory.get_select_entity_event(from_cache("combat").allies)
             self._links["INSPECT_ENTITY"] = event.link()
+
             game.state_device_controller.add_state_device(event)
             self.set_state(self.States.INSPECT_ENTITY)
 
@@ -270,10 +271,14 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_ENTITY, InputType.SILENT)
         def logic(_: any) -> None:
 
+            entity = from_storage(self._links["INSPECT_ENTITY"]["selected_element"], delete=True)
+
+            if entity is None:
+                self.set_state(self.States.DEFAULT)
+                return
+
             # Build an inspection event and add it to the stack
-            event = InspectEntityEvent(
-                target=from_storage(self._links["INSPECT_ENTITY"]["selected_element"], delete=True)
-            )
+            event = InspectEntityEvent(target=entity)
             game.state_device_controller.add_state_device(event)
 
             # Look back in the state history to the previous state (before this one). Use this to determine if the
