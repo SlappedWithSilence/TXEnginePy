@@ -84,12 +84,20 @@ class EquipmentController(LoadableMixin):
                 raise RuntimeError(
                     f"Cannot equip {item_ref.name} to slot {item_ref.slot} since slot {item_ref.slot} is disabled.")
 
-            # Do not check requirements if the equipment_controller is not in player mode
-            if not (self.player_mode and item_ref.is_requirements_fulfilled(self._owner)):
-                return False
+            # If operating in player mode, check for quantity and requirements
+            if self.player_mode:
+                if not item_ref.is_requirements_fulfilled(self._owner):
+                    return False
 
-            self.unequip(item_ref.slot)
-            self[item_ref.slot] = item_id
+                if self._owner.inventory.total_quantity(item_ref.id) < 1:
+                    return False
+
+                # Consume item from inventory before equipping
+                self._owner.inventory.consume_item(item_ref.id, 1)
+
+            self.unequip(item_ref.slot)  # Attempt to unequip existing item
+            self[item_ref.slot] = item_id  # Set slot id to item id
+
             return True
 
         raise TypeError(f"Cannot equip item of type {type(item_ref)}! Expected item of type Equipment")
