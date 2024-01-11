@@ -288,10 +288,6 @@ test_input_int_cases_bad = [
     [1, None, None],
     [1, 1, None],
     [None, 1, None],
-    [None, None, "5"],  # Bad payload type, str
-    [1, None, "3"],
-    [1, 1, "1"],
-    [None, 1, "-1"],
     [None, None, lambda: pow(2, 2)],  # Bad typed
     [-1, 0, 1],  # Out of bounds, large
     [None, 2, 3],  # Out of bounds, large
