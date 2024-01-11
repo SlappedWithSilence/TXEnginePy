@@ -26,7 +26,8 @@ class Action(LoadableMixin, RequirementsMixin, FiniteStateDevice, ABC):
                  visible: bool = True, reveal_other_action_index: int = -1,
                  hide_after_use: bool = False,
                  persistent: bool = False, *args, **kwargs):
-        super().__init__(default_input_type=default_input_type, states=states, default_state=default_state, *args, **kwargs)
+        super().__init__(default_input_type=default_input_type, states=states, default_state=default_state, *args,
+                         **kwargs)
 
         self._menu_name: str = menu_name  # Name of the Action when viewed from a room
         self.activation_text: str = activation_text  # Text that is printed when the Action is run
@@ -57,7 +58,8 @@ class ExitAction(Action):
     def __init__(self, target_room: int, menu_name: str = None, activation_text: str = None, visible: bool = True,
                  reveal_other_action_index: int = -1, hide_after_use: bool = False,
                  on_exit: list[events.Event] = None, *args, **kwargs):
-        super().__init__(menu_name, activation_text or "", ExitAction.States, ExitAction.States.DEFAULT, InputType.SILENT,
+        super().__init__(menu_name, activation_text or "", ExitAction.States, ExitAction.States.DEFAULT,
+                         InputType.SILENT,
                          visible, reveal_other_action_index, hide_after_use, *args, **kwargs)
 
         # Set instance variables
@@ -237,11 +239,14 @@ class ManageInventoryAction(Action):
         def content() -> dict:
             ref = self.player_ref.inventory.items[self.stack_index].ref
             return ComponentFactory.get(
-                [StringContent(value=ref.name, formatting="item_name"),
-                 StringContent(value=f"\n{ref.functional_description}", formatting="func_desc") if hasattr(ref, "functional_description") else "",
-                 "\n\n",
-                 ref.description
-                 ]
+                [
+                    StringContent(value=ref.name, formatting="item_name"),
+                    StringContent(
+                        value=f"\n{ref.functional_description}", formatting="func_desc") if hasattr(ref,
+                                                                                                    "functional_description") else "",
+                    "\n\n",
+                    ref.description
+                ]
             )
 
         # USE_ITEM
@@ -254,6 +259,32 @@ class ManageInventoryAction(Action):
                 )
             )
             self.set_state(self.States.DISPLAY_INVENTORY)
+
+        # EQUIP_ITEM
+
+        @FiniteStateDevice.state_logic(self, self.States.EQUIP_ITEM, InputType.ANY)
+        def logic(_: any) -> None:
+
+            item = self.player_ref.inventory.items[self.stack_index].ref
+
+            if not self.player_ref.equipment_controller[item.slot].enabled:
+                self.set_state(self.States.EQUIPMENT_SLOT_DISABLED)
+                return
+
+            if self.player_ref.equipment_controller[item.slot] is not None:
+                self.player_ref.equipment_controller.unequip(item.slot)
+
+            self.player_ref.equipment_controller.equip(item.id)
+            self.set_state(self.States.DEFAULT)
+
+        @FiniteStateDevice.state_content(self, self.States.EQUIP_ITEM)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [
+                    f"You equipped ",
+                    StringContent(value=self.player_ref.inventory.items[self.stack_index].ref.name, style="item_name")
+                ]
+            )
 
     @staticmethod
     @cache.cached([LoadableMixin.LOADER_KEY, "ManageInventoryAction", LoadableMixin.ATTR_KEY])
