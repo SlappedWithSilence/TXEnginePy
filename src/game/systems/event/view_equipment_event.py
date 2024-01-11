@@ -38,7 +38,7 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
             self.set_state(self.States.DISPLAY_EQUIPMENT)
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_EQUIPMENT, InputType.INT, input_min=-1,
-                                       input_max=lambda: len(self.target.equipment_controller.enabled_slots))
+                                       input_max=lambda: len(self.target.equipment_controller.enabled_slots) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
                 self.set_state(self.States.TERMINATE)
@@ -56,7 +56,7 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [self.target.name, "'s Equipment:"],
-                [self.target.equipment_controller.get_equipment_as_options()]
+                self.target.equipment_controller.get_equipment_as_options()
             )
 
         @FiniteStateDevice.state_logic(self, self.States.SLOT_IS_EMPTY, InputType.ANY)
