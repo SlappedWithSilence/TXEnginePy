@@ -138,7 +138,8 @@
             "class" : "AddItemEvent",
             "item_id" : 7,
             "item_quantity" : 1
-          }
+          },
+          "hide_after_use": true
         }
       ]
     },
