@@ -1,4 +1,4 @@
-arguments: ["white", "gray", "red", "blue", "green", "orange", "bold", "italic"]
+arguments: ["white", "gray", "red", "blue", "green", "orange", "cyan", "bold", "italic"]
 styles:
   item_name : ["blue", "bold"]
   item_desc : ["italic"]
@@ -19,3 +19,5 @@ styles:
   valid_recipe : ["white"]
   invalid_recipe : ["red"]
   skill_name : ["blue", "bold"]
+  combat_damage : ["red"]
+  combat_resist : ["cyan"]

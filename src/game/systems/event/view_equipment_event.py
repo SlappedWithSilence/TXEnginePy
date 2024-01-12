@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 from enum import Enum
+
+import rich.pretty
 
 from game.cache import from_cache
 from game.structures import enums
 from game.structures.enums import InputType
-from game.structures.messages import ComponentFactory
+from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 from game.systems.event.events import EntityTargetMixin
 from game.systems.item.item import Equipment
+
+from game.systems.entity.entities import CombatEntity
 
 
 class ViewEquipmentEvent(EntityTargetMixin, Event):
@@ -18,15 +24,15 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
         SLOT_IS_EMPTY = 3
         TERMINATE = -1
 
-    def __init__(self, **kwargs):
+    def __init__(self, target: CombatEntity, **kwargs):
         super().__init__(default_input_type=InputType.SILENT,
                          states=self.States,
                          default_state=self.States.DEFAULT,
+                         target=target,
                          **kwargs)
 
         self._inspect_item_id: int = None
 
-        from game.systems.entity.entities import CombatEntity
         if not isinstance(self.target, CombatEntity):
             raise TypeError(f"ViewEquipmentEvent.target must be of type CombatEntity! Got {type(self.target)} instead.")
 
@@ -76,6 +82,7 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
         @FiniteStateDevice.state_content(self, self.States.INSPECT_EQUIPMENT)
         def content() -> dict:
             ref: Equipment = from_cache("managers.ItemManager").get_instance(self._inspect_item_id)
+            rich.pretty.pprint(ref.__dict__)
             return ComponentFactory.get(
                 [
                     ref.name, "'s Summary",
@@ -84,9 +91,9 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
                     "\n",
                     ref.description,
                     "\n",
-                    "damage: ", ref.damage_buff,
+                    "damage: ", StringContent(value=str(ref.damage_buff), style="combat_damage"),
                     "\n"
-                    "armor: ", ref.damage_resist,
+                    "armor: ", StringContent(value=str(ref.damage_resist), style="combat_resist")
                 ]
             )
 
