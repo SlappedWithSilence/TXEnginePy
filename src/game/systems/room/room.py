@@ -92,6 +92,11 @@ class Room(LoadableMixin, FiniteStateDevice):
             else:
                 self.set_state(self.States.DISPLAY_OPTIONS)
 
+            # Make action invisible
+            if self.visible_actions[self._action_index].hide_after_use:
+                logger.debug(f"Setting {self.visible_actions[self._action_index]} as hidden...")
+                self.visible_actions[self._action_index].visible = False
+
         @FiniteStateDevice.state_logic(self, self.States.REQ_NOT_MET, InputType.ANY)
         def logic(_) -> None:
             self.set_state(self.States.DISPLAY_OPTIONS)
