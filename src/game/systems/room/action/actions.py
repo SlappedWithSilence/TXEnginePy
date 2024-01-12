@@ -340,15 +340,20 @@ class WrapperAction(Action):
         - wrap: Event
 
         Optional JSON fields:
-        - requirements
+        - hide_after_use: bool
+        - requirements: list
         """
 
         required_fields = [
             ("menu_name", str), ("activation_text", str), ("wrap", (dict, list))
         ]
 
+        optional_fields = [
+            ("hide_after_use", bool), ("requirements", list)
+        ]
+
         LoadableFactory.validate_fields(required_fields, json)
-        kw = LoadableFactory.collect_optional_fields([], json)
+        kw = LoadableFactory.collect_optional_fields(optional_fields, json)
 
         if type(json['wrap']) == dict:
             wrap = LoadableFactory.get(json['wrap'])
