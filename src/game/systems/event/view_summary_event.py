@@ -7,10 +7,11 @@ from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity import Entity
-from game.systems.entity.entities import ResourceMixin, AbilityMixin, SkillMixin
+from game.systems.entity.entities import ResourceMixin, AbilityMixin, SkillMixin, EquipmentMixin
 from game.systems.event import Event
 from game.systems.event.events import ViewResourcesEvent
 from game.systems.event.view_abilities_event import ViewAbilitiesEvent
+from game.systems.event.view_equipment_event import ViewEquipmentEvent
 from game.systems.event.view_skills_event import ViewSkillsEvent
 
 
@@ -39,6 +40,10 @@ class ViewSummaryEvent(Event):
                 "class": ViewSkillsEvent,
                 "required_classes": [SkillMixin]
             },
+            "View Equipment": {
+                "class": ViewEquipmentEvent,
+                "required_classes": [EquipmentMixin]
+            }
         }
 
         self.setup_states()
