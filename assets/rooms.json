@@ -28,7 +28,8 @@
           "class" : "CombatEvent",
           "allies" : [2],
           "enemies" : [3]
-        }
+        },
+        "reveal_after_use" : ["combat_locked"]
       }
     ]
   },
@@ -60,6 +61,19 @@
             "item_id": 2,
             "item_quantity": 2
           }
+        },
+        {
+          "class" : "WrapperAction",
+          "menu_name" : "A reward of blood and bone",
+          "activation_text" : "As your enemies lay slain, their bodies turn to ash and scatter to the wind. Left behind is a trophy of your might.",
+          "wrap" : {
+            "class" : "AddItemEvent",
+            "item_id" : 6,
+            "item_quantity" : 1
+          },
+          "visible": false,
+          "tags" : ["combat_locked"],
+          "hide_after_use" : true
         },
         {
           "class" : "ExitAction",
