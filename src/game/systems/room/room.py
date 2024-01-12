@@ -92,6 +92,13 @@ class Room(LoadableMixin, FiniteStateDevice):
             else:
                 self.set_state(self.States.DISPLAY_OPTIONS)
 
+            # Attempt to reveal actions:
+            if self.visible_actions[self._action_index].reveal_after_use is not None:
+                for reveal_tag in self.visible_actions[self._action_index].reveal_after_use:
+                    for a in self.actions:
+                        if a.tags is not None and reveal_tag in a.tags:
+                            a.visible = True
+
             # Make action invisible
             if self.visible_actions[self._action_index].hide_after_use:
                 logger.debug(f"Setting {self.visible_actions[self._action_index]} as hidden...")
@@ -114,7 +121,7 @@ class Room(LoadableMixin, FiniteStateDevice):
 
         @FiniteStateDevice.state_content(self, self.States.LEAVE_ROOM)
         def content():
-            return ComponentFactory.get([f"You leave {self.name}"] )
+            return ComponentFactory.get([f"You leave {self.name}"])
 
     @property
     def visible_actions(self) -> list[actions.Action]:

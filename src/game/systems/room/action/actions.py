@@ -23,19 +23,22 @@ class Action(LoadableMixin, RequirementsMixin, FiniteStateDevice, ABC):
 
     def __init__(self, menu_name: str, activation_text: str,
                  states: type[enum.Enum], default_state, default_input_type: InputType,
-                 visible: bool = True, reveal_other_action_index: int = -1,
+                 visible: bool = True, reveal_after_use: list[str] = None,
                  hide_after_use: bool = False,
-                 persistent: bool = False, *args, **kwargs):
+                 persistent: bool = False,
+                 tags: list[str] = None,
+                 *args, **kwargs):
         super().__init__(default_input_type=default_input_type, states=states, default_state=default_state, *args,
                          **kwargs)
 
         self._menu_name: str = menu_name  # Name of the Action when viewed from a room
         self.activation_text: str = activation_text  # Text that is printed when the Action is run
         self.visible: bool = visible  # If True, visible in the owning Room
-        self.reveal_other_action_index: int = reveal_other_action_index  # If >= 0 set room.actions[idx].hidden to False
         self.hide_after_use: bool = hide_after_use  # If True, the action will set itself to hidden after being used
+        self.reveal_after_use: list[str] = reveal_after_use  # Hide other actions in the room after this action is used
         self.room: room.Room = None  # The Room that owns this action. Should ONLY be a weakref.proxy
         self.persistent: bool = persistent
+        self.tags: list[str] = tags  # Arbitrary string tags assigned to the action by the game designer
 
     @property
     def menu_name(self) -> str:
@@ -56,11 +59,11 @@ class ExitAction(Action):
         TERMINATE = -1
 
     def __init__(self, target_room: int, menu_name: str = None, activation_text: str = None, visible: bool = True,
-                 reveal_other_action_index: int = -1, hide_after_use: bool = False,
+                 reveal_after_use: list[str] = None, hide_after_use: bool = False,
                  on_exit: list[events.Event] = None, *args, **kwargs):
         super().__init__(menu_name, activation_text or "", ExitAction.States, ExitAction.States.DEFAULT,
                          InputType.SILENT,
-                         visible, reveal_other_action_index, hide_after_use, *args, **kwargs)
+                         visible, reveal_after_use, hide_after_use, *args, **kwargs)
 
         # Set instance variables
         self.target_room = target_room
@@ -88,8 +91,8 @@ class ExitAction(Action):
         ]
 
         optional_fields = [
-            ("menu_name", str), ("visible", bool), ("reveal_other_action_index", int),
-            ("hide_after_use", bool), ("requirement_list", list), ("on_exit", list)
+            ("menu_name", str), ("visible", bool), ("reveal_after_use", list),
+            ("hide_after_use", bool), ("requirements", list), ("on_exit", list), ("tags", list)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -121,10 +124,10 @@ class ManageInventoryAction(Action):
     def get_stack_inspection_options(cls) -> list[list[str]]:
         return [[opt] for opt in cls.stack_inspect_options.keys()]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__("View inventory", "",
                          self.States, self.States.DEFAULT, InputType.SILENT,
-                         *args, **kwargs)
+                         **kwargs)
 
         self.player_ref: entity.entities.Player = None
         self.stack_index: int = None
@@ -340,8 +343,11 @@ class WrapperAction(Action):
         - wrap: Event
 
         Optional JSON fields:
+        - visible: bool
         - hide_after_use: bool
-        - requirements: list
+        - reveal_after_use: list[str]
+        - tags: list[str]
+        - requirements: list[Requirement]
         """
 
         required_fields = [
@@ -349,7 +355,8 @@ class WrapperAction(Action):
         ]
 
         optional_fields = [
-            ("hide_after_use", bool), ("requirements", list)
+            ("visible", bool), ("reveal_after_use", list),
+            ("hide_after_use", bool), ("requirements", list), ("on_exit", list), ("tags", list)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
