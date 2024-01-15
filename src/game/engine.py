@@ -5,6 +5,8 @@ from omegaconf import OmegaConf
 
 # These imports rescue stranded from_json declarations. Removing them prevents the interpreter from finding and caching
 # Those functions. Do not remove.
+from game.systems.room.action.manage_equipment_action import *
+from game.systems.room.action.manage_inventory_action import *
 from game.systems.requirement.item_requirement import *
 from game.systems.room.action.shop_action import *
 from game.systems.event.view_summary_event import *
