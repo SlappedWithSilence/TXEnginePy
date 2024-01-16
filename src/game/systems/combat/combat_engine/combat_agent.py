@@ -1,45 +1,28 @@
 from __future__ import annotations
 
+import random
 import weakref
 from abc import ABC
-
-from loguru import logger
 
 import game
 from game.cache import from_cache
 from game.structures.errors import CombatError
+from game.systems.combat import Ability
 from game.systems.combat.combat_engine.choice_data import ChoiceData
-from game.systems.combat.combat_engine.combat_engine import CombatEngine
-from game.systems.event.events import TextEvent
 
 
 class CombatAgentMixin(ABC):
     """
-    A mixin that allows for CombatEngine integration.
+    A mixin that allows for CombatEngine integration. Mixin MUST be applied to a CombatEntity instance.
     """
     name = "abstract_agent"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._combat_engine: CombatEngine | None = None
 
-    @property
-    def combat_engine(self) -> CombatEngine:
-        return self._combat_engine
-
-    @combat_engine.setter
-    def combat_engine(self, element) -> None:
-        """
-        Set a reference to the CombatEngine or remove the existing reference.
-        """
-        if element is None:
-            self._combat_engine = None
-
-        elif isinstance(element, CombatEngine):
-            self._combat_engine = weakref.proxy(element)
-
-        else:
-            raise TypeError(f"Cannot set combat engine to object of type {type(element)}!")
+        from game.systems.entity.entities import CombatEntity
+        if not isinstance(self, CombatEntity):
+            raise TypeError("CombatAgentMixin must mixed with a CombatEntity instance!")
 
     def _choice_logic(self) -> ChoiceData:
         """
@@ -64,16 +47,22 @@ class CombatAgentMixin(ABC):
 
 
 class NaiveAgentMixin(CombatAgentMixin):
+    """
+    A Naive CombatEntity selects abilities at random at targets for those abilities at random.
+    """
     name = "naive_agent"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def _choice_logic(self) -> ChoiceData:
-        game.state_device_controller.add_state_device(
-            TextEvent(f"{from_cache('combat').active_entity.name} passed the turn.")
-        )
-        return ChoiceData(ChoiceData.ChoiceType.PASS)
+        r = random.Random()
+        ab: str = r.choice(self.ability_controller.abilities)
+        targets = from_cache("combat").get_ability_targets(self, ab)
+
+        target = r.choice(targets)
+
+        return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab, ability_target=target)
 
 
 class IntelligentAgentMixin(CombatAgentMixin):
