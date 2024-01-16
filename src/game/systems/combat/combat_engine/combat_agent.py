@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import random
-import weakref
 from abc import ABC
 
 import game
 from game.cache import from_cache
 from game.structures.errors import CombatError
-from game.systems.combat import Ability
 from game.systems.combat.combat_engine.choice_data import ChoiceData
+from game.systems.event import ResourceEvent
+from game.systems.item.item import Usable
 
 
 class CombatAgentMixin(ABC):
@@ -23,6 +23,29 @@ class CombatAgentMixin(ABC):
         from game.systems.entity.entities import CombatEntity
         if not isinstance(self, CombatEntity):
             raise TypeError("CombatAgentMixin must mixed with a CombatEntity instance!")
+
+    @property
+    def usable_abilities(self) -> list[str]:
+        """
+        Returns a list of Abilities with fulfilled Requirements
+        """
+
+        return [
+            ab for ab in self.ability_controller.abilities if from_cache(
+                "managers.AbilityManager"
+            ).get_instance(ab).is_requirements_fulfilled(self)
+        ]
+
+    @property
+    def usable_items(self) -> list[Usable]:
+        """
+        Returns a list of Usable Items with fulfilled Requirements
+        """
+        stacks = self.inventory.filter_stacks(
+            lambda stack: isinstance(stack.ref, Usable) and stack.ref.is_requirements_fulfilled(self)
+        )
+
+        return [s.ref for s in stacks]
 
     def _choice_logic(self) -> ChoiceData:
         """
@@ -56,6 +79,11 @@ class NaiveAgentMixin(CombatAgentMixin):
         super().__init__(**kwargs)
 
     def _choice_logic(self) -> ChoiceData:
+
+        # If the entity doesn't know any abilities, just pass
+        if len(self.ability_controller.abilities) < 1:
+            return ChoiceData(ChoiceData.ChoiceType.PASS)
+
         r = random.Random()
         ab: str = r.choice(self.ability_controller.abilities)
         targets = from_cache("combat").get_ability_targets(self, ab)
@@ -66,10 +94,44 @@ class NaiveAgentMixin(CombatAgentMixin):
 
 
 class IntelligentAgentMixin(CombatAgentMixin):
+    """
+    An Intelligent CombatEntity focuses on survival and is capable of using items.
+
+    Intelligent CombatEntities logic follows:
+    - If primary_resource < threshold, attempt to restore it with an item
+    - If primary_resource < threshold, attempt to restore it with an ability
+    - If possible, attack the entity with the lowest primary_resource
+        - Attempt to use the "best" ability.
+        - If it can't be used, try and use an Item to solve the problem
+        - If it can't be solved, move on to the "next best" ability and repeat
+    """
     name = "intelligent_agent"
+    PRIMARY_RESOURCE_DANGER_THRESHOLD: float = 0.33
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def _is_restorative_item(self, usable: Usable) -> bool:
+        """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
+        counted as restorative."""
+        for e in usable.on_use_events:
+            if isinstance(e, ResourceEvent):
+                if e.stat_name == self.resource_controller.primary_resource.name and e.amount > 0:
+                    return True
+
+        return False
+
+    @property
+    def in_danger(self) -> bool:
+        """A bool that represents if the entity is in danger and needs to restore primary_resource"""
+
+        return self.resource_controller.primary_resource.percent_remaining < self.PRIMARY_RESOURCE_DANGER_THRESHOLD
+
+    @property
+    def restorative_items(self) -> list[Usable]:
+        """A list of Usables that restore primary_resource"""
+
+        return [u for u in self.usable_items if self._is_restorative_item(u)]
 
     def _choice_logic(self) -> ChoiceData:
         return ChoiceData(ChoiceData.ChoiceType.PASS)
