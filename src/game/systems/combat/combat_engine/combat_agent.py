@@ -5,6 +5,7 @@ from abc import ABC
 
 import game
 from game.cache import from_cache
+from game.structures.enums import TargetMode
 from game.structures.errors import CombatError
 from game.systems.combat import Ability
 from game.systems.combat.combat_engine.choice_data import ChoiceData
@@ -156,9 +157,37 @@ class IntelligentAgentMixin(CombatAgentMixin):
 
         return list(results)
 
-    def _choice_logic(self) -> ChoiceData:
-        return ChoiceData(ChoiceData.ChoiceType.PASS)
+    @property
+    def offensive_abilities(self) -> list[str]:
+        """Returns a list of abilities that can be used to deal damage to enemies"""
+        res = []
 
+        for ability_name in self.ability_controller.abilities:
+            instance: Ability = from_cache("managers.AbilityManager").get_instance(ability_name)
+
+            # Check if the ability deals damage and can be used to target enemies
+            if instance.damage > 0 and instance.target_mode not in [
+                TargetMode.ALL_ALLY, TargetMode.SELF, TargetMode.SINGLE_ALLY
+            ]:
+                res.append(ability_name)
+
+        return res
+
+    def _choice_logic(self) -> ChoiceData:
+
+        # If the entity is in danger, use an item to restore primary_resource
+        if self.in_danger:
+            restoratives = self.restorative_items
+            if len(restoratives) > 0:
+
+                # TODO: Improve item selection logic
+                return ChoiceData(ChoiceData.ChoiceType.ITEM, item_id=random.Random().choice(restoratives).id)
+
+        offensive_abilities = self.offensive_abilities
+        if len(offensive_abilities) > 0:
+            pass
+
+        return ChoiceData(ChoiceData.ChoiceType.PASS)
 
 
 class MultiAgentMixin(CombatAgentMixin):
