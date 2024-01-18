@@ -6,9 +6,11 @@ from abc import ABC
 import game
 from game.cache import from_cache
 from game.structures.errors import CombatError
+from game.systems.combat import Ability
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.event import ResourceEvent
 from game.systems.item.item import Usable
+from game.systems.requirement.requirements import ResourceRequirement, ConsumeResourceRequirement
 
 
 class CombatAgentMixin(ABC):
@@ -111,12 +113,12 @@ class IntelligentAgentMixin(CombatAgentMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _is_restorative_item(self, usable: Usable) -> bool:
+    def _is_restorative_item(self, usable: Usable, resource_name: str) -> bool:
         """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
         counted as restorative."""
         for e in usable.on_use_events:
             if isinstance(e, ResourceEvent):
-                if e.stat_name == self.resource_controller.primary_resource.name and e.amount > 0:
+                if e.stat_name == resource_name and not e.harmful:
                     return True
 
         return False
@@ -131,10 +133,32 @@ class IntelligentAgentMixin(CombatAgentMixin):
     def restorative_items(self) -> list[Usable]:
         """A list of Usables that restore primary_resource"""
 
-        return [u for u in self.usable_items if self._is_restorative_item(u)]
+        return [
+            u for u in self.usable_items if self._is_restorative_item(u, self.resource_controller.primary_resource.name)
+        ]
+
+    def get_resource_fix_items(self, ability: str) -> list[Usable]:
+        """
+        For a given ability, if it can't be used due to resource depletion, return a list of Usables that restore
+        the missing resource
+        """
+        instance: Ability = from_cache("managers.AbilityManager").get_instance(ability)
+        depleted_resources = set()
+        for requirement in instance.requirements:
+            if isinstance(requirement, ResourceRequirement) or isinstance(requirement, ConsumeResourceRequirement):
+                depleted_resources.add(requirement.resource_name)
+
+        results = set()
+        for u in self.usable_items:
+            for resource in depleted_resources:
+                if self._is_restorative_item(u, resource):
+                    results.add(u)
+
+        return list(results)
 
     def _choice_logic(self) -> ChoiceData:
         return ChoiceData(ChoiceData.ChoiceType.PASS)
+
 
 
 class MultiAgentMixin(CombatAgentMixin):
