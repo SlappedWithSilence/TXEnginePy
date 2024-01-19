@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-from abc import ABC
 
 from loguru import logger
 
@@ -14,14 +13,16 @@ from game.systems.event import ResourceEvent
 from game.systems.requirement.requirements import ResourceRequirement, ConsumeResourceRequirement
 
 
-class CombatAgentMixin(ABC):
+class CombatAgentMixin:
     """
     A mixin that allows for CombatEngine integration. Mixin MUST be applied to a CombatEntity instance.
     """
-    name = "abstract_agent"
+    PRIMARY_RESOURCE_DANGER_THRESHOLD: float = 0.33
 
-    def __init__(self, **kwargs):
+    def __init__(self, naive: bool = True, **kwargs):
         super().__init__(**kwargs)
+
+        self.naive = naive
 
         from game.systems.entity.entities import CombatEntity
         if not isinstance(self, CombatEntity):
@@ -51,70 +52,6 @@ class CombatAgentMixin(ABC):
         )
 
         return [s.ref for s in stacks]
-
-    def _choice_logic(self) -> ChoiceData:
-        """
-        Get an Entity's choice for its turn during Combat.
-
-        An entity may do one of three things:
-        - Pass
-        - Use an Item
-        - Use an Ability
-
-        To collect information about the combat's context, retrieve it via  from_cache("combat")
-        """
-        raise NotImplementedError()
-
-    def make_choice(self) -> None:
-        """
-        A wrapper for _choice_logic that performs instance checking and validation before submitting the entity choice
-        to the combat engine.
-        """
-
-        from_cache("combat").submit_entity_choice(self, self._choice_logic())
-
-
-class NaiveAgentMixin(CombatAgentMixin):
-    """
-    A Naive CombatEntity selects abilities at random at targets for those abilities at random.
-    """
-    name = "naive_agent"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def _choice_logic(self) -> ChoiceData:
-
-        # If the entity doesn't know any abilities, just pass
-        if len(self.ability_controller.abilities) < 1:
-            return ChoiceData(ChoiceData.ChoiceType.PASS)
-
-        r = random.Random()
-        ab: str = r.choice(self.ability_controller.abilities)
-        targets = from_cache("combat").get_ability_targets(self, ab)
-
-        target = r.choice(targets)
-
-        return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab, ability_target=target)
-
-
-class IntelligentAgentMixin(CombatAgentMixin):
-    """
-    An Intelligent CombatEntity focuses on survival and is capable of using items.
-
-    Intelligent CombatEntities logic follows:
-    - If primary_resource < threshold, attempt to restore it with an item
-    - If primary_resource < threshold, attempt to restore it with an ability
-    - If possible, attack the entity with the lowest primary_resource
-        - Attempt to use the "best" ability.
-        - If it can't be used, try and use an Item to solve the problem
-        - If it can't be solved, move on to the "next best" ability and repeat
-    """
-    name = "intelligent_agent"
-    PRIMARY_RESOURCE_DANGER_THRESHOLD: float = 0.33
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     @classmethod
     def _is_restorative_item(cls, usable: "Usable", resource_name: str) -> bool:
@@ -176,7 +113,21 @@ class IntelligentAgentMixin(CombatAgentMixin):
 
         return res
 
-    def _choice_logic(self) -> ChoiceData:
+    def naive_choice_logic(self) -> ChoiceData:
+
+        # If the entity doesn't know any abilities, just pass
+        if len(self.ability_controller.abilities) < 1:
+            return ChoiceData(ChoiceData.ChoiceType.PASS)
+
+        r = random.Random()
+        ab: str = r.choice(self.ability_controller.abilities)
+        targets = from_cache("combat").get_ability_targets(self, ab)
+
+        target = r.choice(targets)
+
+        return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab, ability_target=target)
+
+    def intelligent_choice_logic(self) -> ChoiceData:
 
         # If the entity is in danger, use an item to restore primary_resource
         if self.in_danger:
@@ -219,9 +170,11 @@ class IntelligentAgentMixin(CombatAgentMixin):
 
                     # Check if it is a single-target ability
                     if ab.target_mode in [TargetMode.SINGLE, TargetMode.SINGLE_ENEMY, TargetMode.NOT_SELF]:
-                        logger.debug(f"Selecting single target for ability: {ab.target_mode} via mode {ab.target_mode}")
+                        logger.debug(
+                            f"Selecting single target for ability: {ab.target_mode} via mode {ab.target_mode}")
                         targets = from_cache("combat").get_ability_targets(self, ab.name)
-                        t = sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
+                        t = \
+                        sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
 
                         logger.debug(f"Selected {t.name}!")
                         return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab.name, ability_target=t)
@@ -237,17 +190,29 @@ class IntelligentAgentMixin(CombatAgentMixin):
 
         return ChoiceData(ChoiceData.ChoiceType.PASS)
 
-
-class MultiAgentMixin(CombatAgentMixin):
-    AVAILABLE_AGENTS = [NaiveAgentMixin, IntelligentAgentMixin]
-    AGENT_MAP = {agent.name: agent for agent in AVAILABLE_AGENTS}
-
-    def __init__(self, combat_provider: str = "naive_agent", *args, **kwargs):
-        super().__init__(**kwargs)
-        self.choice_provider: CombatAgentMixin = MultiAgentMixin.AGENT_MAP[combat_provider]()
-
     def _choice_logic(self) -> ChoiceData:
-        return self.choice_provider._choice_logic()
+        """
+        Get an Entity's choice for its turn during Combat.
+
+        An entity may do one of three things:
+        - Pass
+        - Use an Item
+        - Use an Ability
+
+        To collect information about the combat's context, retrieve it via  from_cache("combat")
+        """
+        if self.naive:
+            return self.naive_choice_logic()
+
+        return self.intelligent_choice_logic()
+
+    def make_choice(self) -> None:
+        """
+        A wrapper for _choice_logic that performs instance checking and validation before submitting the entity choice
+        to the combat engine.
+        """
+
+        from_cache("combat").submit_entity_choice(self, self._choice_logic())
 
 
 class PlayerAgentMixin(CombatAgentMixin):

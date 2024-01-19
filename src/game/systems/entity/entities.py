@@ -10,7 +10,7 @@ from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.ability_controller import AbilityController
-from game.systems.combat.combat_engine.combat_agent import MultiAgentMixin, PlayerAgentMixin
+from game.systems.combat.combat_engine.combat_agent import PlayerAgentMixin, CombatAgentMixin
 from game.systems.crafting.crafting_controller import CraftingController
 from game.systems.inventory import EquipmentController
 from game.systems.item.loot import LootableMixin, LootTable
@@ -177,7 +177,7 @@ class AbilityMixin:
                 self.ability_controller.learn(ability)
 
 
-class CombatEntity(AbilityMixin, EquipmentMixin, MultiAgentMixin, LootableMixin, Entity):
+class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin, Entity):
     """
     A subclass of Entity that contains all the necessary components to participate in Combat.
     """
