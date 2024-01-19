@@ -9,10 +9,8 @@ import game
 from game.cache import from_cache
 from game.structures.enums import TargetMode
 from game.structures.errors import CombatError
-from game.systems.combat import Ability
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.event import ResourceEvent
-from game.systems.item.item import Usable
 from game.systems.requirement.requirements import ResourceRequirement, ConsumeResourceRequirement
 
 
@@ -42,10 +40,12 @@ class CombatAgentMixin(ABC):
         ]
 
     @property
-    def usable_items(self) -> list[Usable]:
+    def usable_items(self) -> list["Usable"]:
         """
         Returns a list of Usable Items with fulfilled Requirements
         """
+        from game.systems.item.item import Usable
+
         stacks = self.inventory.filter_stacks(
             lambda stack: isinstance(stack.ref, Usable) and stack.ref.is_requirements_fulfilled(self)
         )
@@ -117,7 +117,7 @@ class IntelligentAgentMixin(CombatAgentMixin):
         super().__init__(**kwargs)
 
     @classmethod
-    def _is_restorative_item(cls, usable: Usable, resource_name: str) -> bool:
+    def _is_restorative_item(cls, usable: "Usable", resource_name: str) -> bool:
         """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
         counted as restorative."""
         for e in usable.on_use_events:
@@ -134,19 +134,19 @@ class IntelligentAgentMixin(CombatAgentMixin):
         return self.resource_controller.primary_resource.percent_remaining < self.PRIMARY_RESOURCE_DANGER_THRESHOLD
 
     @property
-    def restorative_items(self) -> list[Usable]:
+    def restorative_items(self) -> list["Usable"]:
         """A list of Usables that restore primary_resource"""
 
         return [
             u for u in self.usable_items if self._is_restorative_item(u, self.resource_controller.primary_resource.name)
         ]
 
-    def get_resource_fix_items(self, ability: str) -> list[Usable]:
+    def get_resource_fix_items(self, ability: str) -> list["Usable"]:
         """
         For a given ability, if it can't be used due to resource depletion, return a list of Usables that restore
         the missing resource
         """
-        instance: Ability = from_cache("managers.AbilityManager").get_instance(ability)
+        instance: "Ability" = from_cache("managers.AbilityManager").get_instance(ability)
         depleted_resources = set()
         for requirement in instance.requirements:
             if isinstance(requirement, ResourceRequirement) or isinstance(requirement, ConsumeResourceRequirement):
@@ -161,12 +161,12 @@ class IntelligentAgentMixin(CombatAgentMixin):
         return list(results)
 
     @property
-    def offensive_abilities(self) -> list[Ability]:
+    def offensive_abilities(self) -> list["Ability"]:
         """Returns a list of abilities that can be used to deal damage to enemies"""
         res = []
 
         for ability_name in self.ability_controller.abilities:
-            instance: Ability = from_cache("managers.AbilityManager").get_instance(ability_name)
+            instance: "Ability" = from_cache("managers.AbilityManager").get_instance(ability_name)
 
             # Check if the ability deals damage and can be used to target enemies
             if instance.damage > 0 and instance.target_mode not in [
