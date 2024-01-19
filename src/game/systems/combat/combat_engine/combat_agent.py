@@ -3,6 +3,8 @@ from __future__ import annotations
 import random
 from abc import ABC
 
+from loguru import logger
+
 import game
 from game.cache import from_cache
 from game.structures.enums import TargetMode
@@ -114,7 +116,8 @@ class IntelligentAgentMixin(CombatAgentMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _is_restorative_item(self, usable: Usable, resource_name: str) -> bool:
+    @classmethod
+    def _is_restorative_item(cls, usable: Usable, resource_name: str) -> bool:
         """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
         counted as restorative."""
         for e in usable.on_use_events:
@@ -158,7 +161,7 @@ class IntelligentAgentMixin(CombatAgentMixin):
         return list(results)
 
     @property
-    def offensive_abilities(self) -> list[str]:
+    def offensive_abilities(self) -> list[Ability]:
         """Returns a list of abilities that can be used to deal damage to enemies"""
         res = []
 
@@ -169,7 +172,7 @@ class IntelligentAgentMixin(CombatAgentMixin):
             if instance.damage > 0 and instance.target_mode not in [
                 TargetMode.ALL_ALLY, TargetMode.SELF, TargetMode.SINGLE_ALLY
             ]:
-                res.append(ability_name)
+                res.append(instance)
 
         return res
 
@@ -177,15 +180,60 @@ class IntelligentAgentMixin(CombatAgentMixin):
 
         # If the entity is in danger, use an item to restore primary_resource
         if self.in_danger:
+            logger.debug(f"{self.name}: In danger! ({self.resource_controller.primary_resource.percent_remaining})")
             restoratives = self.restorative_items
             if len(restoratives) > 0:
-
+                logger.debug("Found restorative items!")
                 # TODO: Improve item selection logic
                 return ChoiceData(ChoiceData.ChoiceType.ITEM, item_id=random.Random().choice(restoratives).id)
 
         offensive_abilities = self.offensive_abilities
         if len(offensive_abilities) > 0:
-            pass
+            logger.debug("Found offensive abilities!")
+            # sort by damage in desc order
+            offensive_abilities = sorted(
+                offensive_abilities,
+                key=lambda x: x.damage,
+                reverse=True)
+
+            # Attempt to figure out which offensive abilities are usable
+            for ab in offensive_abilities:  # Starting with ability that does the most damage
+                logger.debug(f"Evaluating ability: {ab.name}")
+
+                # If the ability cannot be used for some reason
+                if not ab.is_requirements_fulfilled(self):
+                    logger.debug(f"Requirements not met for {ab.name}")
+
+                    # See if there are any items that can fix the situation
+                    resource_fixers = self.get_resource_fix_items(ab.name)
+                    if len(resource_fixers) < 1:
+                        logger.debug("No fixer items located. Skipping.")
+                        # There are no items that can help, so skip this ability
+                        continue
+
+                    # There is an item that can help, so just use the first one available
+                    logger.debug(f"Fixer item found: {resource_fixers[0].name} (id: {resource_fixers[0].id})")
+                    return ChoiceData(ChoiceData.ChoiceType.ITEM, item_id=resource_fixers[0].id)
+
+                else:
+
+                    # Check if it is a single-target ability
+                    if ab.target_mode in [TargetMode.SINGLE, TargetMode.SINGLE_ENEMY, TargetMode.NOT_SELF]:
+                        logger.debug(f"Selecting single target for ability: {ab.target_mode} via mode {ab.target_mode}")
+                        targets = from_cache("combat").get_ability_targets(self, ab.name)
+                        t = sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
+
+                        logger.debug(f"Selected {t.name}!")
+                        return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab.name, ability_target=t)
+
+                    # If ability is group-target, just choose it
+                    else:
+                        logger.debug(f"Group selected for ability: {ab.name}")
+                        return ChoiceData(
+                            ChoiceData.ChoiceType.ABILITY,
+                            ability_name=ab.name,
+                            ability_target=from_cache("combat").get_ability_targets(self, ab.name)
+                        )
 
         return ChoiceData(ChoiceData.ChoiceType.PASS)
 
