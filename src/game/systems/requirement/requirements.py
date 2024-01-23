@@ -166,7 +166,7 @@ class ResourceRequirement(Requirement):
 
         elif type(self.adjust_quantity) == float:
             _resource = entity.resource_controller[self.resource_name]
-            if _resource.remaining_percentage >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
+            if _resource.percent_remaining >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
                 return False
 
         else:
