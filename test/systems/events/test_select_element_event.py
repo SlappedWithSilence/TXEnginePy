@@ -219,8 +219,6 @@ def test_factory_usable_selection_filter_size_zero():
     entity.inventory.insert_item(-110, 2)
     entity.inventory.insert_item(-111, 3)
     entity.inventory.insert_item(-119, 1)
-    entity.inventory.insert_item(-120, 1)
-    entity.inventory.insert_item(-121, 1)
 
     # Check that test case dependencies are in place
     assert entity.resource_controller.get_value(f"{TEST_PREFIX}health") == 1
