@@ -483,12 +483,7 @@ class ResourceEvent(EntityTargetMixin, Event):
     @property
     def harmful(self) -> bool:
         """Returns true if the ResourceEvent will reduce the absolute value of the Resource"""
-        if type(self.amount) == int:
-            return self.amount < 0
-        elif type(self.amount) == float:
-            return self.amount < 1.0
-        else:
-            raise TypeError(f"Invalid type {type(self.amount)} for ResourceEvent::amount!")
+        return self.amount < 0
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
