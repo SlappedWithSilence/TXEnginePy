@@ -48,7 +48,7 @@ class CombatAgentMixin:
         from game.systems.item.item import Usable
 
         stacks = self.inventory.filter_stacks(
-            lambda stack: isinstance(stack.ref, Usable) and stack.ref.is_requirements_fulfilled(self)
+            lambda stack: isinstance(stack, Usable) and stack.is_requirements_fulfilled(self)
         )
 
         return [s.ref for s in stacks]
