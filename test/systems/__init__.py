@@ -52,9 +52,10 @@ def pre_collect_setup():
     te10 = Equipment(f"{TEST_PREFIX} Equipment 6", -119, {-110: 1}, "", "legs", "legs", 0, 0,
                      resource_modifiers={f"{TEST_PREFIX}health": -0.25})
 
-    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
-    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", ""
-                  , requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
+    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "",
+                  requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 0.2)])
+    te12 = Usable(f"{TEST_PREFIX} Usable 2", -121, {-110: 5}, "", "",
+                  requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
 
     item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
 
