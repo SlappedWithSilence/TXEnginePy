@@ -92,18 +92,18 @@ def pre_collect_setup():
     logger.info("Setting up test abilities...")
 
     ta_1 = Ability(name=f"{TEST_PREFIX}Ability 1", description="ta_1", on_use="ta_1 used",
-                   target_mode=TargetMode.SINGLE)
+                   target_mode=TargetMode.SINGLE, damage=1)
     ta_2 = Ability(name=f"{TEST_PREFIX}Ability 2", description="ta_2", on_use="ta_2 used",
-                   target_mode=TargetMode.SINGLE_ENEMY,
+                   target_mode=TargetMode.SINGLE_ENEMY, damage=1,
                    costs={f"{TEST_PREFIX}health": 1})
     ta_3 = Ability(name=f"{TEST_PREFIX}Ability 3", description="ta_3", on_use="ta_3 used",
                    target_mode=TargetMode.SINGLE_ALLY,
                    costs={f"{TEST_PREFIX}stamina": 2})
     ta_4 = Ability(name=f"{TEST_PREFIX}Ability 4", description="ta_1", on_use="ta_1 used",
-                   target_mode=TargetMode.ALL)
+                   target_mode=TargetMode.ALL, damage=1)
     ta_5 = Ability(name=f"{TEST_PREFIX}Ability 5", description="ta_2", on_use="ta_2 used",
                    target_mode=TargetMode.ALL_ENEMY,
-                   costs={f"{TEST_PREFIX}health": 1})
+                   costs={f"{TEST_PREFIX}health": 1}, damage=1)
     ta_6 = Ability(name=f"{TEST_PREFIX}Ability 6", description="ta_3", on_use="ta_3 used",
                    target_mode=TargetMode.ALL_ALLY,
                    costs={f"{TEST_PREFIX}stamina": 2})
