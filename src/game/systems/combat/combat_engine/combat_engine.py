@@ -177,6 +177,7 @@ class CombatEngine(FiniteStateDevice):
                     effect_copy = copy.deepcopy(effect)  # Deepcopy may cause an issue
 
                     # Assign sources and targets from the deepcopy
+                    logger.debug(f"Assigning effect {effect_copy} to entity {target.name} in phase {phase}")
                     effect_copy.assign(self.active_entity, target)
                     target.acquire_effect(effect_copy, phase)
 
@@ -259,6 +260,10 @@ class CombatEngine(FiniteStateDevice):
             # Return a list of all entities
             case TargetMode.SINGLE:
                 return self.allies + self.enemies
+
+            # Return a list containing only the active entity
+            case TargetMode.SELF:
+                return [self.active_entity]
 
             # Return a list of all entities that are not `entity`
             case TargetMode.NOT_SELF:
@@ -396,15 +401,20 @@ class CombatEngine(FiniteStateDevice):
             self.current_turn += 1  # Increment turn index
             self.current_phase_index = 0  # Reset phase index to 0 (Start phase)
 
+            if self.active_entity is None:
+                # Detect if the active entity went out of bounds and a new turn cycle must be started
+                self.set_state(self.States.START_TURN_CYCLE)
+                return
+
+            logger.debug(f"Starting turn for entity {self.active_entity}")
+
             if self.is_dead(self.active_entity):
                 # Skip this entity's turn and then check if combat should have ended.
-                self.current_phase_index = len(self.get_master_phase_order()) - 1
                 self.set_state(self.States.DETECT_COMBAT_TERMINATION)
+                return
 
-            elif self.active_entity:  # If incremented position is in range, handle the turn's phase logic
+            if self.active_entity:  # If incremented position is in range, handle the turn's phase logic
                 self.set_state(self.States.HANDLE_PHASE)
-            else:  # If not, then all entities have had a turn, start a new turn cycle
-                self.set_state(self.States.START_TURN_CYCLE)
 
         @FiniteStateDevice.state_logic(self, self.States.HANDLE_PHASE, InputType.SILENT)
         def logic(_: any) -> None:

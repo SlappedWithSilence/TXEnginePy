@@ -63,8 +63,8 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         if not isinstance(target_entity, CombatEntity):
             raise TypeError()
 
-        self._target_entity = weakref.proxy(target_entity)
-        self._source_entity = weakref.proxy(source_entity)
+        self._target_entity = target_entity
+        self._source_entity = source_entity
 
     def perform(self):
         """
@@ -122,8 +122,11 @@ class ResourceEffect(CombatEffect):
     def __str__(self):
         return f"{self.name}: ({self._resource_name}: {self._adjust_quantity})"
 
-    def __repr__(self):
-        return self.__str__()
+    def __copy__(self):
+        return ResourceEffect(self._resource_name, self._adjust_quantity, self.trigger_message)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     def _perform(self, target: CombatEntity):
         if self._resource_name not in target.resource_controller:

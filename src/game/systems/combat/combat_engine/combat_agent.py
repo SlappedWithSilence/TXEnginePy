@@ -120,11 +120,11 @@ class CombatAgentMixin:
             return ChoiceData(ChoiceData.ChoiceType.PASS)
 
         r = random.Random()
-        ab: str = r.choice(self.ability_controller.abilities)
+        ab: str = r.choice(self.usable_abilities)
         targets = from_cache("combat").get_ability_targets(self, ab)
 
         target = r.choice(targets)
-
+        logger.debug(f"Entity {self.name} used ability {ab} on entity {target.name}")
         return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab, ability_target=target)
 
     def intelligent_choice_logic(self) -> ChoiceData:
@@ -156,6 +156,9 @@ class CombatAgentMixin:
                     logger.debug(f"Requirements not met for {ab.name}")
 
                     # See if there are any items that can fix the situation
+                    # TODO: Implement look-ahead to see if the next ability is > n% "worse" than the current ability
+                    #  and is also ready to be used. If not ready, recursively call to see if there's a better
+                    #  ability than can be used with max_depth 'k'
                     resource_fixers = self.get_resource_fix_items(ab.name)
                     if len(resource_fixers) < 1:
                         logger.debug("No fixer items located. Skipping.")
@@ -173,8 +176,7 @@ class CombatAgentMixin:
                         logger.debug(
                             f"Selecting single target for ability: {ab.target_mode} via mode {ab.target_mode}")
                         targets = from_cache("combat").get_ability_targets(self, ab.name)
-                        t = \
-                        sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
+                        t = sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
 
                         logger.debug(f"Selected {t.name}!")
                         return ChoiceData(ChoiceData.ChoiceType.ABILITY, ability_name=ab.name, ability_target=t)
