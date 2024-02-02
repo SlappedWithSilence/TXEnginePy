@@ -27,7 +27,7 @@
         "wrap" : {
           "class" : "CombatEvent",
           "allies" : [2],
-          "enemies" : [3]
+          "enemies" : [3, 4]
         },
         "reveal_after_use" : ["combat_locked"]
       }

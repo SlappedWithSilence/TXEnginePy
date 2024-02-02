@@ -44,6 +44,17 @@
           }
         ]
       }
+    },
+    {
+      "class" : "Ability",
+      "name" : "Heavy Swing",
+      "description" : "The user swings its limbs wildly, putting all its weight behind the attack.",
+      "on_use" : "{wielder} swung wildly at {target}",
+      "damage" : 15,
+      "target_mode" : "single_enemy",
+      "costs" : {
+        "stamina" : 0.5
+      }
     }
 
 
