@@ -191,7 +191,7 @@ class CombatEngine(FiniteStateDevice):
                 [
                     self.active_entity.name, " used ", StringContent(value=ability_name, formatting="ability_name"),
                     "\n",
-                    ability.on_use
+                    ability.on_use.format(wielder=self.active_entity.name)
                 ]
             ))
 
