@@ -140,12 +140,12 @@ class ResourceEffect(CombatEffect):
         """
         post_change: int = self._target_entity.resource_controller[self._resource_name].test_adjust(
             self._adjust_quantity)
-        net: int = post_change - self._target_entity.resource_controller[self._resource_name].value > -1
-        term = "gained" if net else "lost"
+        net = post_change - self._target_entity.resource_controller[self._resource_name].value
+        term = "gained" if net > -1 else "lost"
 
         return [
-            self._target_entity.name, " ", term, " ", abs(net), " ",
-            StringContent(value=self.name, formatting="resource_name"),
+            self._target_entity.name, " ", term, " ", str(abs(net)), " ",
+            StringContent(value=self._resource_name, formatting="resource_name"),
             "."
         ]
 
