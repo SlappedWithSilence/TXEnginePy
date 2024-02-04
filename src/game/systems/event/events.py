@@ -480,6 +480,11 @@ class ResourceEvent(EntityTargetMixin, Event):
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
 
+    @property
+    def harmful(self) -> bool:
+        """Returns true if the ResourceEvent will reduce the absolute value of the Resource"""
+        return self.amount < 0
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ResourceEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:

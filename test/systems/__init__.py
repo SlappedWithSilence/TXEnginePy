@@ -5,6 +5,7 @@ from game.systems.crafting.recipe import Recipe
 from game.systems.currency import currency_manager, Currency
 from game.systems.entity import Resource
 from game.systems.entity.entities import CombatEntity
+from game.systems.event import ResourceEvent
 from game.systems.item.item import Item, Equipment, Usable
 from game.systems.item import item_manager
 from game.systems.crafting import recipe_manager
@@ -52,11 +53,18 @@ def pre_collect_setup():
     te10 = Equipment(f"{TEST_PREFIX} Equipment 6", -119, {-110: 1}, "", "legs", "legs", 0, 0,
                      resource_modifiers={f"{TEST_PREFIX}health": -0.25})
 
-    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "", requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 2)])
-    te12 = Usable(f"{TEST_PREFIX} Usable 1", -121, {-110: 5}, "", ""
-                  , requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
+    te11 = Usable(f"{TEST_PREFIX} Usable 1", -120, {-110: 2}, "", "",
+                  requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 0.2)])
+    te12 = Usable(f"{TEST_PREFIX} Usable 2", -121, {-110: 5}, "", "",
+                  requirements=[ResourceRequirement(f"{TEST_PREFIX}health", 5)])
 
-    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12])
+    te13 = Usable(f"{TEST_PREFIX} Usable 3", -122, {-110: 5}, "", "", on_use_events=[
+                        ResourceEvent(f"{TEST_PREFIX}health", 0.2)])
+
+    te14 = Usable(f"{TEST_PREFIX} Usable 4", -123, {-110: 5}, "", "", on_use_events=[
+                        ResourceEvent(f"{TEST_PREFIX}health", 5)])
+
+    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13, te14])
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])
@@ -84,18 +92,18 @@ def pre_collect_setup():
     logger.info("Setting up test abilities...")
 
     ta_1 = Ability(name=f"{TEST_PREFIX}Ability 1", description="ta_1", on_use="ta_1 used",
-                   target_mode=TargetMode.SINGLE)
+                   target_mode=TargetMode.SINGLE, damage=1)
     ta_2 = Ability(name=f"{TEST_PREFIX}Ability 2", description="ta_2", on_use="ta_2 used",
-                   target_mode=TargetMode.SINGLE_ENEMY,
+                   target_mode=TargetMode.SINGLE_ENEMY, damage=1,
                    costs={f"{TEST_PREFIX}health": 1})
     ta_3 = Ability(name=f"{TEST_PREFIX}Ability 3", description="ta_3", on_use="ta_3 used",
                    target_mode=TargetMode.SINGLE_ALLY,
                    costs={f"{TEST_PREFIX}stamina": 2})
     ta_4 = Ability(name=f"{TEST_PREFIX}Ability 4", description="ta_1", on_use="ta_1 used",
-                   target_mode=TargetMode.ALL)
+                   target_mode=TargetMode.ALL, damage=1)
     ta_5 = Ability(name=f"{TEST_PREFIX}Ability 5", description="ta_2", on_use="ta_2 used",
                    target_mode=TargetMode.ALL_ENEMY,
-                   costs={f"{TEST_PREFIX}health": 1})
+                   costs={f"{TEST_PREFIX}health": 1}, damage=1)
     ta_6 = Ability(name=f"{TEST_PREFIX}Ability 6", description="ta_3", on_use="ta_3 used",
                    target_mode=TargetMode.ALL_ALLY,
                    costs={f"{TEST_PREFIX}stamina": 2})

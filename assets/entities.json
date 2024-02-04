@@ -43,7 +43,24 @@
             [1, 2]
           ]
         }
-      }
+      },
+    {
+      "class" : "CombatEntity",
+      "id" : 4,
+      "name" : "Intelligent Cobol",
+      "loot_table" : 0,
+      "xp_yield" : 1,
+      "turn_speed" : 1,
+      "abilities" : ["Proto Ability", "Heavy Swing"],
+      "inventory" : {
+        "class" : "InventoryController",
+        "manifest" : [
+          [9, 3],
+          [8, 1]
+        ]
+      },
+      "naive" : false
+    }
 
   ]
 }

@@ -4,7 +4,7 @@
       "class" : "Ability",
       "name" : "Proto Ability",
       "description" : "The first ability ever created",
-      "on_use" : "Feelsbad",
+      "on_use" : "{wielder} used the first ability ever created; its underpowered.",
       "damage" : 1,
       "target_mode": "single_enemy"
     },
@@ -12,7 +12,7 @@
       "class" : "Ability",
       "name" : "My Opinions on Facebook are Really Important",
       "description" : "Does 1 mental damage to anyone around",
-      "on_use" : "Feelsbad",
+      "on_use" : "{wielder} mistakenly thought we care about its opinions.",
       "damage" : 1,
       "target_mode": "all"
     },
@@ -28,7 +28,7 @@
       "class" : "Ability",
       "name" : "Etchings of Iron",
       "description" : "The might of your forefathers fills you, restoring your stamina",
-      "on_use" : "The might of your forefathers fills you.",
+      "on_use" : "The might of {wielder}'s forefathers restores stamina",
       "damage" : 0,
       "target_mode": "self",
       "costs" : {
@@ -40,9 +40,20 @@
             "class" : "ResourceEffect",
             "resource_name" : "Stamina",
             "adjust_quantity" : 0.5,
-            "trigger_message" : "You recovered your stamina."
+            "trigger_message" : "{target} recovered stamina."
           }
         ]
+      }
+    },
+    {
+      "class" : "Ability",
+      "name" : "Heavy Swing",
+      "description" : "The user swings its limbs wildly, putting all its weight behind the attack.",
+      "on_use" : "{wielder} swung wildly at {target}",
+      "damage" : 15,
+      "target_mode" : "single_enemy",
+      "costs" : {
+        "stamina" : 0.5
       }
     }
 

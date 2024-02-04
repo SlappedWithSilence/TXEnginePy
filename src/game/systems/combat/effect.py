@@ -63,8 +63,8 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         if not isinstance(target_entity, CombatEntity):
             raise TypeError()
 
-        self._target_entity = weakref.proxy(target_entity)
-        self._source_entity = weakref.proxy(source_entity)
+        self._target_entity = target_entity
+        self._source_entity = source_entity
 
     def perform(self):
         """
@@ -122,8 +122,11 @@ class ResourceEffect(CombatEffect):
     def __str__(self):
         return f"{self.name}: ({self._resource_name}: {self._adjust_quantity})"
 
-    def __repr__(self):
-        return self.__str__()
+    def __copy__(self):
+        return ResourceEffect(self._resource_name, self._adjust_quantity, self.trigger_message)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     def _perform(self, target: CombatEntity):
         if self._resource_name not in target.resource_controller:
@@ -137,12 +140,12 @@ class ResourceEffect(CombatEffect):
         """
         post_change: int = self._target_entity.resource_controller[self._resource_name].test_adjust(
             self._adjust_quantity)
-        net: int = post_change - self._target_entity.resource_controller[self._resource_name].value > -1
-        term = "gained" if net else "lost"
+        net = post_change - self._target_entity.resource_controller[self._resource_name].value
+        term = "gained" if net > -1 else "lost"
 
         return [
-            self._target_entity.name, " ", term, " ", abs(net), " ",
-            StringContent(value=self.name, formatting="resource_name"),
+            self._target_entity.name, " ", term, " ", str(abs(net)), " ",
+            StringContent(value=self._resource_name, formatting="resource_name"),
             "."
         ]
 
