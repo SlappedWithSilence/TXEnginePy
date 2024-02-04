@@ -53,7 +53,7 @@
       "damage" : 15,
       "target_mode" : "single_enemy",
       "costs" : {
-        "stamina" : 0.5
+        "Stamina" : 0.5
       }
     }
 

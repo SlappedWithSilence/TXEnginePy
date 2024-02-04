@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import ABC
 
+from loguru import logger
+
 from game.cache import cached
 from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
@@ -46,6 +48,7 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         # For each cost, insert a ResourceRequirement that matches the cost to enforce resource-minimums without extra
         # logic.
         for resource_name, cost_quantity in self.costs.items():
+            logger.debug(f"Adding ResourceRequirement to {self.name}: {resource_name} : {cost_quantity}")
             self.requirements.append(
                 ResourceRequirement(resource_name, cost_quantity)
             )
@@ -76,7 +79,7 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         ]
 
         optional_fields = [
-            ("effects", dict), ("requirements", list)
+            ("effects", dict), ("requirements", list), ("costs", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -86,7 +89,7 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
             raise ValueError('Incorrect class designation!')
 
         # Build complex optional field collections
-        kwargs = {}
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json, False)
 
         # Build, verify and store effects
         if 'effects' in json:
@@ -109,11 +112,6 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
                     effects[CombatPhase(phase)].append(LoadableFactory.get(raw_effect))
 
             kwargs['effects'] = effects
-
-        # Build requirements via LoadableFactory.
-        if 'requirements' in json:
-            requirements = LoadableFactory.collect_requirements(json)
-            kwargs['requirements'] = requirements
 
         return Ability(
             name=json['name'],
