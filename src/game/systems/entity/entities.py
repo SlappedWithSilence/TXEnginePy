@@ -243,6 +243,7 @@ class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin
         - resource_controller: ResourceController
         - equipment_controller: EquipmentController
         - coin_purse: CoinPurse
+        - naive: bool
 
         """
 
@@ -253,7 +254,7 @@ class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin
 
         optional_fields = [
             ("combat_provider", str), ("inventory_controller", dict), ("resource_controller", dict),
-            ("equipment_controller", dict), ("coin_purse", dict)
+            ("equipment_controller", dict), ("coin_purse", dict), ("naive", bool)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
