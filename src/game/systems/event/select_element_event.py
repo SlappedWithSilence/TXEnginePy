@@ -17,7 +17,6 @@ class SelectElementEvent(Event):
     class States(Enum):
         DEFAULT = 0
         SHOW_ELEMENTS = 1
-        PROCESS_CHOICE = 2
         TERMINATE = -1
 
     def __init__(self, collection: list, key: Callable, element_filter: Callable = None,
@@ -98,11 +97,6 @@ class SelectElementEvent(Event):
             return ComponentFactory.get([self._prompt],
                                         [self._to_listing(e) for e in self.__filtered_collection])
 
-        # PROCESS_CHOICE
-        @FiniteStateDevice.state_logic(self, self.States.PROCESS_CHOICE, InputType.SILENT)
-        def logic(_: any) -> None:
-            pass
-
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "SelectElementEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
@@ -177,9 +171,9 @@ class SelectElementEventFactory:
 
         # If no collection override is supplied, used the inventory in the combat_entity
         # In all cases, translate the passed data structure into a list of id-quantity tuples
-        collection: list[tuple[int, int]] = None
+        collection: list[tuple[int, int]] | None = None
 
-        from game.systems.entity.entities import InventoryMixin
+        from game.systems.entity.mixins.inventory_mixin import InventoryMixin
         if collection_override is None:
             collection = [(stack.id, stack.quantity) for stack in combat_entity.inventory.items]
 
@@ -188,11 +182,13 @@ class SelectElementEventFactory:
             collection = [(stack.id, stack.quantity) for stack in collection_override.inventory.items]
 
         # If a list-tuple override is passed, check its contents and then use it
-        elif type(collection_override) == list:
+        elif isinstance(collection_override, list):
             if len(collection_override) < 1:
                 raise ValueError("list typed collection overrides must be of size > 0")
-            if type(collection_override[0]) != tuple or type(collection_override[0][0]) != int or type(
-                    collection_override[0][1]) != int:
+            if not isinstance(
+                    collection_override[0], tuple) or not isinstance(
+                    collection_override[0][0], int) or not isinstance(
+                    collection_override[0][1], int):
                 raise ValueError("list typed collection overrides must only contain objects of type tuple[int, int]")
             collection = collection_override
 

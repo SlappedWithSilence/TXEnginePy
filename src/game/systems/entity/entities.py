@@ -3,111 +3,32 @@ from __future__ import annotations
 from abc import ABC
 
 import game.systems.combat.effect as effects
-import game.systems.entity.resource as resource
-import game.systems.inventory.inventory_controller as inv
 from game.cache import cached
 from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
-from game.systems.combat.ability_controller import AbilityController
 from game.systems.combat.combat_engine.combat_agent import PlayerAgentMixin, CombatAgentMixin
-from game.systems.crafting.crafting_controller import CraftingController
-from game.systems.inventory import EquipmentController
+from game.systems.entity.mixins.ability_mixin import AbilityMixin
+from game.systems.entity.mixins.crafting_mixin import CraftingMixin
+from game.systems.entity.mixins.currency_mixin import CurrencyMixin
+from game.systems.entity.mixins.equipment_mixin import EquipmentMixin
+from game.systems.entity.mixins.inventory_mixin import InventoryMixin
+from game.systems.entity.mixins.resource_mixin import ResourceMixin
+from game.systems.entity.mixins.skill_mixin import SkillMixin
 from game.systems.item.loot import LootableMixin, LootTable
-from game.systems.skill.skill_controller import SkillController
 
 
 class EntityBase(ABC):
 
     def __init__(self, id: int, name: str):
-        if type(id) != int:
+        if not isinstance(id, int):
             raise TypeError(f"Expected id to be of type int, got {type(id)} instead.")
 
-        if type(name) != str:
+        if not isinstance(name, str):
             raise TypeError(f"Expected name to be of type str, got {type(name)} instead.")
 
         self.id: int = id
         self.name: str = name
-
-
-class InventoryMixin:
-    """
-    A mixin for Entity objects that provides Inventory functionality.
-    """
-
-    def __init__(self, inventory: inv.InventoryController = None, **kwargs):
-        super().__init__(**kwargs)
-        """
-        An InventoryController's content may be provided via instance, by tuple, or both.
-        """
-        self.inventory = inventory or inv.InventoryController()
-
-
-class CurrencyMixin:
-    """
-    A mixin for Entity objects that provides CoinPurse functionality.
-    """
-
-    def __init__(self, coin_purse=None, **kwargs):
-        super().__init__(**kwargs)
-        from game.systems.currency.coin_purse import CoinPurse
-        self.coin_purse = coin_purse or CoinPurse()
-
-
-class ResourceMixin:
-    """
-    A mixin for Entity objects that provides ResourceController functionality
-    """
-
-    def __init__(self, resource_controller: resource.ResourceController = None, **kwargs):
-        super().__init__(**kwargs)
-        self.resource_controller: resource.ResourceController = resource_controller or resource.ResourceController()
-
-
-class SkillMixin:
-    """
-    A mixin that gives an entity access to a SkillController
-    """
-
-    def __init__(self, skills: dict[str, dict[str, int]] = None, **kwargs):
-        super().__init__(**kwargs)
-        """
-        Expects a dict-form manifest formatted like so:
-        {
-            "skill_id" : {
-                "level" : 1
-                "xp" : 1
-            }
-        }
-        """
-
-        self.skill_controller = SkillController(obtain_all=True)
-
-        if skills is not None and type(skills) is not dict:
-            raise TypeError(f"Unexpected type for skills! Expected either dict or None, got {type(skills)} instead.")
-
-        # Iterate through the skill dicts provided, and load them into the controller's data
-        if skills is not None:
-            for skill_id in skills:
-
-                # JSON does not allow for int-typed keys, so we have to cast the str-equivalent of int back into an int
-                try:
-                    true_id = int(skill_id)
-                except ValueError:
-                    raise ValueError(f"ID of {skill_id} cannot be converted to int!")
-
-                if true_id not in self.skill_controller and self.skill_controller.obtain_all:
-                    raise ValueError(f"No skill with id {true_id}!")
-                elif true_id not in self.skill_controller and not self.skill_controller.obtain_all:
-                    self.skill_controller.obtain_skill(true_id)
-
-                for term in ["level", "xp"]:
-                    if term not in skills[skill_id]:
-                        raise ValueError(f"Missing field {term} in skill definition for skill {skill_id}")
-
-                # Finally, set the level and xp values of the skill (assuming it has already been obtained)
-                self.skill_controller[true_id].level = skills[skill_id]['level']
-                self.skill_controller[true_id].xp = skills[skill_id]['xp']
 
 
 class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
@@ -151,30 +72,6 @@ class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceM
         kw = LoadableFactory.collect_optional_fields(optional_fields, json)
 
         return Entity(name=json['name'], id=json['id'], **kw)
-
-
-class EquipmentMixin:
-    """
-    A mixin for Entity objects that provides EquipmentController functionality
-    """
-
-    def __init__(self, equipment_controller: EquipmentController = None, **kwargs):
-        super().__init__(**kwargs)
-        self.equipment_controller = equipment_controller or EquipmentController()
-        self.equipment_controller.owner = self
-
-
-class AbilityMixin:
-    """
-    A mixin that grants an Entity the capacity to learn Abilities
-    """
-
-    def __init__(self, abilities: list[str] = None, ability_controller=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.ability_controller = ability_controller or AbilityController()
-        if abilities is not None:
-            for ability in abilities:
-                self.ability_controller.learn(ability)
 
 
 class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin, Entity):
@@ -264,9 +161,9 @@ class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin
         # Pre-process LootableMixin data. Determine if an ID or an instance is passed.
         # If an ID is passed, simply pass it through. If a LootTable JSON blob is passed,
         # transform it via LoadableFactory and pass it back to kw dict.
-        if type(json['loot_table']) == int:
+        if isinstance(json['loot_table'], int):
             kw['loot_table_id'] = json['loot_table']
-        elif type(json['loot_table']) == dict:
+        elif isinstance(json['loot_table'], dict):
             res = LoadableFactory.get(json['loot_table'])
             if not isinstance(res, LootTable):
                 raise TypeError("Expected entity['loot_table'] to be of class LootTable!")
@@ -291,16 +188,6 @@ class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin
             ce.equipment_controller.owner = ce
 
         return ce
-
-
-class CraftingMixin:
-    """
-    A mixin that adds support for CraftingController to an entity
-    """
-
-    def __init__(self, recipes: list[int] = None, **kwargs):
-        super().__init__(**kwargs)
-        self.crafting_controller: CraftingController = CraftingController(recipe_manifest=recipes or [], owner=self)
 
 
 class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):

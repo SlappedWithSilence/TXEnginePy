@@ -43,11 +43,11 @@ class ViewInventoryEvent(EntityTargetMixin, Event):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        from game.systems.entity.entities import InventoryMixin
+        from game.systems.entity.mixins.inventory_mixin import InventoryMixin
         if not isinstance(self.target, InventoryMixin):
             raise TypeError("Cannot view inventory of Entity not of type InventoryMixin!")
 
-        self.stack_index: int = None
+        self.stack_index: int | None = None
 
         self._setup_states()
 

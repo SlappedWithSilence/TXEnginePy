@@ -73,7 +73,7 @@ class RequirementsMixin:
     def get_requirements_from_json(cls, json) -> list[Requirement]:
         requirements = []
         if 'requirements' in json:
-            if type(json['requirements']) != list:
+            if not isinstance(json['requirements'], list):
                 raise TypeError("requirements field must be a list!")
 
             for raw_requirement in json['requirements']:
@@ -103,7 +103,7 @@ class SkillRequirement(Requirement):
         self._skill_name: str | None = None
 
     def fulfilled(self, entity) -> bool:
-        from game.systems.entity.entities import SkillMixin
+        from game.systems.entity.mixins.skill_mixin import SkillMixin
 
         if isinstance(entity, SkillMixin):
 
@@ -160,11 +160,11 @@ class ResourceRequirement(Requirement):
         self.adjust_quantity: int | float = adjust_quantity
 
     def fulfilled(self, entity) -> bool:
-        if type(self.adjust_quantity) == int:  # Resource must be gte adjustment quantity
+        if isinstance(self.adjust_quantity, int):  # Resource must be gte adjustment quantity
             if entity.resource_controller[self.resource_name].value < self.adjust_quantity:
                 return False
 
-        elif type(self.adjust_quantity) == float:
+        elif isinstance(self.adjust_quantity, float):
             _resource = entity.resource_controller[self.resource_name]
             if _resource.percent_remaining >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
                 return False
@@ -176,7 +176,7 @@ class ResourceRequirement(Requirement):
 
     @property
     def description(self) -> list[str | StringContent]:
-        sss = f"{self.adjust_quantity}" if type(self.adjust_quantity) == int else f"{self.adjust_quantity * 100}%"
+        sss = f"{self.adjust_quantity}" if isinstance(self.adjust_quantity, int) else f"{self.adjust_quantity * 100}%"
         return [
             "Requires ",
             StringContent(value=sss, formatting="resource_quantity"),
@@ -216,11 +216,11 @@ class ConsumeResourceRequirement(Requirement):
         self.adjust_quantity: int | float = adjust_quantity
 
     def fulfilled(self, entity) -> bool:
-        if type(self.adjust_quantity) == int:  # Resource must be gte adjustment quantity
+        if isinstance(self.adjust_quantity, int):  # Resource must be gte adjustment quantity
             if entity.resource_controller[self.resource_name].value < self.adjust_quantity:
                 return False
 
-        elif type(self.adjust_quantity) == float:
+        elif isinstance(self.adjust_quantity, float):
             _resource = entity.resource_controller[self.resource_name]
             if _resource.remaining_percentage >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
                 return False
@@ -233,7 +233,7 @@ class ConsumeResourceRequirement(Requirement):
 
     @property
     def description(self) -> list[str | StringContent]:
-        sss = f"{self.adjust_quantity}" if type(self.adjust_quantity) == int else f"{self.adjust_quantity * 100}%"
+        sss = f"{self.adjust_quantity}" if isinstance(self.adjust_quantity, int) else f"{self.adjust_quantity * 100}%"
         return [
             "Consumes ",
             StringContent(value=sss, formatting="resource_quantity"),

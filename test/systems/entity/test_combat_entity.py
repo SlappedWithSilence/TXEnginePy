@@ -1,4 +1,6 @@
-from game.systems.entity.entities import CombatEntity, AbilityMixin, EquipmentMixin, Entity
+from game.systems.entity.entities import CombatEntity, Entity
+from game.systems.entity.mixins.equipment_mixin import EquipmentMixin
+from game.systems.entity.mixins.ability_mixin import AbilityMixin
 
 import pytest
 

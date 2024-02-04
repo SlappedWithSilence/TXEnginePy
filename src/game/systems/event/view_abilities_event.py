@@ -27,7 +27,7 @@ class ViewAbilitiesEvent(Event):
             if self.target is None:
                 self.target = from_cache('player')
 
-            from game.systems.entity.entities import AbilityMixin
+            from game.systems.entity.mixins.ability_mixin import AbilityMixin
             if not isinstance(self.target, AbilityMixin):
                 raise TypeError(f"Cannot view Abilities for non-AbilityMixin entity! ({self.target})")
 

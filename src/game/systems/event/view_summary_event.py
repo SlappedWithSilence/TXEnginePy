@@ -7,7 +7,10 @@ from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity import Entity
-from game.systems.entity.entities import ResourceMixin, AbilityMixin, SkillMixin, EquipmentMixin
+from game.systems.entity.mixins.resource_mixin import ResourceMixin
+from game.systems.entity.mixins.skill_mixin import SkillMixin
+from game.systems.entity.mixins.equipment_mixin import EquipmentMixin
+from game.systems.entity.mixins.ability_mixin import AbilityMixin
 from game.systems.event import Event
 from game.systems.event.events import ViewResourcesEvent
 from game.systems.event.view_abilities_event import ViewAbilitiesEvent
