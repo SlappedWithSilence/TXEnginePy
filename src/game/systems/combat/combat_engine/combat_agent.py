@@ -41,7 +41,7 @@ class CombatAgentMixin:
         ]
 
     @property
-    def usable_items(self) -> list["Usable"]:
+    def usable_items(self) -> list:
         """
         Returns a list of Usable Items with fulfilled Requirements
         """
@@ -54,7 +54,7 @@ class CombatAgentMixin:
         return [s.ref for s in stacks]
 
     @classmethod
-    def _is_restorative_item(cls, usable: "Usable", resource_name: str) -> bool:
+    def _is_restorative_item(cls, usable, resource_name: str) -> bool:
         """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
         counted as restorative."""
         for e in usable.on_use_events:
@@ -71,19 +71,19 @@ class CombatAgentMixin:
         return self.resource_controller.primary_resource.percent_remaining < self.PRIMARY_RESOURCE_DANGER_THRESHOLD
 
     @property
-    def restorative_items(self) -> list["Usable"]:
+    def restorative_items(self) -> list:
         """A list of Usables that restore primary_resource"""
 
         return [
             u for u in self.usable_items if self._is_restorative_item(u, self.resource_controller.primary_resource.name)
         ]
 
-    def get_resource_fix_items(self, ability: str) -> list["Usable"]:
+    def get_resource_fix_items(self, ability: str) -> list:
         """
         For a given ability, if it can't be used due to resource depletion, return a list of Usables that restore
         the missing resource
         """
-        instance: "Ability" = from_cache("managers.AbilityManager").get_instance(ability)
+        instance = from_cache("managers.AbilityManager").get_instance(ability)
         depleted_resources = set()
         for requirement in instance.requirements:
             if isinstance(requirement, ResourceRequirement) or isinstance(requirement, ConsumeResourceRequirement):
@@ -98,12 +98,12 @@ class CombatAgentMixin:
         return list(results)
 
     @property
-    def offensive_abilities(self) -> list["Ability"]:
+    def offensive_abilities(self) -> list:
         """Returns a list of abilities that can be used to deal damage to enemies"""
         res = []
 
         for ability_name in self.ability_controller.abilities:
-            instance: "Ability" = from_cache("managers.AbilityManager").get_instance(ability_name)
+            instance = from_cache("managers.AbilityManager").get_instance(ability_name)
 
             # Check if the ability deals damage and can be used to target enemies
             if instance.damage > 0 and instance.target_mode not in [
