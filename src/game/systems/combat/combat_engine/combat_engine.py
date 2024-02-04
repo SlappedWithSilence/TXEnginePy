@@ -169,7 +169,9 @@ class CombatEngine(FiniteStateDevice):
                 f"Cannot activate ability '{ability}! Requirements not met for entity: {self.active_entity}"
             )
 
-        _targets = targets if type(targets) == list else [targets]
+        # A single-target is an instance of CombatEntity, but logic expects list[CombatEntity]
+        # TODO: Single-target should result in an instance of CombatEntity wrapped in a list by default
+        _targets = targets if isinstance(targets, list) else [targets]
 
         for target in _targets:  # For each selected target of the chosen ability
             for phase, effects in ability.effects.items():  # Unpack the ability's effects into phases
@@ -181,7 +183,7 @@ class CombatEngine(FiniteStateDevice):
                     effect_copy.assign(self.active_entity, target)
                     target.acquire_effect(effect_copy, phase)
 
-                target.resource_controller[get_config()["resources"]["primary_resource"]].adjust(ability.damage * -1)
+            target.resource_controller[get_config()["resources"]["primary_resource"]].adjust(ability.damage * -1)
 
         self.active_entity.ability_controller.consume_ability_resources(ability_name)
 
