@@ -8,13 +8,7 @@ from game.structures.enums import CombatPhase
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.combat_engine.combat_agent import PlayerAgentMixin, CombatAgentMixin
-from game.systems.entity.mixins.ability_mixin import AbilityMixin
-from game.systems.entity.mixins.crafting_mixin import CraftingMixin
-from game.systems.entity.mixins.currency_mixin import CurrencyMixin
-from game.systems.entity.mixins.equipment_mixin import EquipmentMixin
-from game.systems.entity.mixins.inventory_mixin import InventoryMixin
-from game.systems.entity.mixins.resource_mixin import ResourceMixin
-from game.systems.entity.mixins.skill_mixin import SkillMixin
+import game.systems.entity.mixins as mixins
 from game.systems.item.loot import LootableMixin, LootTable
 
 
@@ -31,7 +25,7 @@ class EntityBase(ABC):
         self.name: str = name
 
 
-class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceMixin, EntityBase):
+class Entity(mixins.SkillMixin, mixins.CurrencyMixin, mixins.InventoryMixin, LoadableMixin, mixins.ResourceMixin, EntityBase):
     """A basic object that stores an entity's instance attributes such as name, ID, inventory, currencies, etc"""
 
     def __init__(self, **kwargs):
@@ -74,7 +68,7 @@ class Entity(SkillMixin, CurrencyMixin, InventoryMixin, LoadableMixin, ResourceM
         return Entity(name=json['name'], id=json['id'], **kw)
 
 
-class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin, Entity):
+class CombatEntity(mixins.AbilityMixin, mixins.EquipmentMixin, CombatAgentMixin, LootableMixin, Entity):
     """
     A subclass of Entity that contains all the necessary components to participate in Combat.
     """
@@ -190,11 +184,12 @@ class CombatEntity(AbilityMixin, EquipmentMixin, CombatAgentMixin, LootableMixin
         return ce
 
 
-class Player(CraftingMixin, PlayerAgentMixin, CombatEntity):
+class Player(mixins.CraftingMixin, PlayerAgentMixin, CombatEntity):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Player", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
+        # TODO: Implement player persistence
         pass
 
     def __init__(self, **kwargs):
