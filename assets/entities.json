@@ -51,7 +51,7 @@
       "loot_table" : 0,
       "xp_yield" : 1,
       "turn_speed" : 1,
-      "abilities" : ["Proto Ability", "Heavy Swing"],
+      "abilities" : ["Proto Ability", "Heavy Swing", "Steroids"],
       "inventory" : {
         "class" : "InventoryController",
         "manifest" : [

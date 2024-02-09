@@ -137,14 +137,14 @@ class InspectEntityEvent(EntityTargetMixin, Event):
         # INSPECT_SKILLS
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_RESOURCES, InputType.SILENT)
         def logic(_: any) -> None:
-            event = ViewSkillsEvent(target=self.target)
+            event = ViewResourcesEvent(target=self.target)
             game.state_device_controller.add_state_device(event)
             self.set_state(self.States.SHOW_OPTIONS)
 
         # INSPECT_RESOURCES
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_SKILLS, InputType.SILENT)
         def logic(_: any) -> None:
-            event = ViewResourcesEvent(target=self.target)
+            event = ViewSkillsEvent(target=self.target)
             game.state_device_controller.add_state_device(event)
             self.set_state(self.States.SHOW_OPTIONS)
 
