@@ -166,7 +166,7 @@ class ResourceRequirement(Requirement):
 
         elif isinstance(self.adjust_quantity, float):
             _resource = entity.resource_controller[self.resource_name]
-            if _resource.percent_remaining >= self.adjust_quantity:  # Resource % must be >= adjust_quantity
+            if _resource.percent_remaining < self.adjust_quantity:  # Resource % must be >= adjust_quantity
                 return False
 
         else:
@@ -179,7 +179,7 @@ class ResourceRequirement(Requirement):
         sss = f"{self.adjust_quantity}" if isinstance(self.adjust_quantity, int) else f"{self.adjust_quantity * 100}%"
         return [
             "Requires ",
-            StringContent(value=sss, formatting="resource_quantity"),
+            StringContent(value=sss, formatting="resource_value"),
             " of ",
             StringContent(value=self.resource_name, formatting="resource_name")
         ]
