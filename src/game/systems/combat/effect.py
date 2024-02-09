@@ -38,12 +38,14 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
                  target_entity: CombatEntity = None,
                  source_entity: CombatEntity = None,
                  duration: int | None = 1,
+                 on_remove: str | None = None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_states()
         self._target_entity: CombatEntity = target_entity  # The entity the effect is assigned
         self._source_entity: CombatEntity = source_entity  # The entity that spawned the Effect
-        self.duration: int | None = duration  # Number of remaining turns before Effect is removed
+        self.duration: int | None = duration  # Number of remaining turns before Effect is removed,
+        self.on_remove: str | None = on_remove
         self.tags: list[str] = []
 
     def is_assigned(self) -> bool:
@@ -106,8 +108,8 @@ class ResourceEffect(CombatEffect):
     Modify a given resource by a given amount for the target.
     """
 
-    def __init__(self, resource_name: str, adjust_quantity: int | float, trigger_message: str = None):
-        super().__init__(default_input_type=InputType.ANY, states=self.States)
+    def __init__(self, resource_name: str, adjust_quantity: int | float, trigger_message: str = None, **kwargs):
+        super().__init__(default_input_type=InputType.ANY, states=self.States, **kwargs)
 
         if type(resource_name) != str:
             raise TypeError("resource_name must be of type str!")
@@ -182,6 +184,10 @@ class ResourceEffect(CombatEffect):
         - resource_name: (str)
         - adjust_quantity: (int | float)
         - trigger_message: (str)
+
+        Optional JSON fields:
+        - duration: (int)
+        - on_remove: (str)
         """
 
         # Validate that required fields are present and correctly-typed
@@ -191,10 +197,15 @@ class ResourceEffect(CombatEffect):
             ("trigger_message", str)
         ]
 
+        optional_fields = [
+            ("duration", int), ("on_remove", str)
+        ]
+
         LoadableFactory.validate_fields(required_fields, json)
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json, False)
 
         # Type and value validation
         if json["class"] != "ResourceEffect":
             raise ValueError("Incorrect class field in JSON! Expected class field of value 'ResourceEffect'")
 
-        return ResourceEffect(json['resource_name'], json['adjust_quantity'], json['trigger_message'])
+        return ResourceEffect(json['resource_name'], json['adjust_quantity'], json['trigger_message'], **kwargs)

@@ -44,10 +44,24 @@ class EffectActivator(PhaseHandler):
         ce = from_cache("combat")
 
         active_entity: entities.CombatEntity = ce.active_entity
+        expired_effects = []
 
         for effect in reversed(active_entity.active_effects[ce.current_phase]):
+            if effect.duration < 1:
+                if effect.on_remove:
+                    from game.systems.event.events import TextEvent
+
+                    game.state_device_controller.add_state_device(TextEvent(effect.on_remove))
+
+                expired_effects.append(effect)
+                continue
+
             effect.reset()  # Reset the Effect state device in case it was previously used
             game.state_device_controller.add_state_device(effect)  # Add it to the stack
+
+        # Removed expired effecs
+        for effect in expired_effects:
+            active_entity.active_effects[ce.current_phase].remove(effect)
 
 
 class ChoiceActivator(PhaseHandler):
@@ -61,4 +75,3 @@ class ChoiceActivator(PhaseHandler):
         """
         ce = from_cache("combat")
         ce.active_entity.make_choice()
-
