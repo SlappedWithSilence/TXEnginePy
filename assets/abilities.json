@@ -55,6 +55,29 @@
       "costs" : {
         "Stamina" : 0.5
       }
+    },
+    {
+      "class" : "Ability",
+      "name" : "Steroids",
+      "description" : "The user cheats at the game and injects metabolic steroids to regain stamina",
+      "on_use" : "{wielder} injected steroids!",
+      "damage" : 0,
+      "target_mode" : "self",
+      "costs" : {
+        "Health" : 0.05
+      },
+      "effects" : {
+        "post_action_phase" : [
+          {
+            "class" : "ResourceEffect",
+            "resource_name" : "Stamina",
+            "adjust_quantity" : 1.0,
+            "trigger_message" : "{target} is roided and recovered stamina.",
+            "duration": 1,
+            "on_remove" : "{target} is no longer roided."
+          }
+        ]
+      }
     }
 
 

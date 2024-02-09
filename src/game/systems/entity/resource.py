@@ -42,7 +42,7 @@ class Resource:
     def test_adjust(self, amount: int | float) -> int:
         """
         Fake adjusts the value of the Resource. If amount is int, value is added to amount. If amount is float, value
-        is added to (value*amount).
+        is added to (max*amount).
 
         Args:
             amount: An int or float that determines how the resource's value is changed.
@@ -55,7 +55,7 @@ class Resource:
             return max(0, min(self.max, self.value + amount))
 
         elif type(amount) == float:
-            return round(max(0, min(self.max, self.value + (self.value * amount))))
+            return round(max(0, min(self.max, self.value + (self.max * amount))))
 
         else:
             raise TypeError(f"Cannot adjust Resource by type {type(amount)}! Must be int or float.")
@@ -63,7 +63,7 @@ class Resource:
     def adjust(self, amount: int | float) -> int:
         """
         Adjusts the value of the Resource. If amount is an int, value is added to amount. If amount is a float, value
-        is added to (value*amount).
+        is added to (max*amount).
 
         Args:
             amount: An int or float that determines how the resource's value is changed.

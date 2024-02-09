@@ -91,8 +91,8 @@ class AbilityController:
         returns: None
         """
 
-        for resource, quantity in from_cache("managers.AbilityManager").get_instance(ability_name).costs.items():
-            game.state_device_controller.add_state_device(events.ResourceEvent(resource, quantity, self.owner))
+        for res, quantity in from_cache("managers.AbilityManager").get_instance(ability_name).costs.items():
+            game.state_device_controller.add_state_device(events.ResourceEvent(res, abs(quantity) * -1, self.owner))
 
     def _get_ability_as_option(self, ability_name) -> list[str | StringContent]:
         """
