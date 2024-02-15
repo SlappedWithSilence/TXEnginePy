@@ -64,7 +64,11 @@ def pre_collect_setup():
     te14 = Usable(f"{TEST_PREFIX} Usable 4", -123, {-110: 5}, "", "", on_use_events=[
                         ResourceEvent(f"{TEST_PREFIX}health", 5)])
 
-    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13, te14])
+    # test_select_element_event depends on this
+    te15 = Usable(f"{TEST_PREFIX} Usable 4", -124, {-110: 5}, "", "", on_use_events=[
+                        ResourceEvent(f"{TEST_PREFIX}health", 3)])
+
+    item_manager.register_item([te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13, te14, te15])
 
     logger.info("Setting up test recipes...")
     tr1 = Recipe(-110, [(-110, 1)], [(-111, 1)])

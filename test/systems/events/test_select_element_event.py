@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 from loguru import logger
 
@@ -134,7 +136,7 @@ def test_factory_usable_selection_functional():
     """
 
     # Set up test-case dependencies
-    entity = from_cache("managers.EntityManager").get_instance(-110)  # Get a copy of the entity
+    entity = copy.deepcopy(from_cache("managers.EntityManager").get_instance(-110))  # Get a copy of the entity
     entity.inventory.insert_item(-110, 2)
     entity.inventory.insert_item(-111, 3)
     entity.inventory.insert_item(-119, 1)
@@ -163,17 +165,17 @@ def test_factory_usable_selection_filter():
     """
 
     # Set up test-case dependencies
-    entity = from_cache("managers.EntityManager").get_instance(-110)  # Get a copy of the entity
+    entity = copy.deepcopy(from_cache("managers.EntityManager").get_instance(-110))  # Get a copy of the entity
     entity.inventory.insert_item(-110, 2)
     entity.inventory.insert_item(-111, 3)
-    entity.inventory.insert_item(-119, 1)
+    entity.inventory.insert_item(-115, 1)
     entity.inventory.insert_item(-120, 1)
-    entity.inventory.insert_item(-121, 1)
+    entity.inventory.insert_item(-124, 1)
     entity.resource_controller.get_instance(f"{TEST_PREFIX}health").value = 3
 
     # Check that test case dependencies are in place
     assert entity.resource_controller.get_value(f"{TEST_PREFIX}health") == 3
-    assert entity.inventory.total_quantity(-120) == 1
+    assert entity.inventory.total_quantity(-124) == 1
 
     event = SelectElementEventFactory.get_select_usable_item_event(entity, only_requirements_met=True)
     links = event.link()
@@ -181,7 +183,7 @@ def test_factory_usable_selection_filter():
     tester = EventTester(event, [0], [])
     tester.run_tests()
 
-    assert from_storage(links["selected_element"]) == -120
+    assert from_storage(links["selected_element"]) == -124
 
 
 def test_factory_usable_selection_override():
