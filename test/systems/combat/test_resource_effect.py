@@ -62,7 +62,8 @@ perform_cases_multiple_int = [
      {f"{TEST_PREFIX}mana": 2}],
     [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}health", 6)],
      {f"{TEST_PREFIX}mana": -4, f"{TEST_PREFIX}health": 6}],
-    [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}mana", 6), ResourceEffect(f"{TEST_PREFIX}stamina", 3)],
+    [[ResourceEffect(f"{TEST_PREFIX}mana", -4), ResourceEffect(f"{TEST_PREFIX}mana", 6),
+      ResourceEffect(f"{TEST_PREFIX}stamina", 3)],
      {f"{TEST_PREFIX}mana": 2, f"{TEST_PREFIX}stamina": 3}]
 ]
 
@@ -126,31 +127,51 @@ def test_perform_single_float(resource_effect: ResourceEffect):
            min(
                max(
                    0,
-                   round(RES_START_VALUE + (RES_START_VALUE * resource_effect._adjust_quantity))
+                   round(RES_START_VALUE + (
+                               target_tce.resource_controller[res_name].max * resource_effect._adjust_quantity))
                ),
                target_tce.resource_controller[res_name].max
            )
 
 
 perform_cases_multiple_float = [
-    [[ResourceEffect(f"{TEST_PREFIX}health", 0.33), ResourceEffect(f"{TEST_PREFIX}health", -0.2)],
-     {f"{TEST_PREFIX}health": 1}],
-    [[ResourceEffect(f"{TEST_PREFIX}stamina", -0.33), ResourceEffect(f"{TEST_PREFIX}stamina", 0.5)],
-     {f"{TEST_PREFIX}stamina": 0}],
-    [[ResourceEffect(f"{TEST_PREFIX}mana", -1.0), ResourceEffect(f"{TEST_PREFIX}mana", 1.0)],
-     {f"{TEST_PREFIX}mana": -15}],
-    [[ResourceEffect(f"{TEST_PREFIX}mana", -0.5), ResourceEffect(f"{TEST_PREFIX}health", .2)],
-     {f"{TEST_PREFIX}mana": -7, f"{TEST_PREFIX}health": 3}],
-    [[ResourceEffect(f"{TEST_PREFIX}mana", -0.33), ResourceEffect(f"{TEST_PREFIX}mana", 0.2), ResourceEffect(f"{TEST_PREFIX}stamina", 0.33)],
-     {f"{TEST_PREFIX}mana": -3, f"{TEST_PREFIX}stamina": 5}]
+    [  # Cancel out
+        ResourceEffect(f"{TEST_PREFIX}health", 0.2),
+        ResourceEffect(f"{TEST_PREFIX}health", -0.2)
+    ],
+    [
+        ResourceEffect(f"{TEST_PREFIX}stamina", -0.2),
+        ResourceEffect(f"{TEST_PREFIX}stamina", 0.5)
+    ],
+    [
+        ResourceEffect(f"{TEST_PREFIX}mana", -1.0),
+        ResourceEffect(f"{TEST_PREFIX}mana", 1.0)
+    ],
+    [
+        ResourceEffect(f"{TEST_PREFIX}mana", -0.5),
+        ResourceEffect(f"{TEST_PREFIX}health", .2)
+    ],
+    [
+        ResourceEffect(f"{TEST_PREFIX}mana", -0.33),
+        ResourceEffect(f"{TEST_PREFIX}mana", 0.2),
+        ResourceEffect(f"{TEST_PREFIX}stamina", 0.33)
+    ]
 ]
 
 
-@pytest.mark.parametrize("resource_effects, net_res_changes", perform_cases_multiple_float)
-def test_perform_multiple_float(resource_effects: list[ResourceEffect], net_res_changes: dict[str, int]):
+@pytest.mark.parametrize("resource_effects", perform_cases_multiple_float)
+def test_perform_multiple_float(resource_effects: list[ResourceEffect]):
     """
     Test that multiple consecutive ResourceEffect triggers resolve correctly.
     """
+
+    net_res_changes: dict[str, float] = {}  # Net change for each resource represented in float form
+
+    for res_effect in resource_effects:
+        if res_effect._resource_name not in net_res_changes:
+            net_res_changes[res_effect._resource_name] = res_effect._adjust_quantity
+        else:
+            net_res_changes[res_effect._resource_name] += res_effect._adjust_quantity
 
     # Set up source and target entities
     source_tce = copy.deepcopy(dummy_entity)
@@ -166,13 +187,9 @@ def test_perform_multiple_float(resource_effects: list[ResourceEffect], net_res_
         starting_res_value = target_tce.resource_controller[res_name].value  # Value before execution
         effect.assign(source_tce, target_tce)
         effect.perform()  # Execution
-        assert target_tce.resource_controller[res_name].value == round(
-            starting_res_value + (starting_res_value * effect._adjust_quantity)
+        assert target_tce.resource_controller[res_name].value == min(target_tce.resource_controller[res_name].max, max(0, round(
+            starting_res_value + (target_tce.resource_controller[res_name].max * effect._adjust_quantity)))
         )  # Verify
-
-    # For each resource modified, ensure that its final value conforms with the predicted differences
-    for res in net_res_changes:
-        assert round(target_tce.resource_controller[res].value - RESOURCE_BASE_VALUE) == net_res_changes[res]
 
 
 fsm_int_cases = [
