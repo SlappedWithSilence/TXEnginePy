@@ -10,7 +10,7 @@ from game.structures.enums import TargetMode
 from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.choice_data import ChoiceData
 from game.systems.event import ResourceEvent
-from game.systems.requirement.requirements import ResourceRequirement, ConsumeResourceRequirement
+from game.systems.requirement.requirements import ResourceRequirement
 
 
 class CombatAgentMixin:
@@ -86,7 +86,7 @@ class CombatAgentMixin:
         instance = from_cache("managers.AbilityManager").get_instance(ability)
         depleted_resources = set()
         for requirement in instance.requirements:
-            if isinstance(requirement, ResourceRequirement) or isinstance(requirement, ConsumeResourceRequirement):
+            if isinstance(requirement, ResourceRequirement):
                 depleted_resources.add(requirement.resource_name)
 
         results = set()
