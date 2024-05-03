@@ -8,6 +8,7 @@ from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
+from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 from game.systems.requirement.requirements import RequirementsMixin
@@ -27,19 +28,8 @@ class DialogNodeBase(ABC):
     on_enter: list[Event] = dataclasses.field(default_factory=list)  # Events triggered when node is entered.
 
     def get_option_text(self) -> list[str]:
+        """Return a list containing all the strings for each option in the node"""
         return [s for s in self.options.keys()]
-
-    def get_next_node(self, option: str) -> int | None:
-        """
-        Get the next node to transition to after the current node is completed. If the target node id is -1, return None
-        """
-        if option not in self.options.keys():
-            raise ValueError(f"No such option: {option}")
-
-        if "next node" not in self.options[option]:
-            raise KeyError(f"Unable to find required key `next_node` for option {option}")
-
-        return self.options[option] if self.options[option] > 0 else None
 
     def should_trigger_events(self) -> bool:
         """
@@ -49,6 +39,7 @@ class DialogNodeBase(ABC):
         return self.multiple_event_triggers or not self.visited
 
     def get_events(self) -> list[Event]:
+        """Return a deep copy of each on_enter Event object"""
         return [copy.deepcopy(e) for e in self.on_enter]
 
     def trigger_events(self) -> None:
@@ -129,8 +120,15 @@ class DialogBase(ABC):
         if len(nodes) < 1:
             raise ValueError("Unable to instantiate Dialog Object with zero nodes!")
         self.id = dialog_id
-        self.nodes: list[DialogNode] = nodes
+        self.nodes: dict[int, DialogNode] = {n.node_id: n for n in nodes}
         self.initial_node_id: int = initial_node_id
+        self._current_node: int = initial_node_id
+
+        if initial_node_id not in self.nodes:
+            raise ValueError(f"Invalid starting node id {initial_node_id} for Dialog with id {self.id}")
+
+        def get() -> DialogNode:
+            return self.nodes[self._current_node] if self._current_node > 0 else None
 
 
 class Dialog(LoadableMixin, DialogBase):
@@ -145,26 +143,44 @@ class Dialog(LoadableMixin, DialogBase):
     def from_json(json: dict[str, any]) -> any:
         pass
 
-    def visit(self, node_id: int) -> DialogNode:
-        """Marks a node as visited, conditionally launches any on_enter Events, and then returns the Node object"""
-
 
 class DialogEvent(Event):
     """An Event that hosts the Dialog objects logic and manages spawning TextEvents for it."""
 
     class States(Enum):
         DEFAULT = 0
+        VISIT_NODE = 1
         TERMINATE = -1
 
-    def __init__(self, **kwargs):
+    def __init__(self, dialog_id: int, **kwargs):
         super().__init__(**kwargs)
+
+        self.current_node: DialogNode = None
+        self.dialog: Dialog = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            pass
+            self.dialog = copy.deepcopy(from_cache("managers.DialogManager").get_dialog(dialog_id))
+
+        @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE, InputType.INT,
+                                       input_min=0, input_max=len(self.current_node.get_option_text()) - 1)
+        def logic(user_input: int):
+            user_choice: str = self.current_node.get_option_text()[user_input]
+            next_node: int = self.current_node.options[user_choice]
+            if next_node is None:
+                self.set_state(self.States.TERMINATE)
+                return
+
+            self.current_node = self.dialog.nodes[next_node]
+
+        @FiniteStateDevice.state_content(self, self.States.VISIT_NODE)
+        def content() -> dict:
+            return ComponentFactory.get(
+                [self.current_node.text],
+                self.current_node.get_option_text()
+            )
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "DialogEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         pass
-
