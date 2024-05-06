@@ -54,6 +54,15 @@
         },
         {
           "class" : "WrapperAction",
+          "menu_name" : "Talk to suspicious person.",
+          "activation_text" : "You approach the weirdo.",
+          "wrap": {
+            "class" : "DialogEvent",
+            "dialog_id" : 0
+          }
+        },
+        {
+          "class" : "WrapperAction",
           "menu_name" : "Ooh, shiny!",
           "activation_text" : "You find a glittering brass key on the floor.",
           "wrap" : {
