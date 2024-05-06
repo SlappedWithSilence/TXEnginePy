@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "class" : "Dialog",
+      "id" : 0,
+      "nodes" : [
+        {
+          "class" : "DialogNode",
+          "node_id" : 0,
+          "text" : "We are conversing.",
+          "options" : {
+            "That's a weird Tinder opener." : 1,
+            "No we're not." : -1
+          }
+        },
+        {
+          "class" : "DialogNode",
+          "node_id" : 1,
+          "text" : "No u.",
+          "options" : {
+            "OK." : -1
+          }
+        }
+      ]
+    }
+  ]
+}

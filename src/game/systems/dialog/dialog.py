@@ -64,11 +64,11 @@ class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
     @cached([LoadableMixin.LOADER_KEY, "DialogNode", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
-        Loads a ResourceEvent object from a JSON blob.
+        Loads a DialogNode object from a JSON blob.
 
         Required JSON fields:
         - node_id: int
-        - options: dict[str, dict[str, any]]
+        - options: dict[str, int]
         - text: str
 
         Optional JSON fields:
@@ -95,7 +95,7 @@ class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
         LoadableFactory.validate_fields(required_fields, json)
         LoadableFactory.validate_fields(optional_fields, json, False, False)
 
-        if json["class"] != "ResourceEvent":
+        if json["class"] != "DialogNode":
             raise ValueError()
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
@@ -110,7 +110,7 @@ class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
                                  f" {json['node_id']}!")
                     raise e
 
-        return DialogNode(**kwargs)
+        return DialogNode(node_id=json["node_id"], options=json["options"], text=json["text"], **kwargs)
 
 
 class DialogBase(ABC):
@@ -141,7 +141,42 @@ class Dialog(LoadableMixin, DialogBase):
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Dialog", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a Dialog object from a JSON blob.
+
+        Required JSON fields:
+        - id: int
+        - nodes: list[DialogNode]
+
+        Optional JSON fields:
+        - single-use: bool
+        """
+
+        required_fields = [
+            ("id", int), ("nodes", list)
+        ]
+
+        optional_fields = [
+            ("single-use", bool)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+        LoadableFactory.validate_fields(optional_fields, json, False, False)
+
+        if json["class"] != "Dialog":
+            raise ValueError()
+
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        real_nodes = []
+        for raw_node in json["nodes"]:
+            try:
+                real_nodes.append(LoadableFactory.get(raw_node))
+            except Exception as e:
+                logger.error(f"Something went wrong while loading a DialogNode for Dialog with id:{json['id']}!")
+                raise e
+
+        return Dialog(dialog_id=json["id"], nodes=real_nodes, **kwargs)
 
 
 class DialogEvent(Event):
@@ -165,6 +200,7 @@ class DialogEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE, InputType.INT,
                                        input_min=0, input_max=len(self.current_node.get_option_text()) - 1)
         def logic(user_input: int):
+            self.current_node.visited = True
             user_choice: str = self.current_node.get_option_text()[user_input]
             next_node: int = self.current_node.options[user_choice]
             if next_node is None:
@@ -172,15 +208,33 @@ class DialogEvent(Event):
                 return
 
             self.current_node = self.dialog.nodes[next_node]
+            if self.current_node.should_trigger_events():
+                self.current_node.trigger_events()
 
         @FiniteStateDevice.state_content(self, self.States.VISIT_NODE)
         def content() -> dict:
             return ComponentFactory.get(
                 [self.current_node.text],
-                self.current_node.get_option_text()
+                [self.current_node.get_option_text()]
             )
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "DialogEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
-        pass
+        """
+        Loads a LearnRecipeEvent object from a JSON blob.
+
+        Required JSON fields:
+        - dialog_id (int)
+        """
+
+        required_fields = [
+            ('dialog_id', int)
+        ]
+
+        LoadableFactory.validate_fields(required_fields, json)
+
+        if json['class'] != "DialogEvent":
+            raise ValueError()
+
+        return DialogEvent(json['dialog_id'])
