@@ -27,9 +27,9 @@ class DialogNodeBase(ABC):
     persistent: bool = False  # If True, properties will be persisted in storage between sessions
     on_enter: list[Event] = dataclasses.field(default_factory=list)  # Events triggered when node is entered.
 
-    def get_option_text(self) -> list[str]:
+    def get_option_text(self) -> list[list[str]]:
         """Return a list containing all the strings for each option in the node"""
-        return [s for s in self.options.keys()]
+        return [[s] for s in self.options.keys()]
 
     def should_trigger_events(self) -> bool:
         """
@@ -188,22 +188,25 @@ class DialogEvent(Event):
         TERMINATE = -1
 
     def __init__(self, dialog_id: int, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(InputType.SILENT, self.States, self.States.DEFAULT, **kwargs)
 
         self.current_node: DialogNode = None
         self.dialog: Dialog = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            self.dialog = copy.deepcopy(from_cache("managers.DialogManager").get_dialog(dialog_id))
+            self.dialog = from_cache("managers.DialogManager")[dialog_id]
+            self.current_node = self.dialog.nodes[self.dialog.initial_node_id]
+            self.set_state(self.States.VISIT_NODE)
 
         @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE, InputType.INT,
-                                       input_min=0, input_max=len(self.current_node.get_option_text()) - 1)
+                                       input_min=0, input_max=lambda: len(self.current_node.get_option_text()) - 1)
         def logic(user_input: int):
             self.current_node.visited = True
-            user_choice: str = self.current_node.get_option_text()[user_input]
+            logger.debug(self.current_node)
+            user_choice: str = self.current_node.get_option_text()[user_input][0]
             next_node: int = self.current_node.options[user_choice]
-            if next_node is None:
+            if next_node < 0:
                 self.set_state(self.States.TERMINATE)
                 return
 
@@ -215,7 +218,7 @@ class DialogEvent(Event):
         def content() -> dict:
             return ComponentFactory.get(
                 [self.current_node.text],
-                [self.current_node.get_option_text()]
+                self.current_node.get_option_text()
             )
 
     @staticmethod
