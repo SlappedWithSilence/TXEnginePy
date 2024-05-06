@@ -307,6 +307,7 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Assign max
         if callable(self.state_data[next_state.value]['max']):
+            logger.debug("Calling max enum...")
             self.domain_max = self.state_data[next_state.value]['max']()
         else:
             self.domain_max = self.state_data[next_state.value]['max']
@@ -416,7 +417,21 @@ class FiniteStateDevice(StateDevice, ABC):
 
         return decorate
 
+    def _update_dynamic_input_domains(self) -> None:
+        """
+        When the user transitions to a state, check if the min and/or max are defined dynamically. If so, force the
+        value to refresh.
+        """
+
+        if callable(self.state_data[self.current_state.value]['max']):
+            self.domain_max = self.state_data[self.current_state.value]['max']()
+
+        if callable(self.state_data[self.current_state.value]['min']):
+            self.domain_min = self.state_data[self.current_state.value]['min']()
+
     def _logic(self, user_input: any) -> None:
+
+        self._update_dynamic_input_domains()
 
         # Check for bad state data
         if self.current_state.value not in self.state_data:
@@ -430,6 +445,9 @@ class FiniteStateDevice(StateDevice, ABC):
 
     @property
     def components(self) -> dict[str, any]:
+
+        self._update_dynamic_input_domains()
+
         # Check for bad state data
         if self.current_state.value not in self.state_data:
             raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
