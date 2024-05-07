@@ -19,7 +19,14 @@
           "text" : "No u.",
           "options" : {
             "OK." : -1
-          }
+          },
+          "on_enter" : [
+            {
+              "class" : "AddItemEvent",
+              "item_id" : 1,
+              "item_quantity" : 1
+            }
+          ]
         }
       ]
     }
