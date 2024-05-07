@@ -3,18 +3,18 @@ import dataclasses
 from abc import ABC
 from enum import Enum
 
+from loguru import logger
+
 import game
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
-from game.structures.messages import ComponentFactory, StringContent
+from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 from game.systems.event.events import TextEvent
 from game.systems.requirement.requirements import RequirementsMixin
-
-from loguru import logger
 
 
 @dataclasses.dataclass
@@ -201,6 +201,13 @@ class DialogBase(ABC):
 
     @property
     def current_node(self) -> int:
+        """
+        A simple wrapper for the internal _current_node value
+        Returns:
+            _current_node, the ID of the DialogNode currently being visited by
+            the player.
+
+        """
         return self._current_node
 
     @current_node.setter
@@ -287,16 +294,34 @@ class DialogEvent(Event):
     """
 
     class States(Enum):
+        """
+        Internal Enum for FSD states.
+        """
         DEFAULT = 0
         VISIT_NODE = 1
         TERMINATE = -1
 
     @property
     def current_node(self) -> DialogNode | None:
+        """
+        Fetches a reference to the DialogNode the player is visiting.
+        Returns:
+            A DialogNode if the player is visiting a valid DialogNode. Otherwise
+            returns None.
+        """
         return self.dialog.get()
 
     @current_node.setter
     def current_node(self, value: int) -> None:
+        """
+        Set the current_node.
+
+        Args:
+            value: The ID of the new DialogNode to set to current_node
+
+        Returns: None
+
+        """
         if not isinstance(value, int):
             raise ValueError(
                 f"Cannot set current_node to value of type {type(value)}! "
@@ -321,11 +346,16 @@ class DialogEvent(Event):
             if not self.current_node:
                 raise RuntimeError(
                     f"Failed to start Dialog with id {self.dialog.id}! "
-                    f"Initial state of id {self.dialog.current_node} returned None!"
+                    f"Initial state of id {self.dialog.current_node} returned "
+                    f"None!"
                 )
 
-        @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE, InputType.INT,
-                                       input_min=0, input_max=lambda: len(self.current_node.get_option_text()) - 1)
+        @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE,
+                                       InputType.INT,
+                                       input_min=0,
+                                       input_max=lambda: len(
+                                           self.current_node.get_option_text()
+                                       ) - 1)
         def logic(user_input: int):
             self.current_node.visited = True
             user_choice: str = self.current_node.get_option_text()[user_input][0]
@@ -339,8 +369,10 @@ class DialogEvent(Event):
                 self.current_node.trigger_events()
 
                 if self.current_node.text_before_events:
-                    # Add a text event on top of the triggered events with the node's main text.
-                    # This will allow the user to read the text of the node before "seeing" the triggered events.
+                    # Add a text event on top of the triggered events with the
+                    # node's main text.
+                    # This will allow the user to read the text of the node
+                    # before "seeing" the triggered events.
                     game.state_device_controller.add_state_device(TextEvent(
                         self.current_node.text
                     ))
