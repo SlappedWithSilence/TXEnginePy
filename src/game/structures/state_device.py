@@ -283,12 +283,14 @@ class FiniteStateDevice(StateDevice, ABC):
         DEFAULT = 0
         TERMINATE = -1
 
-    def __init__(self, default_input_type: InputType, states: type[enum.Enum], default_state=States.DEFAULT):
+    def __init__(self, default_input_type: InputType, states: type[enum.Enum],
+                 default_state=States.DEFAULT):
         super().__init__(default_input_type)
 
         self.states: type[enum.Enum] = states
         self.current_state = self.default_state = default_state
-        self.state_data: dict[states, dict] = {k.value: copy.deepcopy(self.state_data_dict) for k in self.states}
+        self.state_data: dict[states, dict] = {
+            k.value: copy.deepcopy(self.state_data_dict) for k in self.states}
         self.state_history: list[states] = [self.current_state]
         self.set_defaults()
 
@@ -324,43 +326,66 @@ class FiniteStateDevice(StateDevice, ABC):
     # Custom Decorators
     @staticmethod
     def state_logic(instance, state, input_type: enums.InputType,
-                    input_min: int | Callable = None, input_max: int | Callable = None,
+                    input_min: int | Callable = None,
+                    input_max: int | Callable = None,
                     input_len: int = None, override: bool = False):
         """
-        A decorator factory that registers a function as a logic provider within an instance of FiniteStateDevice and
-        stores auxiliary state information such as input type and input range.
+        A decorator factory that registers a function as a logic provider within
+        an instance of FiniteStateDevice and stores auxiliary state information
+        such as input type and input range.
 
         Args:
             instance: an instance of a FiniteStateDevice to operate on
             state: The state to map 'func' to
             input_type: The input type for this state
-            input_min: The input range's min for this state. This may be an int or a callable that returns an int.
-            input_max: The input range's max for this state. This may be an int or a callable that returns an int.
-            input_len: The input range's length for this state. This must be an int.
+            input_min:
+                The input range's min for this state. This may be an int or
+                a callable that returns an int.
+            input_max:
+                The input range's max for this state. This may be an int or a
+                callable that returns an int.
+            input_len:
+                The input range's length for this state. This must be an int.
             override: If True, ignore collision errors
 
-        Returns: A decorator that registers the wrapped function and passed input information to 'instance'
+        Returns:
+            callable: A decorator that registers the wrapped function and passed
+            input information to 'instance'
+
         """
 
         # Type and value checking
         if not isinstance(instance, FiniteStateDevice):
             raise StateDeviceInternalError(
-                f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
+                f"Can only wrap instances of FiniteStateDevice! "
+                f"Type {type(instance)} is not supported."
+            )
 
         if state not in instance.state_data and state.value not in instance.state_data:
             raise StateDeviceInternalError(f"Unknown state {state}:{state.value}!")
 
         if not override and instance.state_data[state.value]['logic']:
-            raise StateDeviceInternalError(f"State.logic collision! {state} already has a logic function registered.")
+            raise StateDeviceInternalError(
+                f"State.logic collision! {state} already has a logic function "
+                f"registered.")
 
-        if input_min is not None and (not callable(input_min) and not type(input_min) == int):
-            raise StateDeviceInternalError(f"input_min must be an int or a callable! Got {type(input_min)} instead.")
+        if input_min is not None and (
+                not callable(input_min) and not type(input_min) == int):
+            raise StateDeviceInternalError(
+                f"input_min must be an int or a callable! Got {type(input_min)}"
+                f" instead.")
 
-        if input_max is not None and (not callable(input_max) and not type(input_max) == int):
-            raise StateDeviceInternalError(f"input_max must be an int or a callable! Got {type(input_max)} instead.")
+        if input_max is not None and (
+                not callable(input_max) and not type(input_max) == int):
+            raise StateDeviceInternalError(
+                f"input_max must be an int or a callable! Got {type(input_max)}"
+                f" instead.")
 
-        if input_len is not None and (not callable(input_len) and not type(input_len) == int):
-            raise StateDeviceInternalError(f"input_len must be an int or a callable! Got {type(input_len)} instead.")
+        if input_len is not None and (
+                not callable(input_len) and not type(input_len) == int):
+            raise StateDeviceInternalError(
+                f"input_len must be an int or a callable! Got {type(input_len)}"
+                f" instead.")
 
         def decorate(fn):
             """
@@ -371,7 +396,8 @@ class FiniteStateDevice(StateDevice, ABC):
             if len(spec.args) != 1:
                 raise ValueError(
                     f"""Error registering logic provider for state {state}.
-                    State logic functions must accept only a single positional argument, not {len(spec.args)}!""")
+                    State logic functions must accept only a single positional 
+                    argument, not {len(spec.args)}!""")
 
             instance.state_data[state.value]['input_type'] = input_type
             instance.state_data[state.value]['min'] = input_min
@@ -384,33 +410,38 @@ class FiniteStateDevice(StateDevice, ABC):
         return decorate
 
     @staticmethod
-    def state_content(instance, state, override: bool = False):  # Outer decorator
+    def state_content(instance, state, override: bool = False):
         """
-        A decorator factory that returns a factory that registers the wrapped function as the content provider for
-        state 'state'.
+        A decorator factory that returns a factory that registers the wrapped
+        function as the content provider for state 'state'.
 
         Args:
             instance: An instance of the FiniteStateDevice to modify
             state: The state to register the content function to
             override: If True, ignore collisions
 
-        Returns: A decorator function that registers the wrapped function as a content provider for a given state
+        Returns:
+            A decorator function that registers the wrapped function as a
+            content provider for a given state
         """
 
         # Check argument types and values
         if not isinstance(instance, FiniteStateDevice):
             raise StateDeviceInternalError(
-                f"Can only wrap instances of FiniteStateDevice! Type {type(instance)} is not supported.")
+                f"Can only wrap instances of FiniteStateDevice! Type "
+                f"{type(instance)} is not supported.")
         if state.value not in instance.state_data:
             raise StateDeviceInternalError(f"Unknown state {state}!")
         if instance.state_data[state.value]['content'] and not override:
             raise StateDeviceInternalError(
-                f"State.content collision! {state} already has a content function registered.")
+                f"State.content collision! {state} already has a content "
+                f"function registered.")
 
         # Inner decorator that receives the function
         def decorate(fn):
             """
-            A simple decorator that registers the wrapped function to the passed instance
+            A simple decorator that registers the wrapped function to the passed
+            instance.
             """
             instance.state_data[state.value]['content'] = fn
             return fn
@@ -419,8 +450,8 @@ class FiniteStateDevice(StateDevice, ABC):
 
     def _update_dynamic_input_domains(self) -> None:
         """
-        When the user transitions to a state, check if the min and/or max are defined dynamically. If so, force the
-        value to refresh.
+        When the user transitions to a state, check if the min and/or max are
+        defined dynamically. If so, force the value to refresh.
         """
 
         if callable(self.state_data[self.current_state.value]['max']):
