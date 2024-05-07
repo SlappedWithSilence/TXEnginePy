@@ -144,6 +144,7 @@ class Engine:
 
         # For each manager that has no priority, load it
         for leftover_key in manager_keys:
+            logger.debug(f"[{leftover_key}] Loading assets")
             from_cache(['managers', leftover_key]).load()  # Fetch from cache and load manager
 
     def _startup(self):
