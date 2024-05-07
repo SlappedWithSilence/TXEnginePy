@@ -19,6 +19,25 @@ from loguru import logger
 
 @dataclasses.dataclass
 class DialogNodeBase(ABC):
+    """
+    Abstract base class for DialogNode
+
+    The DialogNodeBase is a self-contained data structure containing all the information required to run a particular
+    "conversation node" with a greater Dialog object. DialogNodeBase is highly configurable but only requires a few
+    values.
+    Note that each DialogNodeBase within a Dialog must have an internally-unique node_id.
+
+    Attributes:
+        node_id: An internal unique identifier for the node.
+        options: A list of responses the player can select for the text prompt.
+        text: The text prompt shown to the user. This simulates the "speech" of the NPC on the other side of the Dialog
+        visited: Has the node been visited by the player before?
+        allow_multiple_visits: If False, the node will be hidden from `options` if visited==True
+        multiple_event_triggers: If True, `on_enter` events will trigger each time node is visited. If False, only once.
+        persistent: If True, node states are cached, saved, and loaded.
+        on_enter: A collection of Event objects to be run when the node is visited
+        text_before_events: If True, a TextEvent will be spawned on top of the `on_enter` events containing `text`.
+    """
     node_id: int  # Unique ID for the node. Every node must be unique, even when considered between dialogs.
     options: dict[str, int]  # A map of selectable "options" to their corresponding target nodes. -1 means end dialog.
     text: str
@@ -30,7 +49,9 @@ class DialogNodeBase(ABC):
     text_before_events: bool = True  # If False, no text event will be spawned on top of the events when triggered.
 
     def get_option_text(self) -> list[list[str]]:
-        """Return a list containing all the strings for each option in the node"""
+        """
+        Return a list containing all the strings for each option in the node
+        """
         return [[s] for s in self.options.keys()]
 
     def should_trigger_events(self) -> bool:
@@ -41,12 +62,16 @@ class DialogNodeBase(ABC):
         return self.multiple_event_triggers or not self.visited
 
     def get_events(self) -> list[Event]:
-        """Return a deep copy of each on_enter Event object"""
+        """
+        Return a deep copy of each on_enter Event object.
+
+        If an Event does not implement a custom __deep_copy__ method, unexpected behavior is likely.
+        """
         return [copy.deepcopy(e) for e in self.on_enter]
 
     def trigger_events(self) -> None:
         """
-        Run a deep copy of each event
+        Run a deep copy of each event, as supplied by `get_events`
         """
 
         for event in self.get_events():
@@ -54,12 +79,15 @@ class DialogNodeBase(ABC):
 
 
 class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
+    """
+    A DialogNodeBase that implements the Requirement interface and Loadable interface.
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         if self.persistent:
-            # Handle fetching properties from storage
+            # TODO: Handle fetching properties from storage
             pass
 
     @staticmethod
@@ -80,6 +108,17 @@ class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
         - persistent: bool
         - on_enter: list[Event]
         - text_before_events: bool
+
+        Args:
+            json: A raw JSON dict
+
+        Returns:
+            A DialogNode converted from the supplied JSON dict
+
+        Raises:
+            ValueError: Incorrect field value was supplied
+            TypeError: Incorrect field type was supplied
+
         """
 
         required_fields = [
@@ -122,7 +161,15 @@ class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
 
 
 class DialogBase(ABC):
-    """Base Class for Dialog objects. Implements all non-interface functionality of Dialog"""
+    """
+    Abstract base Class for Dialog objects that implements all non-interface functionality of Dialog.
+
+    Attributes:
+        id: A globally-unique identifier for the Dialog
+        nodes: A collection of DialogNodes
+        initial_node_id: Which node the Dialog should start from
+        _current_node: The id of the node the player is currently on
+    """
 
     def __init__(self, dialog_id: int, nodes: list[DialogNode], initial_node_id: int = 0):
         if len(nodes) < 1:
@@ -135,8 +182,29 @@ class DialogBase(ABC):
         if initial_node_id not in self.nodes:
             raise ValueError(f"Invalid starting node id {initial_node_id} for Dialog with id {self.id}")
 
-        def get() -> DialogNode:
-            return self.nodes[self._current_node] if self._current_node > 0 else None
+    @property
+    def current_node(self) -> int:
+        return self._current_node
+
+    @current_node.setter
+    def current_node(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError(f"current_node must be of type int! Got object of type  {type(value)} instead.")
+
+        if value not in self.nodes:
+            raise ValueError(f"Unknown DialogNode with id {value}!")
+
+        self._current_node = value
+
+    def get(self) -> DialogNode:
+        """
+        Return the instance of the node the player is currently on.
+
+        Returns:
+            None if the player wants to terminate the Dialog. Otherwise, returns a reference to the DialogNode that
+            the player is currently visiting.
+        """
+        return self.nodes[self._current_node] if self._current_node >= 0 else None
 
 
 class Dialog(LoadableMixin, DialogBase):
@@ -195,30 +263,45 @@ class DialogEvent(Event):
         VISIT_NODE = 1
         TERMINATE = -1
 
+    @property
+    def current_node(self) -> DialogNode | None:
+        return self.dialog.get()
+
+    @current_node.setter
+    def current_node(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise ValueError(f"Cannot set current_node to value of type {type(value)}! Expected an int!")
+
+        self.dialog.current_node = value
+
     def __init__(self, dialog_id: int, **kwargs):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT, **kwargs)
 
-        self.current_node: DialogNode = None
         self.dialog: Dialog = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
             self.dialog = from_cache("managers.DialogManager")[dialog_id]
-            self.current_node = self.dialog.nodes[self.dialog.initial_node_id]
             self.set_state(self.States.VISIT_NODE)
+
+            # Ensure that the initial state is valid.
+            if not self.current_node:
+                raise RuntimeError(
+                    f"Failed to start Dialog with id {self.dialog.id}! "
+                    f"Initial state of id {self.dialog.current_node} returned None!"
+                )
 
         @FiniteStateDevice.state_logic(self, self.States.VISIT_NODE, InputType.INT,
                                        input_min=0, input_max=lambda: len(self.current_node.get_option_text()) - 1)
         def logic(user_input: int):
             self.current_node.visited = True
-            logger.debug(self.current_node)
             user_choice: str = self.current_node.get_option_text()[user_input][0]
             next_node: int = self.current_node.options[user_choice]
             if next_node < 0:
                 self.set_state(self.States.TERMINATE)
                 return
 
-            self.current_node = self.dialog.nodes[next_node]
+            self.current_node = self.dialog.nodes[next_node].node_id
             if self.current_node.should_trigger_events():
                 self.current_node.trigger_events()
 
