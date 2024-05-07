@@ -31,7 +31,8 @@ class DialogNodeBase(ABC):
     information required to run a particular "conversation node" with a greater
     Dialog object. DialogNodeBase is highly configurable but only requires a few
     values.
-    Note that each DialogNodeBase within a Dialog must have an internally-unique node_id.
+    Note that each DialogNodeBase within a Dialog must have an internally-unique
+    node_id.
 
     Attributes:
         node_id: An internal unique identifier for the node.
