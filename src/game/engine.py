@@ -1,10 +1,14 @@
+"""
+Houses the primary logical driver logic for starting TXEngine. Responsible for
+initiating IO, reading and executing config, and more.
+"""
 import os.path
 
 from loguru import logger
 from omegaconf import OmegaConf
 
-# These imports rescue stranded from_json declarations. Removing them prevents the interpreter from finding and caching
-# Those functions. Do not remove.
+# These imports rescue stranded from_json declarations. Removing them prevents
+# the interpreter from finding and caching those functions. Do not remove.
 from game.systems.room.action.manage_equipment_action import *
 from game.systems.room.action.manage_inventory_action import *
 from game.systems.requirement.item_requirement import *
@@ -25,11 +29,12 @@ style_path: str = conf_dir_path + style_file_path
 
 class Engine:
     """
-    A high-level manager that coordinates disk-io, config manipulation, loading content, saving content, and more
+    A high-level manager that coordinates disk-io, config manipulation, loading
+    content, saving content, and more.
     """
 
-    # An explicit order for order-dependant managers. Any managers not listed will be loaded in random order after the
-    # lowest priority (the largest int).
+    # An explicit order for order-dependant managers. Any managers not listed
+    # will be loaded in random order after the lowest priority (the largest int)
     manager_load_priority = {
         0: ["CurrencyManager", "ResourceManager", "FlagManager"],
         1: ["EquipmentManager"],
@@ -44,17 +49,21 @@ class Engine:
         Retrieve the priority of a manager class
 
         args:
-            manager_cls : The name of the class of the manager, or the class of the manager
+            manager_cls : The name of the class of the manager, or the class of
+            the manager
 
-        returns: The priority of the manager class if it has been set, otherwise None
+        returns:
+            The priority of the manager class if it has been set, otherwise None
         """
 
-        if type(manager_cls) == str:
+        if isinstance(manager_cls, str):
             true_cls = manager_cls
-        elif type(manager_cls) == type:
+        elif isinstance(manager_cls, type):
             true_cls = manager_cls.__name__
         else:
-            raise TypeError(f"Expect str or type for manager_cls. Got type {type(manager_cls)} instead!")
+            raise TypeError(
+                f"Expect str or type for manager_cls. "
+                f"Got type {type(manager_cls)} instead!")
 
         for priority in cls.manager_load_priority:
             if true_cls in cls.manager_load_priority[priority]:
@@ -63,7 +72,8 @@ class Engine:
         return None
 
     @classmethod
-    def set_manager_priority(cls, manager_cls: str | type, priority: int) -> None:
+    def set_manager_priority(cls, manager_cls: str | type,
+                             priority: int) -> None:
         """
         Set a manager's loading priority.
 
@@ -77,24 +87,31 @@ class Engine:
         """
 
         # Type checking
-        if type(priority) != int:
-            raise TypeError(f"Cannot set priority to type {type(priority)}. Priority must be an int!")
+        if not isinstance(priority, int):
+            raise TypeError(
+                f"Cannot set priority to type {type(priority)}. "
+                f"Priority must be an int!")
         if priority < 0:
-            raise ValueError(f"Invalid priority: {priority}. Priority must be positive or zero!")
+            raise ValueError(
+                f"Invalid priority: {priority}. "
+                f"Priority must be positive or zero!")
 
-        if type(manager_cls) == str:
+        if isinstance(manager_cls, str):
             true_cls = manager_cls
-        elif type(manager_cls) == type:
+        elif isinstance(manager_cls, type):
             true_cls = manager_cls.__name__
         else:
-            raise TypeError(f"Expect str or type for manager_cls. Got type {type(manager_cls)} instead!")
+            raise TypeError(
+                f"Expect str or type for manager_cls. "
+                f"Got type {type(manager_cls)} instead!")
 
-        # Check if the manager has already been assigned a priority. If so, remove it from the extant list
+        # Check if the manager has already been assigned a priority.
+        # If so, remove it from the extant list
         extant_priority = cls.get_manager_priority(true_cls)
         if extant_priority is not None:
             cls.manager_load_priority[extant_priority].remove(true_cls)
 
-        # Check if the that priority already has a mapped list. If not, make one.
+        # Check if the that priority already has a mapped list. If not, make one
         if priority not in cls.manager_load_priority:
             cls.manager_load_priority[priority] = []
 
@@ -120,7 +137,8 @@ class Engine:
         p.inventory.new_stack(3, 15)
         p.crafting_controller.learn_recipe(1)
         p.ability_controller.learn("Proto Ability")
-        p.ability_controller.learn("My Opinions on Facebook are Really Important")
+        p.ability_controller.learn(
+            "My Opinions on Facebook are Really Important")
         p.ability_controller.learn("Shortcuts are Great")
 
     def _load_assets(self) -> None:
@@ -135,17 +153,23 @@ class Engine:
         ordered_priorities = list(self.manager_load_priority)
         ordered_priorities.sort()
 
-        # Starting from lowest, for each priority load the managers at that level
+        # Starting lowest, for each priority load the managers at that level
         for priority_level in ordered_priorities:
             for manager_key in self.manager_load_priority[priority_level]:
                 logger.debug(f"[{manager_key}] Loading assets")
-                from_cache(['managers', manager_key]).load()  # Fetch manager from cache and load
-                manager_keys.remove(manager_key)  # Remove it from the list of remaining managers
+
+                # Fetch manager from cache and load
+                from_cache(['managers', manager_key]).load()
+
+                # Remove it from the list of remaining managers
+                manager_keys.remove(manager_key)
 
         # For each manager that has no priority, load it
         for leftover_key in manager_keys:
             logger.debug(f"[{leftover_key}] Loading assets")
-            from_cache(['managers', leftover_key]).load()  # Fetch from cache and load manager
+
+            # Fetch from cache and load manager
+            from_cache(['managers', leftover_key]).load()
 
     def _startup(self):
         """
@@ -210,8 +234,10 @@ class Engine:
                 "room": {"default_id": 0}
                 }
 
-    def write_styles(self) -> None:
+    @classmethod
+    def write_styles(cls) -> None:
         """
+        Write an empty styles file to disk.
 
         Returns: None
         """
@@ -230,8 +256,10 @@ class Engine:
             f.close()
         OmegaConf.save(styles_empty, style_path)
 
-    def write_conf(self) -> None:
+    @classmethod
+    def write_conf(cls) -> None:
         """
+        Write a default config file to disk
 
         Returns: None
 
@@ -240,13 +268,12 @@ class Engine:
         if not get_config():
             raise ValueError("Engine::conf must not be None!")
 
-        else:
-            if not os.path.exists(conf_dir_path):
-                try:
-                    os.mkdir(conf_dir_path)
-                except FileExistsError:
-                    logger.info("Config folder exists, skipping....")
+        if not os.path.exists(conf_dir_path):
+            try:
+                os.mkdir(conf_dir_path)
+            except FileExistsError:
+                logger.info("Config folder exists, skipping....")
 
-                f = open(conf_path, "x")
+            with open(conf_path, "x") as f:
                 f.close()
             OmegaConf.save(get_config(), conf_path)
