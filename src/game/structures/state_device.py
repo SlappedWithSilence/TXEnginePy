@@ -1,3 +1,10 @@
+"""
+The foundational building block classes of TXEngine.
+
+Every "activity" in TXEngine is encapsulated in a self-contained StateDevice
+object, the vast majority of which are actually further sub-divided into states
+within a FiniteStateDevice object.
+"""
 import copy
 import enum
 import inspect
@@ -12,69 +19,133 @@ from game.structures import enums
 from game.structures.enums import InputType
 from game.structures.errors import StateDeviceInternalError
 from game.structures.messages import Frame, ComponentFactory
-from game.util.input_utils import is_valid_range, to_range, affirmative_range, affirmative_to_bool
+from game.util.input_utils import is_valid_range, to_range, affirmative_range, \
+    affirmative_to_bool
 
 
 class StateDevice(ABC):
     """
-    An abstract class that defines an object that represents game logic
+    An abstract class that defines an object that represents game logic.
+
+    The StateDevice object is a loosely-formalized representation of internal
+    state progression within the engine. It takes an input of a specific type
+    and domain and increments its internal logic in response. The increment in
+    internal logic in turn adjusts the "frame" output of the device, modifying
+    the text shown to the end user.
+
+    In general, one should avoid using a bare StateDevice and instead opt to use
+    a FiniteStateDevice.
     """
 
-    def __init__(self, input_type: InputType, input_range: dict[str, int] = None, name: str = None):
+    def __init__(self, input_type: InputType,
+                 input_range: dict[str, int] = None, name: str = None):
         self._input_type: InputType = input_type
         self._input_range: dict[str, int] = input_range or to_range()
         self.name: str = name or f"StateDevice::{self.__class__.__name__}"
-        self._controller: any = None  # This value should only be set by the GameStateController
+        self._controller: any = None  # Only set by the GameStateController
 
     @property
     def input_type(self) -> InputType:
+        """
+        The input type currently expected by the state device.
+        Returns: InputType of the state device
+
+        """
         return self._input_type
 
     @input_type.setter
-    def input_type(self, value) -> None:
-        if type(value) != InputType:
-            raise TypeError(f"Cannot set input_type to object of type {type(value)}")
+    def input_type(self, value: InputType) -> None:
+        """
+        Sets the InputType of the state device.
+        Args:
+            value: The InputType to set to.
+
+        Returns: None
+
+        """
+        if not isinstance(value, InputType):
+            raise TypeError(
+                f"Cannot set input_type to object of type {type(value)}")
 
         self._input_type = value
 
     @property
     def controller(self) -> any:
+        """
+        Get a reference to the StateDeviceController that hosts the state device
+        Returns: A StateDeviceController reference
+        """
+
+        # TODO: The controller can be accessed globally. Is this obsolete?
         return self._controller
 
     @controller.setter
     def controller(self, engine_in) -> None:
+        """
+        Weakrefs an instance of an engine and stores it.
+        Args:
+            engine_in: The engine to weakref
+
+        Returns: None
+
+        """
         self._controller = weakref.ref(engine_in)
 
     @property
     def domain_min(self) -> int | None:
+        """
+        The minimum value the StateDevice can accept
+
+        Returns: None or an int representing the lowest acceptable value.
+
+        """
         return self._input_range["min"]
 
     @domain_min.setter
     def domain_min(self, val: int | None) -> None:
+        """
+        Validate a value as being acceptable as a minimum value and set it.
 
-        if is_valid_range(self.input_type, val, self.domain_max, self.domain_length):
+        Args:
+            val: The value to validate
+
+        Returns: None
+        """
+
+        if is_valid_range(self.input_type, val,
+                          self.domain_max,
+                          self.domain_length):
             self._input_range["min"] = val
         else:
-            raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
+            raise ValueError(
+                f"Tried to set lower limit of "
+                f"{self.input_type} to value of type {type(val)}!")
 
     @property
     def domain_max(self) -> int | None:
         """
-        An optional value that determines the maximum value a submitted int can have
+        An optional value that determines the maximum value of a submitted int.
+
+        Returns: The maximum value allowed for the current InputType
         """
         return self._input_range["max"]
 
     @domain_max.setter
     def domain_max(self, val: int | None) -> None:
-        if is_valid_range(self.input_type, self.domain_min, val, self.domain_length):
+        if is_valid_range(
+                self.input_type,
+                self.domain_min, val,
+                self.domain_length):
             self._input_range["max"] = val
         else:
-            raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
+            raise ValueError(
+                f"Tried to set lower limit of "
+                f"{self.input_type} to value of type {type(val)}!")
 
     @property
     def domain_length(self) -> int | None:
         """
-        An optional value that determines the maximum length of a submitted string
+        An optional value that determines the maximum length of a submitted str.
         """
         if "len" not in self._input_range:
             return None
@@ -83,43 +154,63 @@ class StateDevice(ABC):
 
     @domain_length.setter
     def domain_length(self, val: int | None) -> None:
-        if is_valid_range(self.input_type, self.domain_min, self.domain_max, val):
+        if is_valid_range(self.input_type,
+                          self.domain_min,
+                          self.domain_max, val):
             self._input_range["len"] = val
         else:
-            raise ValueError(f"Tried to set lower limit of {self.input_type} to value of type {type(val)}!")
+            raise ValueError(
+                f"Tried to set lower limit of "
+                f"{self.input_type} to value of type {type(val)}!")
 
     @property
     def input_domain(self) -> dict[str, any]:
         """
-        A map that stores the domain of the allowed values for the StateDevice
+        A map that stores the domain of the allowed values for the StateDevice.
         """
         return self._input_range
 
     @input_domain.setter
     def input_domain(self, range_dict: dict[str: int | None]) -> None:
-        if is_valid_range(self.input_type, range_dict['min'], range_dict['max'], range_dict['len']):
+        if is_valid_range(
+                self.input_type,
+                range_dict['min'],
+                range_dict['max'],
+                range_dict['len']):
             self._input_range = range_dict
 
         else:
-            raise ValueError(f"""Invalid input domain values for type {self.input_type}:\n 
-                                                                       min: {range_dict['min']}\n
-                                                                       max: {range_dict['max']}\n
-                                                                       length: {range_dict['max']}
-                              """)
+            raise ValueError(
+                f"""Invalid input domain values for type {self.input_type}:\n
+                    min: {range_dict['min']}\n
+                    max: {range_dict['max']}\n
+                    length: {range_dict['max']}
+                """)
 
     def reset(self) -> None:
+        """
+        Resets the FiniteStateDevice to some pre-determined state.
+
+        Not every StateDevice needs a reset method, but its there and should be
+        overridden should the need arise.
+        """
         pass
 
     def _link(self) -> dict[str, str]:
         """
-        Internal link logic that is responsible for acquiring storage keys, creating the returned dict, and
-        storing the storage keys internally.
+        Internal link logic that is responsible for acquiring storage keys,
+        creating the returned dict, and storing the storage keys internally.
+
+        Intended to be overridden.
         """
         return {}
 
     def link(self) -> dict[str, str]:
         """
-        Reserve a set number of keys in storage and map them to a specific use case within the StateDevice
+        Reserve a set number of keys in storage and map them to a specific use
+        case within the StateDevice.
+
+        Intended to be overriden.
         """
         return self._link()
 
@@ -129,7 +220,6 @@ class StateDevice(ABC):
         """
         The basic display components of the device
         """
-        pass
 
     def validate_input(self, input_value) -> bool:
         """
@@ -141,15 +231,19 @@ class StateDevice(ABC):
         Returns: True if the input value is valid, False otherwise
         """
 
-        if self.input_type == InputType.SILENT or self.input_type == InputType.ANY:
+        # SILENT and ANY input types don't care. Just return True.
+        if self.input_type in [InputType.SILENT, InputType.ANY]:
             return True
 
         # Input must be str matching the set of strings in the array
         elif self.input_type == InputType.AFFIRMATIVE:
-            if type(input_value) == str and str.lower(input_value) in affirmative_range:
+            if type(input_value) == str and str.lower(
+                    input_value) in affirmative_range:
                 return True
             else:
-                logger.warning(f"[{self}]: Failed to validate input! {input_value} must be in {affirmative_range}")
+                logger.warning(
+                    f"[{self}]: Failed to validate input! "
+                    f"{input_value} must be in {affirmative_range}")
                 return False
 
         # Input must be an int that is below the maximum and above the minimum
@@ -159,18 +253,24 @@ class StateDevice(ABC):
 
                 if self.domain_min is not None and true_input < self.domain_min:
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {true_input} must be >= {self._input_range['min']}")
+                        f"[{self}]: Failed to validate input! "
+                        f"{true_input} must be >= {self._input_range['min']}")
                     return False
 
-                if self.domain_max is not None and (true_input > self.domain_max):
+                if self.domain_max is not None and (
+                        true_input > self.domain_max):
                     logger.warning(
-                        f"[{self}]: Failed to validate input! {true_input} must be <= {self._input_range['max']}")
+                        f"[{self}]: Failed to validate input! "
+                        f"{true_input} must be <= {self._input_range['max']}")
                     return False
 
                 return True
 
-            except Exception as e:
-                logger.warning(f"input_type.INT requires int, not type: {type(input_value)}!")
+            except ValueError:
+                logger.warning(
+                    f"input_type.INT requires int not type: "
+                    f"{type(input_value)}!")
+                return False
 
         # Input must be a str shorter than length
         elif self.input_type == InputType.STR:
@@ -185,7 +285,9 @@ class StateDevice(ABC):
                 else:
                     return True
             logger.warning(
-                f"[{self}]: Failed to validate input! {input_value} is not a str of len <= {self._input_range['len']}"
+                f"[{self}]: "
+                f"Failed to validate input! {input_value} "
+                f"is not a str of len <= {self._input_range['len']}"
             )
             return False
         else:
@@ -202,12 +304,12 @@ class StateDevice(ABC):
         Returns: None
 
         """
-        pass
 
     def input(self, user_input: any) -> bool:
         """
-        Submits the user's input to the state device. The state device advances its internal logic and modifies its
-        output. If the input is not valid, it is rejected.
+        Submits the user's input to the state device. The state device advances
+        its internal logic and modifies its output. If the input is not valid,
+        it is rejected.
 
         Args:
             user_input: The value passed by the user
@@ -217,7 +319,8 @@ class StateDevice(ABC):
         """
         if self.validate_input(user_input):
 
-            if self.input_type == enums.InputType.AFFIRMATIVE:  # Intercept affirmative input values and transform them
+            # Intercept affirmative input values and transform them
+            if self.input_type == enums.InputType.AFFIRMATIVE:
                 self._logic(affirmative_to_bool(user_input))
 
             elif self.input_type == enums.InputType.INT:
@@ -256,7 +359,8 @@ class StateDevice(ABC):
 
 class FiniteStateDevice(StateDevice, ABC):
     """
-    A subclass of StateDevice that adds support for explicit state ordering and transitions
+    A subclass of StateDevice that adds support for explicit state ordering and
+    transitions.
     """
 
     state_data_dict = {
@@ -274,7 +378,7 @@ class FiniteStateDevice(StateDevice, ABC):
 
         Proper convention for designing FiniteStateDevices requires:
         - State flow starts with DEFAULT and ends with TERMINATE
-        - No state calls game.state_device_controller.set_dead() except for TERMINATE
+        - No state calls state_device_controller.set_dead() except for TERMINATE
         - TERMINATE must call game.state_device_controller.set_dead()
         - TERMINATE == -1, DEFAULT == 0
         - No two states have the same value
@@ -362,7 +466,8 @@ class FiniteStateDevice(StateDevice, ABC):
             )
 
         if state not in instance.state_data and state.value not in instance.state_data:
-            raise StateDeviceInternalError(f"Unknown state {state}:{state.value}!")
+            raise StateDeviceInternalError(
+                f"Unknown state {state}:{state.value}!")
 
         if not override and instance.state_data[state.value]['logic']:
             raise StateDeviceInternalError(
@@ -466,12 +571,16 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Check for bad state data
         if self.current_state.value not in self.state_data:
-            raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
+            raise ValueError(
+                f"State {self.current_state} "
+                f"has not been registered with {self.name}!")
 
         if 'logic' not in self.state_data[self.current_state.value] \
                 or not self.state_data[self.current_state.value]['logic']:
-            raise StateDeviceInternalError(f"No logical provider has been registered for state {self.current_state}!",
-                                           {KeyError: ""})
+            raise StateDeviceInternalError(
+                f"No logical provider has been registered for state "
+                f"{self.current_state}!",
+                {KeyError: ""})
         self.state_data[self.current_state.value]['logic'](user_input)
 
     @property
@@ -481,15 +590,21 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Check for bad state data
         if self.current_state.value not in self.state_data:
-            raise ValueError(f"State {self.current_state} has not been registered with {self.name}!")
+            raise ValueError(
+                f"State {self.current_state} "
+                f"has not been registered with {self.name}!")
 
-        # If the state is silent, simply return an empty component dict. This circumvents checks for silent states
-        if self.state_data[self.current_state.value]["input_type"] == InputType.SILENT:
+        # If the state is silent, simply return an empty component dict.
+        # This circumvents checks for silent states
+        if self.state_data[self.current_state.value][
+            "input_type"] == InputType.SILENT:
             return ComponentFactory.get()
 
         if 'content' not in self.state_data[self.current_state.value] \
                 or not self.state_data[self.current_state.value]['content']:
-            raise KeyError(f"No content provider has been registered for state {self.current_state}!")
+            raise KeyError(
+                f"No content provider has been registered for state "
+                f"{self.current_state}!")
 
         return self.state_data[self.current_state.value]['content']()
 
@@ -498,7 +613,8 @@ class FiniteStateDevice(StateDevice, ABC):
 
     def set_defaults(self) -> None:
 
-        @FiniteStateDevice.state_logic(self, self.States.TERMINATE, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.TERMINATE,
+                                       InputType.SILENT)
         def logic(_: any):
             game.state_device_controller.set_dead()
 
@@ -507,27 +623,43 @@ class FiniteStateDevice(StateDevice, ABC):
             return ComponentFactory.get()
 
     @staticmethod
-    def user_branching_state(instance: "FiniteStateDevice", state, branch_map: dict[str, any],
+    def user_branching_state(instance: "FiniteStateDevice", state,
+                             branch_map: dict[str, any],
                              prompt: str = "Choose an option",
-                             back_out_state=None, cache_choice_in_attr: str = None):
+                             back_out_state=None,
+                             cache_choice_in_attr: str = None):
         """
-        Build a simple branching state. Uses the state map defined in branch_map to define a list of options for the
-        user to chose from, then updates the FiniteStateDevice's current state to the state mapped to the user's choice.
+        Build a simple branching state. Uses the state map defined in branch_map
+        to define a list of options for the user to chose from, then updates the
+        FiniteStateDevice's current state to the state mapped to the user's '
+        choice.
 
         Args:
-            instance: An instance of a FiniteStateDevice to create the branching state.
-            state: The state that the branching-state should be created in
-            branch_map: A map of strings (Options to show in the choice-selection list) to states
-            prompt: The prompt that is shown to the user when asked to choose
-            back_out_state: The state that should be mapped to a choice of -1. If None, there is no -1 choice.
-            cache_choice_in_attr: If not set to none, attempt to store the choice in str form inside the given attr
+            instance:
+                The instance of FiniteStateDevice in which to create the state.
+            state:
+                The state that the branching-state should be created in
+            branch_map:
+                A map of strings (Options to show in the choice-selection list)
+                to states.
+            prompt:
+                The prompt that is shown to the user when asked to choose
+            back_out_state:
+                The state that should be mapped to a choice of -1.
+                If None, there is no -1 choice.
+            cache_choice_in_attr:
+                If not set to none, attempt to store the choice in str form
+                inside the given attr
         """
 
         if instance is None:
-            raise TypeError("Expected type of argument: instance to be FiniteStateDevice. Got None instead.")
+            raise TypeError(
+                "Expected type of argument: instance to be FiniteStateDevice. "
+                "Got None instead.")
 
         if state.value not in instance.state_data:
-            raise ValueError(f"Unknown state: {state} in FiniteStateDevice: {instance.name}")
+            raise ValueError(
+                f"Unknown state: {state} in FiniteStateDevice: {instance.name}")
 
         if len(branch_map.keys()) < 2:
             raise ValueError("Branch map must be of size >= 2!")
@@ -535,9 +667,12 @@ class FiniteStateDevice(StateDevice, ABC):
         if cache_choice_in_attr is not None:
             if type(cache_choice_in_attr) is not str:
                 raise TypeError(
-                    f"cache_choice_in_attr must be of type str or None! Invalid type: {type(cache_choice_in_attr)}")
+                    f"cache_choice_in_attr must be of type str or None! "
+                    f"Invalid type: {type(cache_choice_in_attr)}")
             if not hasattr(instance, cache_choice_in_attr):
-                raise ValueError(f"instance: {instance.name} has to attr: {cache_choice_in_attr}!")
+                raise ValueError(
+                    f"instance: {instance.name} has to attr: "
+                    f"{cache_choice_in_attr}!")
 
         @FiniteStateDevice.state_logic(instance, state,
                                        input_type=InputType.INT,
@@ -545,14 +680,19 @@ class FiniteStateDevice(StateDevice, ABC):
                                        input_max=len(branch_map.keys()) - 1)
         def logic(user_input: int) -> None:
 
-            # If back_out_state is enabled and the user entered -1, set the state to the defined back-out state
+            # If back_out_state is enabled and the user entered -1, set the
+            # state to the defined back-out state
             if back_out_state is not None and user_input == -1:
                 instance.set_state(back_out_state)
-                return  # Terminate the function to prevent fall-through state setting.
 
-            choice_as_str = list(branch_map.keys())[user_input]  # Convert the user's choice from an index to a str
+                # Terminate the function to prevent fall-through state setting.
+                return
 
-            # If cache_choice_in_attr is enabled, store the user's choice (in str form) in that attr.
+            # Convert the user's choice from an index to a str
+            choice_as_str = list(branch_map.keys())[user_input]
+
+            # If cache_choice_in_attr is enabled, store the user's choice
+            # (in str form) in that attr.
             if cache_choice_in_attr:
                 setattr(instance, cache_choice_in_attr, choice_as_str)
 
