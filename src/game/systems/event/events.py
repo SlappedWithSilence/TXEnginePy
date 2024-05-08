@@ -14,14 +14,16 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.combat_engine import CombatEngine
-from game.systems.combat.combat_engine.termination_handler import TerminationHandler
+from game.systems.combat.combat_engine.termination_handler import \
+    TerminationHandler
 from game.systems.crafting import recipe_manager
 from game.systems.entity.resource import ResourceController
 
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
 
-    def __init__(self, default_input_type: InputType, states: type[Enum], default_state):
+    def __init__(self, default_input_type: InputType, states: type[Enum],
+                 default_state):
         super().__init__(default_input_type, states, default_state)
 
     def __str__(self) -> str:
@@ -30,7 +32,8 @@ class Event(FiniteStateDevice, LoadableMixin, ABC):
 
 class EntityTargetMixin(ABC):
     """
-    Implements entity-target-related functionality, including init-param type-checking, getter and setter methods, and more.
+    Implements entity-target-related functionality, including init-param
+    type-checking, getter and setter methods, and more.
     """
 
     def __init__(self, target: entities.Entity = None, **kwargs):
@@ -42,29 +45,42 @@ class EntityTargetMixin(ABC):
 
     @property
     def target(self) -> entities.Entity:
+        """
+        Dynamically returns a reference to a target entity.
+
+        Returns: The target entity or the player if no entity was supplied.
+
+        """
         return self._target or from_cache('player')
 
     @target.setter
     def target(self, entity) -> None:
         if not isinstance(entity, entities.Entity):
-            raise TypeError(f"Invalid target entity type! Got type {type(entity)}, expected type Entity")
+            raise TypeError(
+                f"Invalid target entity type! Got type {type(entity)}, "
+                f"expected type Entity")
 
 
 class FlagEvent(Event):
     """ An event that sets a specific flag to a given value
 
-        TXEngine Flags are slightly different from exact str-bool mappings. A Flag may define itself to be a part of a
-        flag "subgroup" using dot-notation.
+        TXEngine Flags are slightly different from exact str-bool mappings. A
+        Flag may define itself to be a part of a flag "subgroup" using
+        dot-notation.
+
         For example:
-         - A flag with a key of some.flag = True would store itself in the flags cache as flags['some']['flag'] = True
-         - A flag with a key of this.is.a.deep.flag = False would be flags['this']['is']['a']['deep']['flag'] = False
+         - A flag with a key of some.flag = True would store itself in the flags
+            cache as flags['some']['flag'] = True
+         - A flag with a key of this.is.a.deep.flag = False would be
+            flags['this']['is']['a']['deep']['flag'] = False
     """
 
     def __init__(self, flags: list[tuple[str, bool]]):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self._flags = flags  # The flags to set and their corresponding values
 
-        @FiniteStateDevice.state_logic(input_type=InputType.SILENT, instance=self, state=self.States.DEFAULT)
+        @FiniteStateDevice.state_logic(input_type=InputType.SILENT,
+                                       instance=self, state=self.States.DEFAULT)
         def logic(_: any) -> None:
             """
             Perform some logic for setting flags
@@ -98,10 +114,14 @@ class FlagEvent(Event):
 
         for flag_bundle in json['flags']:
             if len(flag_bundle) != 2:
-                raise ValueError(f"Flag data should be of length 2! Got length {len(flag_bundle)} instead.")
+                raise ValueError(
+                    f"Flag data should be of length 2! Got length "
+                    f"{len(flag_bundle)} instead.")
 
-            assert type(flag_bundle[0]) == str, "Flag data must have a str at pos 0!"
-            assert type(flag_bundle[1]) == bool, "Flag data must have a bool at ps 1!"
+            assert isinstance(flag_bundle[0], str), \
+                "Flag data must have a str at pos 0!"
+            assert isinstance(flag_bundle[1], bool), \
+                "Flag data must have a bool at ps 1!"
 
             _flags.append((flag_bundle[0], flag_bundle[1]))
 
@@ -112,6 +132,9 @@ class LearnAbilityEvent(Event):
     """Causes the player to learn a given ability"""
 
     class States(Enum):
+        """
+        Internal state Enum
+        """
         DEFAULT = 0
         ALREADY_LEARNED = 1
         NOT_ALREADY_LEARNED = 2
@@ -120,11 +143,13 @@ class LearnAbilityEvent(Event):
         TERMINATE = -1
 
     def __init__(self, ability_name: str):
-        super().__init__(InputType.SILENT, LearnAbilityEvent.States, self.States.DEFAULT)
+        super().__init__(InputType.SILENT, LearnAbilityEvent.States,
+                         self.States.DEFAULT)
         self.target_ability: str = ability_name
         self.player_ref = None
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             if not self.player_ref:
                 self.player_ref = from_cache("player")
@@ -134,7 +159,8 @@ class LearnAbilityEvent(Event):
             else:
                 self.set_state(self.States.NOT_ALREADY_LEARNED)
 
-        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.NOT_ALREADY_LEARNED,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             if self.player_ref.ability_controller.is_learnable(ability_name):
                 self.set_state(self.States.REQUIREMENTS_MET)
@@ -142,31 +168,36 @@ class LearnAbilityEvent(Event):
             else:
                 self.set_state(self.States.REQUIREMENTS_NOT_MET)
 
-        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED, input_type=InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.ALREADY_LEARNED,
+                                       input_type=InputType.ANY)
         def logic(_: any):
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.ALREADY_LEARNED)
         def content() -> dict:
-            already_learned_message = [StringContent(value="You already learned "),
-                                       StringContent(value=ability_name,
-                                                     formatting="ability_name")
-                                       ]
+            already_learned_message = [
+                StringContent(value="You already learned "),
+                StringContent(value=ability_name,
+                              formatting="ability_name")
+                ]
             return ComponentFactory.get(already_learned_message)
 
-        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_MET, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_MET,
+                                       InputType.ANY)
         def logic(_: any) -> None:
             self.player_ref.ability_controller.learn(ability_name)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.REQUIREMENTS_MET)
         def content() -> dict:
-            learn_message = [StringContent(value="You learned a new ability!\n"),
-                             StringContent(value=ability_name,
-                                           formatting="ability_name")]
+            learn_message = [
+                StringContent(value="You learned a new ability!\n"),
+                StringContent(value=ability_name,
+                              formatting="ability_name")]
             return ComponentFactory.get(learn_message)
 
-        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.REQUIREMENTS_NOT_MET,
+                                       InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)
 
@@ -176,8 +207,10 @@ class LearnAbilityEvent(Event):
                 ["You do not meet the requirements for learning ",
                  StringContent(value=ability_name, formatting="ability_name"),
                  "."],
-                # Retrieve the requirements for this ability and pass them through the options argument
-                from_cache("managers.AbilityManager").get_instance(ability_name).get_requirements_as_options()
+                # Retrieve the requirements for this ability and pass them
+                # through the options argument
+                from_cache("managers.AbilityManager").get_instance(
+                    ability_name).get_requirements_as_options()
             )
 
     def __copy__(self):
@@ -187,7 +220,8 @@ class LearnAbilityEvent(Event):
         return self.__copy__()
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
+    @cached(
+        [LoadableMixin.LOADER_KEY, "LearnAbilityEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a LearnAbilityEvent object from a JSON blob.
@@ -213,27 +247,34 @@ class CurrencyEvent(Event):
     A currency event changes the player's balance for a specific currency.
     """
 
-    def __init__(self, currency_id: int | str, quantity: int, silent: bool = False):
+    def __init__(self, currency_id: int | str, quantity: int,
+                 silent: bool = False):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
         self._currency_id = currency_id
         self._quantity = quantity
         self._cur = currency.currency_manager.to_currency(currency_id, quantity)
         self._player_ref = from_cache("player")
         self._silent = silent
-        self._gain_message: list[StringContent] = [
-            f"{self._player_ref.name} gained ",
-            StringContent(value=str(self._cur))
-        ]
-        self._loss_message: list[StringContent] = [
-            f"{self._player_ref.name} lost ",
-            StringContent(value=str(self._cur))
-        ]
 
-        self._message = self._gain_message if quantity >= 0 else self._loss_message
+        def get_message() -> list[str | StringContent]:
+            if quantity >= 0:
+                return [
+                    f"{self._player_ref.name} gained ",
+                    StringContent(value=str(self._cur))
+                ]
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY if not silent else InputType.SILENT)
+            return [
+                f"{self._player_ref.name} lost ",
+                StringContent(value=str(self._cur))
+            ]
+
+        self._message = get_message()
+
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.ANY if not silent else InputType.SILENT)
         def logic(_: any) -> None:
-            self._player_ref.coin_purse.adjust(self._currency_id, self._quantity)
+            self._player_ref.coin_purse.adjust(self._currency_id,
+                                               self._quantity)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
@@ -270,7 +311,8 @@ class CurrencyEvent(Event):
         ]
 
         LoadableFactory.validate_fields(required_fields, json, required=True)
-        LoadableFactory.validate_fields(optional_fields, json, required=False, implicit_fields=False)
+        LoadableFactory.validate_fields(optional_fields, json, required=False,
+                                        implicit_fields=False)
 
         if json['class'] != "CurrencyEvent":
             raise ValueError()
@@ -286,6 +328,9 @@ class LearnRecipeEvent(Event):
     """
 
     class States(Enum):
+        """
+        Internal State Enum
+        """
         DEFAULT = 0
         CAN_LEARN = 1
         CANNOT_LEARN = 2
@@ -296,14 +341,17 @@ class LearnRecipeEvent(Event):
         self.recipe_id = recipe_id
         self._player_ref = from_cache('player')
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any):
-            if self._player_ref.crafting_controller.can_learn_recipe(self.recipe_id):
+            if self._player_ref.crafting_controller.can_learn_recipe(
+                    self.recipe_id):
                 self.set_state(self.States.CAN_LEARN)
             else:
                 self.set_state(self.States.CANNOT_LEARN)
 
-        @FiniteStateDevice.state_logic(self, self.States.CAN_LEARN, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.CAN_LEARN,
+                                       InputType.ANY)
         def logic(_: any) -> None:
             self._player_ref.crafting_controller.learn_recipe(recipe_id)
             self.set_state(self.States.TERMINATE)
@@ -311,17 +359,23 @@ class LearnRecipeEvent(Event):
         @FiniteStateDevice.state_content(self, self.States.CAN_LEARN)
         def content():
             return ComponentFactory.get(
-                [f"{self._player_ref.name} learned a recipe!\n{recipe_manager[recipe_id].name}"]
+                [
+                    f"{self._player_ref.name} learned a recipe!\n"
+                    f"{recipe_manager[recipe_id].name}"
+                ]
             )
 
-        @FiniteStateDevice.state_logic(self, self.States.CANNOT_LEARN, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.CANNOT_LEARN,
+                                       InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.CANNOT_LEARN)
         def content():
             return ComponentFactory.get(
-                [f"{self._player_ref.name} cannot learn {recipe_manager[recipe_id].name}!"],
+                [
+                    f"{self._player_ref.name} cannot learn "
+                    f"{recipe_manager[recipe_id].name}!"],
                 recipe_manager[recipe_id].get_requirements_as_options()
             )
 
@@ -332,7 +386,8 @@ class LearnRecipeEvent(Event):
         return LearnRecipeEvent(self.recipe_id)
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
+    @cached(
+        [LoadableMixin.LOADER_KEY, "LearnRecipeEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a LearnRecipeEvent object from a JSON blob.
@@ -358,21 +413,26 @@ class ReputationEvent(Event):
     A ReputationEvent modifies the Player's reputation with a specified Faction
     """
 
-    def __init__(self, faction_id: int, reputation_change: int, silent: bool = False):
+    def __init__(self, faction_id: int, reputation_change: int,
+                 silent: bool = False):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.faction_id = faction_id
         self.reputation_change = reputation_change
         self._silent = silent
-        self.message = [StringContent(value="Your reputation with "),
-                        StringContent(value=f"faction::{faction_id}",
-                                      formatting="faction_name"),
-                        StringContent(value="decreased" if self.reputation_change < 0 else "increased"),
-                        StringContent(value=f" by {reputation_change}")
-                        ]
+        self.message = [
+            StringContent(value="Your reputation with "),
+            StringContent(value=f"faction::{faction_id}",
+                          formatting="faction_name"),
+            StringContent(
+                value="decreased" if self.reputation_change < 0 else "increased"
+            ),
+            StringContent(value=f" by {reputation_change}")
+        ]
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
         def logic(_: any) -> None:
-            from_cache("managers.FactionManager").adjust_affinity(self.faction_id, self.reputation_change)
+            from_cache("managers.FactionManager").adjust_affinity(
+                self.faction_id, self.reputation_change)
 
             self.set_state(self.States.TERMINATE)
 
@@ -383,13 +443,15 @@ class ReputationEvent(Event):
             )
 
     def __copy__(self):
-        return ReputationEvent(self.faction_id, self.reputation_change, self._silent)
+        return ReputationEvent(self.faction_id, self.reputation_change,
+                               self._silent)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
+    @cached(
+        [LoadableMixin.LOADER_KEY, "ReputationEvent", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Loads a ReputationEvent object from a JSON blob.
@@ -412,14 +474,16 @@ class ReputationEvent(Event):
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
-        LoadableFactory.validate_fields(optional_fields, json, required=False, implicit_fields=False)
+        LoadableFactory.validate_fields(optional_fields, json, required=False,
+                                        implicit_fields=False)
 
         if json['class'] != "ReputationEvent":
             raise ValueError()
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        return ReputationEvent(json['faction_id'], json['reputation_change'], **kwargs)
+        return ReputationEvent(json['faction_id'], json['reputation_change'],
+                               **kwargs)
 
 
 class ResourceEvent(EntityTargetMixin, Event):
@@ -428,45 +492,63 @@ class ResourceEvent(EntityTargetMixin, Event):
     """
 
     class States(Enum):
+        """
+        Internal State Enum
+        """
         DEFAULT = 0
         APPLY = 1
         SUMMARY = 2
         TERMINATE = -1
 
     def _build_summary(self, start_value: int, end_value: int) -> None:
-        """Assemble a list[str | StringContent] to be printed within the SUMMARY state"""
+        """
+        Assemble a list[str | StringContent] to be printed within the SUMMARY
+        state.
+        """
         self._summary = [
             f"{self.target.name} {'lost' if self.amount < 0 else 'gained'} ",
             f"{abs(start_value - end_value)} ",
-            StringContent(value=f"{self.stat_name}.", formatting="resource_name")
+            StringContent(value=f"{self.stat_name}.",
+                          formatting="resource_name")
         ]
 
-    def __init__(self, resource_name: str, quantity: int | float, target=None, silent: bool = False):
+    def __init__(self, resource_name: str, quantity: int | float, target=None,
+                 silent: bool = False):
         super().__init__(target=target,
-                         default_input_type=InputType.ANY, states=self.States, default_state=self.States.DEFAULT)
+                         default_input_type=InputType.ANY, states=self.States,
+                         default_state=self.States.DEFAULT)
         self.stat_name: str = resource_name
         self.amount: int | float = quantity
         self._summary: list[str | StringContent] = None
         self._silent = silent
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_):
-            from game.systems.entity.entities import Entity  # Import locally to prevent circular import issues
+            from game.systems.entity.entities import \
+                Entity  # Import locally to prevent circular import issues
 
             if not isinstance(self.target, Entity):
-                raise TypeError(f"Cannot apply a ResourceEvent to an object of type {self.target}")
+                raise TypeError(
+                    f"Cannot apply a ResourceEvent to an object of type "
+                    f"{self.target}")
 
             self.set_state(self.States.APPLY)
 
-        @FiniteStateDevice.state_logic(self, self.States.APPLY, InputType.SILENT)
-        def logic(_):
+        @FiniteStateDevice.state_logic(self, self.States.APPLY,
+                                       InputType.SILENT)
+        def logic(_: any):
             resource_controller: ResourceController = self.target.resource_controller
-            self._build_summary(resource_controller.resources[self.stat_name]['instance'].value,  # Current value
-                                resource_controller.resources[self.stat_name]['instance'].adjust(
-                                    self.amount))  # Post-adjust value
+            self._build_summary(
+                resource_controller.resources[self.stat_name]['instance'].value,
+                # Current value
+                resource_controller.resources[self.stat_name][
+                    'instance'].adjust(
+                    self.amount))  # Post-adjust value
             self.set_state(self.States.SUMMARY)
 
-        @FiniteStateDevice.state_logic(self, self.States.SUMMARY, InputType.SILENT if self._silent else InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.SUMMARY,
+                                       InputType.SILENT if self._silent else InputType.ANY)
         def logic(_: any):
             self.set_state(self.States.TERMINATE)
 
@@ -475,14 +557,19 @@ class ResourceEvent(EntityTargetMixin, Event):
             return ComponentFactory.get(self._summary)
 
     def __copy__(self):
-        return ResourceEvent(self.stat_name, self.amount, self.target, self._silent)
+        return ResourceEvent(self.stat_name, self.amount, self.target,
+                             self._silent)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
 
     @property
     def harmful(self) -> bool:
-        """Returns true if the ResourceEvent will reduce the absolute value of the Resource"""
+        """
+        Returns true if the ResourceEvent will reduce the absolute value of the
+        Resource
+        """
+
         return self.amount < 0
 
     @staticmethod
@@ -516,7 +603,8 @@ class ResourceEvent(EntityTargetMixin, Event):
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        return ResourceEvent(json['resource_name'], json['quantity'], None, **kwargs)
+        return ResourceEvent(json['resource_name'], json['quantity'], None,
+                             **kwargs)
 
 
 class TextEvent(Event):
@@ -574,21 +662,25 @@ class SkillXPEvent(EntityTargetMixin, Event):
         TERMINATE = -1
 
     def __init__(self, skill_id: int, xp_gain: int, target=None):
-        super().__init__(default_input_type=InputType.SILENT, states=self.States, default_state=self.States.DEFAULT,
+        super().__init__(default_input_type=InputType.SILENT,
+                         states=self.States, default_state=self.States.DEFAULT,
                          target=target)
         self._skill_id = skill_id
         self._xp_gained = xp_gain
 
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             if self._target is None:
                 self._target = from_cache('player')
 
             self.set_state(self.States.GAIN_MESSAGE)
 
-        @FiniteStateDevice.state_logic(self, self.States.GAIN_MESSAGE, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.GAIN_MESSAGE,
+                                       InputType.ANY)
         def logic(_: any) -> None:
-            self._target.skill_controller[self._skill_id].gain_xp(self._xp_gained)
+            self._target.skill_controller[self._skill_id].gain_xp(
+                self._xp_gained)
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.GAIN_MESSAGE)
@@ -596,7 +688,8 @@ class SkillXPEvent(EntityTargetMixin, Event):
             return ComponentFactory.get(
                 [
                     f"{self._target.name} gained {self._xp_gained} ",
-                    StringContent(value=self._target.skill_controller[self._skill_id].name, formatting="skill_name"),
+                    StringContent(value=self._target.skill_controller[
+                        self._skill_id].name, formatting="skill_name"),
                     " xp!"
                 ]
             )
@@ -634,7 +727,8 @@ class ViewResourcesEvent(EntityTargetMixin, Event):
 
     def __init__(self, target=None):
         super().__init__(target=target,
-                         default_input_type=InputType.ANY, states=self.States, default_state=self.States.DEFAULT)
+                         default_input_type=InputType.ANY, states=self.States,
+                         default_state=self.States.DEFAULT)
         self._target = target  # The entity to read Resource values from
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.ANY)
@@ -655,7 +749,8 @@ class ViewResourcesEvent(EntityTargetMixin, Event):
         return ViewResourcesEvent(self.target)
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent",
+             LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         return ViewResourcesEvent()
 
@@ -672,23 +767,28 @@ class CombatEvent(Event):
         LAUNCH_COMBAT_ENGINE = 1
         TERMINATE = -1
 
-    def __init__(self, allies: list[int], enemies: list[int], termination_conditions: list[TerminationHandler] = None):
+    def __init__(self, allies: list[int], enemies: list[int],
+                 termination_conditions: list[TerminationHandler] = None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
 
         self._allies: list[int] = allies
         self._enemies: list[int] = enemies
-        self._termination_conditions: list[TerminationHandler] | None = termination_conditions
+        self._termination_conditions: list[
+                                          TerminationHandler] | None = termination_conditions
 
         self._setup_states()
 
     def _setup_states(self):
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             self.set_state(self.States.LAUNCH_COMBAT_ENGINE)
 
-        @FiniteStateDevice.state_logic(self, self.States.LAUNCH_COMBAT_ENGINE, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.LAUNCH_COMBAT_ENGINE,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
-            combat = CombatEngine(self._allies, self._enemies, self._termination_conditions)
+            combat = CombatEngine(self._allies, self._enemies,
+                                  self._termination_conditions)
             game.state_device_controller.add_state_device(combat)
             self.set_state(self.States.TERMINATE)
 
@@ -720,7 +820,8 @@ class CombatEvent(Event):
         if "termination_conditions" in kw:
             # Transform embedded raw JSON blobs into TerminationCondition objects by calling their JSON loaders
             kw["termination_conditions"] = [
-                LoadableFactory.get(raw_condition) for raw_condition in kw["termination_conditions"]
+                LoadableFactory.get(raw_condition) for raw_condition in
+                kw["termination_conditions"]
             ]
 
         return CombatEvent(json["allies"], json["enemies"])
