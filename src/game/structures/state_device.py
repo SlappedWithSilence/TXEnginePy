@@ -266,7 +266,7 @@ class StateDevice(ABC):
 
                 return True
 
-            except ValueError:
+            except (ValueError, TypeError):
                 logger.warning(
                     f"input_type.INT requires int not type: "
                     f"{type(input_value)}!")
