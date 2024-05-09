@@ -1,3 +1,6 @@
+"""
+A collection of Event sublasses.
+"""
 from __future__ import annotations
 
 from abc import ABC
@@ -21,7 +24,9 @@ from game.systems.entity.resource import ResourceController
 
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
-
+    """
+    An abstract base class defining the core behaviors of an Event for TXEngine.
+    """
     def __init__(self, default_input_type: InputType, states: type[Enum],
                  default_state):
         super().__init__(default_input_type, states, default_state)
@@ -608,6 +613,9 @@ class ResourceEvent(EntityTargetMixin, Event):
 
 
 class TextEvent(Event):
+    """
+    A simple Event subclass that prints some text to the user then terminates.
+    """
 
     def __init__(self, text: str | list[str | StringContent]):
         super().__init__(InputType.ANY, self.States, self.States.DEFAULT)
@@ -656,6 +664,9 @@ class SkillXPEvent(EntityTargetMixin, Event):
     """
 
     class States(Enum):
+        """
+        Internal State Enum
+        """
         DEFAULT = 0
         GAIN_MESSAGE = 1  # Tell the user how much XP was gained
         LEVEL_UP = 2  # Tell the user that a Skill leveled up
@@ -751,18 +762,33 @@ class ViewResourcesEvent(EntityTargetMixin, Event):
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewResourcesEvent",
              LoadableMixin.ATTR_KEY])
-    def from_json(json: dict[str, any]) -> any:
+    def from_json(_: dict[str, any]) -> any:
+        """
+        Loads a ViewResourcesEvent from JSON.
+        Args:
+            _: A JSON blob. It's ignored since there's no data thats extracted
+            from JSON.
+
+        Returns: A ViewResourceEvent instance
+
+        """
         return ViewResourcesEvent()
 
 
 class CombatEvent(Event):
-    """An Event that functions as a wrapper for an instance of a CombatEngine object.
+    """
+    An Event that functions as a wrapper for an instance of a CombatEngine
+    object.
 
-        Since only a single CombatEngine can go on the StateDeviceStack at once, the instantiation of the CombatEngine
-        is placed behind the Default state to avoid premature creation.
+    Since only a single CombatEngine can go on the StateDeviceStack at once, the
+    instantiation of the CombatEngine is placed behind the Default state to
+    avoid premature creation.
     """
 
     class States(Enum):
+        """
+        An internal state enum
+        """
         DEFAULT = 0
         LAUNCH_COMBAT_ENGINE = 1
         TERMINATE = -1
@@ -818,7 +844,8 @@ class CombatEvent(Event):
 
         kw = LoadableFactory.collect_optional_fields(optional_fields, json)
         if "termination_conditions" in kw:
-            # Transform embedded raw JSON blobs into TerminationCondition objects by calling their JSON loaders
+            # Transform embedded raw JSON blobs into TerminationCondition
+            # objects by calling their JSON loaders
             kw["termination_conditions"] = [
                 LoadableFactory.get(raw_condition) for raw_condition in
                 kw["termination_conditions"]
