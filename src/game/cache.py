@@ -1,5 +1,6 @@
 """
-A utility python file that hosts a global cache, global config, and useful accessor/setter methods
+A utility python file that hosts a global cache, global config, and useful
+accessor/setter methods
 """
 from typing import Callable
 import string
@@ -10,7 +11,7 @@ from loguru import logger
 config: dict[str, any] = None
 cache: dict[str, any] = {}  # For objects that should have common access
 storage: dict[str, any] = {}  # For objects not intended to have general access
-store_key_length = 5
+STORE_KEY_LENGTH = 5
 
 
 def decode_path(path: list[str] | str) -> list[str]:
@@ -19,11 +20,17 @@ def decode_path(path: list[str] | str) -> list[str]:
     """
 
     if type(path) != list and type(path) != str:
-        raise TypeError(f"Unexpected cache path type: {type(path)}! Allowed types are list[str] and str!")
+        raise TypeError(
+            f"Unexpected cache path type: {type(path)}! "
+            f"Allowed types are list[str] and str!"
+        )
     elif type(path) == list:
         for key in path:
             if type(key) != str:
-                raise TypeError(f"Unexpected type within a listed cache path: {type(key)}! Allowed types are str")
+                raise TypeError(
+                    f"Unexpected type within a listed cache path: "
+                    f"{type(key)}! Allowed types are str"
+                )
         return path
     elif type(path) == str:
         return path.split('.')
@@ -33,7 +40,8 @@ def from_cache(path: list[str] | str) -> any:
     """
     A universal cache-retrieval function.
 
-    Elements cached can be retrieved via their dict-path using a list of keys or string dot-notation.
+    Elements cached can be retrieved via their dict-path using a list of keys or
+    string dot-notation.
 
     args:
         path: A list of nested dict keys or a string of dot notation
@@ -51,7 +59,10 @@ def from_cache(path: list[str] | str) -> any:
             if key not in depth:
                 raise KeyError(f"Invalid cache path key: {key}")
             if type(depth[key]) != dict:
-                raise TypeError(f"Expected key {key}'s value to be of type dict! Got {type(depth[key])} instead.")
+                raise TypeError(
+                    f"Expected key {key}'s value to be of type dict! "
+                    f"Got {type(depth[key])} instead."
+                )
 
             depth = depth[key]
 
@@ -63,8 +74,9 @@ def from_cache(path: list[str] | str) -> any:
 
 def cache_element(path: list[str] | str, element: any) -> None:
     """
-    Universal logic for caching an element in the cache. Using a collection of strings or a dot-notated path string,
-    cache an object along a dict-path of 'path'.
+    Universal logic for caching an element in the cache. Using a collection of
+    strings or a dot-notated path string, cache an object along a dict-path of
+    'path'.
     """
 
     true_path = decode_path(path)
@@ -72,9 +84,10 @@ def cache_element(path: list[str] | str, element: any) -> None:
     depth = get_cache()
     for key in true_path[:-1]:
         if key in depth and type(depth[key]) != dict:
-            raise KeyError("Cannot create path dict in cache! A collision was detected.")
+            raise KeyError(
+                "Cannot create path dict in cache! A collision was detected.")
 
-        elif key in depth and type(depth[key] == dict):
+        if key in depth and type(depth[key] == dict):
             pass
 
         else:
@@ -111,10 +124,12 @@ def get_config() -> dict:
 
 def get_loader(cls: type | str) -> Callable:
     """
-    A convenience wrapper that fetches loader functions from the cache for a given class.
+    A convenience wrapper that fetches loader functions from the cache for a
+    given class.
 
     args:
-        cls: Either a type or a string representation of a type whose loader to fetch
+        cls:
+            Either a type or str representation of a type whose loader to fetch
 
     returns: A reference to the requested loader function
     """
@@ -132,27 +147,36 @@ def get_loader(cls: type | str) -> Callable:
             raise ke
     else:
         raise KeyError(
-            f"No loader found for class {key}! Available loaders:\n{' '.join(list(get_cache()['loader'].keys()))}"
+            f"No loader found for class {key}! Available loaders:"
+            f"\n{' '.join(list(get_cache()['loader'].keys()))}"
         )
 
 
-def delete_element(path: str | list[str], delete_branch: bool = False, force: bool = False):
+def delete_element(path: str | list[str], delete_branch: bool = False,
+                   force: bool = False):
     """
     Delete an element from the cache
 
-    If 'delete_branch' is True, attempt to delete the entire branch of sub-dicts that store the element. If other cached
-    elements depend on those sub-dicts, they will not be removed. If 'force' is True, all sub-dicts and all of their
+    If 'delete_branch' is True, attempt to delete the entire branch of sub-dicts
+    that store the element. If other cached elements depend on those sub-dicts,
+    they will not be removed. If 'force' is True, all sub-dicts and all of their
     contents will be removed.
 
     args:
-        path: The path in the cache to delete. By default, only the final value (ie the leaf of the path) is removed.
-        delete_branch: If true, delete all the sub-dicts down to the root node.
-        force: If true, delete_branch will ignore any dependent branches and still delete the entire sub-dict tree
+        path:
+            The path in the cache to delete. By default, only the final value
+            (ie the leaf of the path) is removed.
+        delete_branch:
+            If true, delete all the sub-dicts down to the root node.
+        force:
+            If true, delete_branch will ignore any dependent branches and still
+            delete the entire sub-dict tree.
     """
 
     true_path: list[str] = decode_path(path)
 
-    is_clean = True  # Can the entire branch be deleted without breaking other cache values
+    # Can the entire branch be deleted without breaking other cache values
+    is_clean = True
 
     depth = get_cache()
 
@@ -160,37 +184,57 @@ def delete_element(path: str | list[str], delete_branch: bool = False, force: bo
 
         if key in depth:  # Check that the next sub-dict exists
             depth = depth[key]  # Move to next sub-dict
-            if type(depth) != dict:  # Check that its actually a dict
-                logger.warning(f"Failed to delete {path} from cache! Invalid path. Key {key} is not a dict!")
+            if not isinstance(depth, dict):  # Check that it's actually a dict
+                logger.warning(
+                    f"Failed to delete {path} from cache! "
+                    f"Invalid path. Key {key} is not a dict!"
+                )
                 break  # Stop executing logic
 
-            # If there's more than one element in the sub-dict, it cannot possibly be cleanly deleted
+            # If there's more than one element in the sub-dict, it cannot
+            # possibly be cleanly deleted
             if len(depth) > 1:
                 is_clean = False
 
         else:
-            logger.warning(f"Failed to delete {path} from cache! Invalid path. Missing key at {key}.")
+            logger.warning(
+                f"Failed to delete {path} from cache! Invalid path. "
+                f"Missing key at {key}."
+            )
             break
 
     # Handle deleting an entire branch of sub-dicts
     if delete_branch:
         if is_clean or force:  # If the branch is clean or force is True
             depth = get_cache()
-            del depth[true_path[0]]  # Delete the connection between the root of the cache and the shallowest sub-dict
+
+            # Delete connection between root of the cache and shallowest leaf
+            del depth[true_path[0]]
         else:
-            logger.warning(f"Failed to delete {path} from cache! Path is not clean and Force == False")
+            logger.warning(
+                f"Failed to delete {path} from cache! "
+                f"Path is not clean and Force == False"
+            )
 
     # Handle standard deletion logic
     else:
-        if true_path[-1] in depth:  # Check if the final key exists in the final sub-dict
-            del depth[true_path[-1]]  # Delete the key-pair value from the sub-dict
+
+        # Check if the final key exists in the final sub-dict
+        if true_path[-1] in depth:
+
+            # Delete the key-pair value from the sub-dict
+            del depth[true_path[-1]]
         else:
-            logger.warning(f"Failed to delete {path} from cache! Invalid path. Missing key at {true_path[-1]}")
+            logger.warning(
+                f"Failed to delete {path} from cache! "
+                f"Invalid path. Missing key at {true_path[-1]}"
+            )
 
 
 def cached(path: list[str] | str) -> Callable:
     """
-    A parameterized decorator that caches a given function under the key 'root_key' and sub-key 'attr_key'.
+    A parameterized decorator that caches a given function under the key
+    'root_key' and sub-key 'attr_key'.
 
     For example:
 
@@ -207,11 +251,14 @@ def cached(path: list[str] | str) -> Callable:
     would cache some_func under:
     get_cache()['fancy']['func']
 
-    args:
-       path: A list of strings or a string following dot-notation that describes the dict-path where the element should
-       be stored.
+    Args:
+       path: A list of strings or a string following dot-notation that describes
+       the dict-path where the element should be stored.
 
-    returns: The base-level decorator
+    Returns: The base-level decorator
+
+    Raises:
+        KeyError: The path provided was invalid.
     """
 
     def decorate(func: Callable):
@@ -222,11 +269,36 @@ def cached(path: list[str] | str) -> Callable:
     return decorate
 
 
+def loader(cls: str | type):
+    """
+    A wrapper for the @cached decorator that pre-populates the path for JSON
+    loader functions.
+
+    This decorator also performs inspections on the JSON loader function to
+    ensure it accepts the appropriate inputs.
+
+    Args:
+        cls: The type or name of type to store the loader in.
+
+    Returns: The base decorator generated by the internal @cached decorator
+
+    Raises:
+        KeyError: The class provided has no Loader stored in the cache
+    """
+    from game.structures.loadable import LoadableMixin
+
+    true_class: str = cls if isinstance(cls, str) else cls.__name__
+    return cached(
+        [LoadableMixin.LOADER_KEY, true_class, LoadableMixin.ATTR_KEY]
+    )
+
+
 """
 Methods for managing storage.
 
-While the cache is a general purpose location to leave things for general access, storage is intended to be used 
-privately between StateDevices. As such, its usage is strictly moderated by the accessors defined here.
+While the cache is a general purpose location to leave things for general access
+storage is intended to be used privately between StateDevices. As such, its 
+usage is strictly moderated by the accessors defined here.
 """
 
 
@@ -234,12 +306,13 @@ def request_storage_key() -> str:
     """
     Reserve a unique key in the storage system.
     """
-    global storage, store_key_length
+    global storage, STORE_KEY_LENGTH
 
     def get_store_key(length: int = 10) -> str:
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        return ''.join(
+            random.choices(string.ascii_uppercase + string.digits, k=length))
 
-    current_key: str = get_store_key(store_key_length)
+    current_key: str = get_store_key(STORE_KEY_LENGTH)
     iterations = 0
     while current_key in storage:
         iterations += 1
@@ -247,10 +320,12 @@ def request_storage_key() -> str:
 
         # If there are multiple consecutive failed attempts to get a new key
         if iterations > 3:
-            store_key_length += 1  # Increase length of key, thus guaranteeing a new key
-            logger.warning(f"Extended storage key length to {store_key_length}!")
+            STORE_KEY_LENGTH += 1  # Increment key length to guarantee a new key
+            logger.warning(
+                f"Extended storage key length to {STORE_KEY_LENGTH}!")
 
-    # Once a new key is secured, add it to the storage and set it to None. Then, return the key
+    # Once a new key is secured, add it to the storage and set it to None.
+    # Then, return the key
     storage[current_key] = None
     return current_key
 
@@ -275,7 +350,8 @@ def store_element(storage_key: str, value: any) -> None:
     """
     Store an element in the storage dict.
 
-    Since the storage dict is shallow (1D), there's no need for complex decoding like in the cache
+    Since the storage dict is shallow (1D), there's no need for complex decoding
+    like in the cache
     """
 
     global storage
