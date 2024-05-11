@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Callable
+from typing import Callable, Iterable
 
 from game.cache import request_storage_key, store_element, from_cache, \
     loader
@@ -34,6 +34,7 @@ class SelectElementEvent(Event):
             If True, the user must select an element. If False, a -1 ->
             terminate option will exist.
     """
+
     class States(Enum):
         """
         An internal state Enum
@@ -184,11 +185,12 @@ class SelectElementEventFactory:
         return event
 
     @classmethod
-    def get_select_usable_item_event(cls, combat_entity, collection_override: any = None,
+    def get_select_usable_item_event(cls, combat_entity,
+                                     collection_override: any = None,
                                      only_requirements_met: bool = False,
                                      must_select: bool = False):
         """
-        Get a SelectElementEvent pre-configured to select an Usable (Item).
+        Get a SelectElementEvent pre-configured to select a Usable (Item).
 
         The returned Event is configured to only display items of type Usable,
         and can optionally be set to only display Usable items that have their
@@ -238,8 +240,8 @@ class SelectElementEventFactory:
                 )
             if not isinstance(
                     collection_override[0], tuple) or not isinstance(
-                    collection_override[0][0], int) or not isinstance(
-                    collection_override[0][1], int):
+                collection_override[0][0], int) or not isinstance(
+                collection_override[0][1], int):
                 raise ValueError(
                     "list typed collection overrides must only contain objects "
                     "of type tuple[int, int]"
@@ -343,6 +345,77 @@ class SelectElementEventFactory:
             key=lambda e: e,
             element_filter=None if allow_player else lambda e: not isinstance(e, Player),
             prompt="Select an Entity",
+            to_listing=to_listing,
+            must_select=must_select
+        )
+
+        return event
+
+    @classmethod
+    def get_select_equipment_event(cls, collection: list,
+                                   only_requirements_met: bool = False,
+                                   fields_of_interest: Iterable[str] = tuple(["name"]),
+                                   must_select: bool = False):
+        """
+        Get a SelectElementEvent pre-configured to select an Entity.
+
+        Event may be optionally configured to dynamically inject variable values
+        via `fields_of_interest` into the internal `to_listing` function.
+        For example, an entity's ID could be inserted by passing [`id`] to the
+        argument.
+
+        Args:
+            collection:
+                A list of Entity objects from which to select
+            only_requirements_met:
+                If True only show equipment that the player is qualified to use
+            fields_of_interest: tuple[str]:
+                A collection of variable names to inject into the to_listing
+                function.
+            must_select:
+                If True, do not allow for a -1 input that terminates the Event.
+                If False, an input of -1
+        Returns: A preconfigured SelectElementEvent object that filters for equipment from an Inventory.
+        """
+
+        if not isinstance(collection, list):
+            raise TypeError()
+
+        if not isinstance(only_requirements_met, bool):
+            raise TypeError()
+
+        if not isinstance(must_select, bool):
+            raise TypeError()
+
+        if not hasattr(fields_of_interest, "__iter__"):
+            raise TypeError()
+
+        from systems.item.item import Equipment
+
+        # Define an inner-function to handle translating the Equipment to strings
+        def to_listing(equipment: Equipment) -> str:
+
+            if not isinstance(equipment, Equipment):
+                raise TypeError(f"Cannot translate object of type {type(equipment)}"
+                                f", expecting object of type Equipment!"
+                                )
+
+            field_values = []
+
+            for field in fields_of_interest:
+                if hasattr(equipment, field):
+                    field_values.append(getattr(equipment, field))
+                else:
+                    raise RuntimeError(f"Equipment {equipment} has no field {field}!")
+
+            return " ".join(field_values)
+
+        event = SelectElementEvent(
+            collection=collection,
+            key=lambda e: e,
+            element_filter=None if not only_requirements_met else lambda e: e.is_requirements_fulfilled(
+                from_cache("player")),
+            prompt="Select an Equipment",
             to_listing=to_listing,
             must_select=must_select
         )
