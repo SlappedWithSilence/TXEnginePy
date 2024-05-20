@@ -5,6 +5,7 @@ translation functions, and related Events.
 
 import copy
 import dataclasses
+import weakref
 from abc import ABC
 from enum import Enum
 
@@ -58,16 +59,43 @@ class DialogNodeBase(ABC):
     text: str
     visited: bool = False
     allow_multiple_visits: bool = True
-    multiple_event_triggers: bool = False # Events run each time node is visited
+    multiple_event_triggers: bool = False  # Events run each visit
     persistent: bool = False  # If True, properties will persist in storage
     on_enter: list[Event] = dataclasses.field(default_factory=list)
     text_before_events: bool = True
+    __dialog_ref: "Dialog" = None
+
+    @property
+    def owner(self) -> "Dialog":
+        return self.__dialog_ref
+
+    @owner.setter
+    def owner(self, dialog: "Dialog") -> None:
+        if not isinstance(dialog, Dialog):
+            raise TypeError("A DialogNode's owner must be of type Dialog! Got"
+                            f" type {type(dialog)} instead!")
+
+        self.__dialog_ref = weakref.proxy(dialog)
 
     def get_option_text(self) -> list[list[str]]:
         """
         Return a list containing all the strings for each option in the node
         """
-        return [[s] for s in self.options.keys()]
+
+        def is_option_valid(option_text: str) -> bool:
+            if not isinstance(option_text, str):
+                raise TypeError(f"option_text must be a str! Got a "
+                                f"{type(option_text)} instead!")
+
+            if self.owner is None:
+                raise RuntimeError("Cannot check if a node is valid when "
+                                   "`owner` is None!")
+
+            dialog_option_target = self.options[option_text]
+            target_node = self.owner.nodes[dialog_option_target]
+            return not target_node.visited or target_node.allow_multiple_visits
+
+        return [[s] for s in self.options.keys() if is_option_valid(s)]
 
     def should_trigger_events(self) -> bool:
         """
@@ -190,7 +218,8 @@ class DialogBase(ABC):
         _current_node: The id of the node the player is currently on
     """
 
-    def __init__(self, dialog_id: int, nodes: list[DialogNode], initial_node_id: int = 0):
+    def __init__(self, dialog_id: int, nodes: list[DialogNode],
+                 initial_node_id: int = 0):
         if len(nodes) < 1:
             raise ValueError(
                 "Unable to instantiate Dialog Object with zero nodes!"
@@ -205,6 +234,10 @@ class DialogBase(ABC):
                 f"Invalid starting node id {initial_node_id} "
                 f"for Dialog with id {self.id}"
             )
+
+        # Ensure all nodes have owner set correctly
+        for node in self.nodes.values():
+            node.owner = self
 
     @property
     def current_node(self) -> int:
@@ -238,7 +271,8 @@ class DialogBase(ABC):
             None if the player wants to terminate the Dialog. Otherwise, returns
             a reference to the DialogNode that the player is currently visiting.
         """
-        return self.nodes[self._current_node] if self._current_node >= 0 else None
+        return self.nodes[
+            self._current_node] if self._current_node >= 0 else None
 
 
 class Dialog(LoadableMixin, DialogBase):
@@ -365,7 +399,8 @@ class DialogEvent(Event):
                                        ) - 1)
         def logic(user_input: int):
             self.current_node.visited = True
-            user_choice: str = self.current_node.get_option_text()[user_input][0]
+            user_choice: str = self.current_node.get_option_text()[user_input][
+                0]
             next_node: int = self.current_node.options[user_choice]
             if next_node < 0:
                 self.set_state(self.States.TERMINATE)

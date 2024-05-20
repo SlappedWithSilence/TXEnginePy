@@ -1,14 +1,15 @@
 import pytest
 
-from game.systems.dialog.dialog import DialogNode
+from game.systems.dialog.dialog import DialogNode, Dialog
 
 
 def test_init_trivial():
+
     node = DialogNode(node_id=0,
                       options={"A choice": -1},
                       text="Text"
                       )
-
+    d = Dialog([node])
     assert node.node_id == 0
     assert len(node.get_option_text()) == 1
     assert node.text == "Text"
