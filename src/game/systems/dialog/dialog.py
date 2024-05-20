@@ -74,7 +74,7 @@ class DialogNodeBase(ABC):
         Determine if events should be triggered.
         """
 
-        return self.multiple_event_triggers or not self.visited
+        return not self.visited or self.multiple_event_triggers
 
     def get_events(self) -> list[Event]:
         """
