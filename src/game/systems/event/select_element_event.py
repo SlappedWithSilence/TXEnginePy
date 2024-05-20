@@ -375,7 +375,7 @@ class SelectElementEventFactory:
             must_select:
                 If True, do not allow for a -1 input that terminates the Event.
                 If False, an input of -1
-        Returns: A preconfigured SelectElementEvent object that filters for equipment from an Inventory.
+        Returns: A pre-configured SelectElementEvent object that filters for equipment from an Inventory.
         """
 
         if not isinstance(collection, list):
