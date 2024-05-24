@@ -3,7 +3,7 @@ from enum import Enum
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
-from game.structures.messages import ComponentFactory, StringContent
+from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event import Event
 
@@ -16,10 +16,29 @@ class ViewAbilitiesEvent(Event):
         EMPTY = 3
         TERMINATE = -1
 
+    @property
+    def selected_ability_instance(self) -> "Ability":
+        """
+        Fetch an instance of the Ability that the user selected
+        Returns: An Ability object selected by the user
+        """
+
+        # Check if an instance was cached
+        if self._selected_instance:
+            return self._selected_instance
+
+        inst = from_cache(
+            "managers.AbilityManager"
+        ).get_instance(self.selected_ability)
+        self._selected_instance = inst  # Cache instance in attr
+
+        return inst
+
     def __init__(self, target=None):
         super().__init__(InputType.SILENT, self.States, self.States.DEFAULT)
         self.target = target  # Defaults to the player at runtime
         self.selected_ability: str | None = None
+        self._selected_instance = None
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
@@ -38,8 +57,8 @@ class ViewAbilitiesEvent(Event):
             self.set_state(self.States.VIEW_ABILITIES)
 
         # This state is highly inefficient. TODO: Improve
-        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES, InputType.INT,
-                                       -1, lambda: len(list(self.target.ability_controller.abilities)) - 1)
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES, InputType.INT, -1,
+                                       lambda: len(list(self.target.ability_controller.abilities)) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
                 self.set_state(self.States.TERMINATE)
@@ -64,10 +83,9 @@ class ViewAbilitiesEvent(Event):
             return ComponentFactory.get(
                 [
                     self.selected_ability + "\n",
-                    StringContent(
-                        value=from_cache("managers.AbilityManager").get_instance(self.selected_ability).description)
+                    self.selected_ability_instance.description
                 ],
-                from_cache("managers.AbilityManager").get_instance(self.selected_ability).get_requirements_as_options()
+                self.selected_ability_instance.get_requirements_as_options()
             )
 
         @FiniteStateDevice.state_logic(self, self.States.EMPTY, InputType.ANY)
