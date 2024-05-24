@@ -9,7 +9,7 @@ def test_init_trivial():
                       options={"A choice": -1},
                       text="Text"
                       )
-    d = Dialog([node])
+    d = Dialog(dialog_id=0, nodes=[node])  # Attach node to a Dialog
     assert node.node_id == 0
     assert len(node.get_option_text()) == 1
     assert node.text == "Text"
@@ -42,3 +42,21 @@ def test_should_trigger_events(is_node_visited,
     )
 
     assert node.should_trigger_events() == expected
+
+
+def test_invalid_option_target():
+    # There is no node in the Dialog with id=3, so an error must be thrown
+    node = DialogNode(
+        node_id=0,
+        options={"An invalid choice": 3},
+        text="Text"
+    )
+
+    dialog = Dialog(
+        dialog_id=0,
+        nodes=[node]
+    )
+
+    with pytest.raises(RuntimeError) as e:
+        node.get_option_text()  # Should throw error
+        assert "No such node" in e.value  # Check that it's the expected error
