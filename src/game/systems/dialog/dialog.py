@@ -91,8 +91,21 @@ class DialogNodeBase(ABC):
                 raise RuntimeError("Cannot check if a node is valid when "
                                    "`owner` is None!")
 
-            dialog_option_target = self.options[option_text]
-            target_node = self.owner.nodes[dialog_option_target]
+            dialog_option_target: int = self.options[option_text]
+
+            # Early return, -1 is always valid and should make the dialog end
+            if dialog_option_target == -1:
+                return True
+
+            if dialog_option_target not in self.owner.nodes:
+                raise RuntimeError(
+                    f"Dialog: {self.owner.id}, Node: {self.node_id} has invalid"
+                    f" option: {option_text}. No such node with id "
+                    f"{dialog_option_target}!"
+                )
+
+            target_node: DialogNode = self.owner.nodes[dialog_option_target]
+
             return not target_node.visited or target_node.allow_multiple_visits
 
         return [[s] for s in self.options.keys() if is_option_valid(s)]
