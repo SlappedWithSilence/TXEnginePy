@@ -112,7 +112,8 @@ class SkillRequirement(Requirement):
 
             return entity.skill_controller.get_level(self.skill_id) >= self.level
 
-        # If the target entity does not have support for skills (IE, NPC CombatEntities) simply return True
+        # If the target entity does not have support for skills
+        # (IE, NPC CombatEntities) simply return True
         else:
             logger.warning(f"SkillRequirement defaulted to True for entity: {str(entity)}")
             return True
