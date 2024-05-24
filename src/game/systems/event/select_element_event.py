@@ -55,7 +55,10 @@ class SelectElementEvent(Event):
         self._element_filter: Callable = element_filter
         self._collection: list = collection
         self._key: Callable = key
-        self._storage_keys: dict[str, any] = {"selected_element": None}  # A pre-built dict to hold storage keys
+
+        # A pre-built dict to hold storage keys
+        self._storage_keys: dict[str, any] = {"selected_element": None}
+
         self._prompt: str = prompt
         self._to_listing: Callable = to_listing
         self._must_select: bool = must_select
@@ -81,12 +84,15 @@ class SelectElementEvent(Event):
 
     def _setup_states(self) -> None:
         # DEFAULT
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
 
             # Check for a filter and use it if available
             if self._element_filter is not None:
-                self.__filtered_collection = [element for element in self._collection if self._element_filter(element)]
+                self.__filtered_collection = [element for element in
+                                              self._collection if
+                                              self._element_filter(element)]
             else:
                 self.__filtered_collection = self._collection
 
@@ -102,9 +108,11 @@ class SelectElementEvent(Event):
             self.set_state(self.States.SHOW_ELEMENTS)
 
         # SHOW_ELEMENTS
-        @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS, InputType.INT,
+        @FiniteStateDevice.state_logic(self, self.States.SHOW_ELEMENTS,
+                                       InputType.INT,
                                        input_min=0 if self._must_select else -1,
-                                       input_max=lambda: int(self.__filtered_collection_len) - 1)
+                                       input_max=lambda: int(
+                                           self.__filtered_collection_len) - 1)
         def logic(user_input: int) -> None:
             """
             If the user chooses to 'go back' via entering -1, None will be
@@ -163,10 +171,11 @@ class SelectElementEventFactory:
         if only_requirements_met is True:
             def test_for_usable_ability(ability_name) -> bool:
                 """
-                Access the AbilityManager to get an instance of the Ability, then test its requirements against the
-                given CombatEntity.
+                Access the AbilityManager to get an instance of the Ability,
+                then test its requirements against the given CombatEntity.
                 """
-                inst = from_cache("managers.AbilityManager").get_instance(ability_name)
+                inst = from_cache("managers.AbilityManager").get_instance(
+                    ability_name)
                 print(inst)
                 return inst.is_requirements_fulfilled(combat_entity)
 
@@ -225,12 +234,14 @@ class SelectElementEventFactory:
 
         from game.systems.entity.mixins.inventory_mixin import InventoryMixin
         if collection_override is None:
-            collection = [(stack.id, stack.quantity) for stack in combat_entity.inventory.items]
+            collection = [(stack.id, stack.quantity) for stack in
+                          combat_entity.inventory.items]
 
         # If a collection override with an inventory is passed, use its
         # inventory instead
         elif isinstance(collection_override, InventoryMixin):
-            collection = [(stack.id, stack.quantity) for stack in collection_override.inventory.items]
+            collection = [(stack.id, stack.quantity) for stack in
+                          collection_override.inventory.items]
 
         # If a list-tuple override is passed, check its contents and then use it
         elif isinstance(collection_override, list):
@@ -326,9 +337,10 @@ class SelectElementEventFactory:
         def to_listing(entity: Entity) -> str:
 
             if not isinstance(entity, Entity):
-                raise TypeError(f"Cannot translate object of type {type(entity)}"
-                                f", expecting object of type Entity!"
-                                )
+                raise TypeError(
+                    f"Cannot translate object of type {type(entity)}"
+                    f", expecting object of type Entity!"
+                )
 
             field_values = []
 
@@ -343,7 +355,8 @@ class SelectElementEventFactory:
         event = SelectElementEvent(
             collection=collection,
             key=lambda e: e,
-            element_filter=None if allow_player else lambda e: not isinstance(e, Player),
+            element_filter=None if allow_player else lambda e: not isinstance(e,
+                                                                              Player),
             prompt="Select an Entity",
             to_listing=to_listing,
             must_select=must_select
@@ -354,7 +367,8 @@ class SelectElementEventFactory:
     @classmethod
     def get_select_equipment_event(cls, collection: list,
                                    only_requirements_met: bool = False,
-                                   fields_of_interest: Iterable[str] = tuple(["name"]),
+                                   fields_of_interest: Iterable[str] = tuple(
+                                       ["name"]),
                                    must_select: bool = False):
         """
         Get a SelectElementEvent pre-configured to select an Entity.
@@ -375,7 +389,8 @@ class SelectElementEventFactory:
             must_select:
                 If True, do not allow for a -1 input that terminates the Event.
                 If False, an input of -1
-        Returns: A pre-configured SelectElementEvent object that filters for equipment from an Inventory.
+        Returns: A pre-configured SelectElementEvent object that filters for
+        equipment from an Inventory.
         """
 
         if not isinstance(collection, list):
@@ -390,15 +405,16 @@ class SelectElementEventFactory:
         if not hasattr(fields_of_interest, "__iter__"):
             raise TypeError()
 
-        from systems.item.item import Equipment
+        from game.systems.item.item import Equipment
 
-        # Define an inner-function to handle translating the Equipment to strings
+        # Define an inner-function to handle translating Equipment to strings
         def to_listing(equipment: Equipment) -> str:
 
             if not isinstance(equipment, Equipment):
-                raise TypeError(f"Cannot translate object of type {type(equipment)}"
-                                f", expecting object of type Equipment!"
-                                )
+                raise TypeError(
+                    f"Cannot translate object of type {type(equipment)}"
+                    f", expecting object of type Equipment!"
+                )
 
             field_values = []
 
@@ -406,15 +422,18 @@ class SelectElementEventFactory:
                 if hasattr(equipment, field):
                     field_values.append(getattr(equipment, field))
                 else:
-                    raise RuntimeError(f"Equipment {equipment} has no field {field}!")
+                    raise RuntimeError(
+                        f"Equipment {equipment} has no field {field}!")
 
             return " ".join(field_values)
 
         event = SelectElementEvent(
             collection=collection,
             key=lambda e: e,
-            element_filter=None if not only_requirements_met else lambda e: e.is_requirements_fulfilled(
-                from_cache("player")),
+            element_filter=None if not only_requirements_met else lambda
+                e: e.is_requirements_fulfilled(
+                    from_cache("player")
+            ),
             prompt="Select an Equipment",
             to_listing=to_listing,
             must_select=must_select
