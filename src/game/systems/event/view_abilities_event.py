@@ -17,7 +17,7 @@ class ViewAbilitiesEvent(Event):
         TERMINATE = -1
 
     @property
-    def selected_ability_instance(self) -> "Ability":
+    def selected_ability_instance(self):
         """
         Fetch an instance of the Ability that the user selected
         Returns: An Ability object selected by the user
