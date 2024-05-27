@@ -65,6 +65,78 @@ class DialogNodeBase(ABC):
     text_before_events: bool = True
     __dialog_ref: "Dialog" = None
 
+    def is_option_visible(self, option_text: str) -> bool:
+        """
+        Check that the target node specified by the provided option_text allows
+        itself to be visited again and should be shown in the options list.
+
+        Args:
+            option_text: The node to check
+
+        Returns: True if the option should be displayed
+        """
+        if not isinstance(option_text, str):
+            raise TypeError(f"option_text must be a str! Got a "
+                            f"{type(option_text)} instead!")
+
+        if self.owner is None:
+            raise RuntimeError("Cannot check if a node is valid when "
+                               "`owner` is None!")
+
+        dialog_option_target: int = self.options[option_text]
+
+        # Early return, -1 is always valid and should make the dialog end
+        if dialog_option_target == -1:
+            return True
+
+        if dialog_option_target not in self.owner.nodes:
+            raise RuntimeError(
+                f"Dialog: {self.owner.id}, Node: {self.node_id} has invalid"
+                f" option: {option_text}. No such node with id "
+                f"{dialog_option_target}!"
+            )
+
+        target_node: DialogNode = self.owner.nodes[dialog_option_target]
+
+        return not target_node.visited or target_node.allow_multiple_visits
+
+    def is_option_valid(self, option_text: str) -> bool:
+        """
+        Check if an option is visible and that its requirements are met (by the
+        Player).
+
+        Args:
+            option_text: The node to check
+
+        Returns: True if the node can be visited, otherwise False
+        """
+        if not isinstance(option_text, str):
+            raise TypeError(f"option_text must be a str! Got a "
+                            f"{type(option_text)} instead!")
+
+        if self.owner is None:
+            raise RuntimeError("Cannot check if a node is valid when "
+                               "`owner` is None!")
+
+        dialog_option_target: int = self.options[option_text]
+
+        # Early return, -1 is always valid and should make the dialog end
+        if dialog_option_target == -1:
+            return True
+
+        if dialog_option_target not in self.owner.nodes:
+            raise RuntimeError(
+                f"Dialog: {self.owner.id}, Node: {self.node_id} has invalid"
+                f" option: {option_text}. No such node with id "
+                f"{dialog_option_target}!"
+            )
+
+        target_node: DialogNode = self.owner.nodes[dialog_option_target]
+
+        return target_node.is_requirements_fulfilled(
+            from_cache("player")
+        ) and self.is_option_visible(option_text)
+
     @property
     def owner(self) -> "Dialog":
         return self.__dialog_ref
@@ -82,33 +154,7 @@ class DialogNodeBase(ABC):
         Return a list containing all the strings for each option in the node
         """
 
-        def is_option_valid(option_text: str) -> bool:
-            if not isinstance(option_text, str):
-                raise TypeError(f"option_text must be a str! Got a "
-                                f"{type(option_text)} instead!")
-
-            if self.owner is None:
-                raise RuntimeError("Cannot check if a node is valid when "
-                                   "`owner` is None!")
-
-            dialog_option_target: int = self.options[option_text]
-
-            # Early return, -1 is always valid and should make the dialog end
-            if dialog_option_target == -1:
-                return True
-
-            if dialog_option_target not in self.owner.nodes:
-                raise RuntimeError(
-                    f"Dialog: {self.owner.id}, Node: {self.node_id} has invalid"
-                    f" option: {option_text}. No such node with id "
-                    f"{dialog_option_target}!"
-                )
-
-            target_node: DialogNode = self.owner.nodes[dialog_option_target]
-
-            return not target_node.visited or target_node.allow_multiple_visits
-
-        return [[s] for s in self.options.keys() if is_option_valid(s)]
+        return [[s] for s in self.options.keys() if self.is_option_visible(s)]
 
     def should_trigger_events(self) -> bool:
         """

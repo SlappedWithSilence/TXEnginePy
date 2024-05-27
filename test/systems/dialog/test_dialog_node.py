@@ -60,3 +60,55 @@ def test_invalid_option_target():
     with pytest.raises(RuntimeError) as e:
         node.get_option_text()  # Should throw error
         assert "No such node" in e.value  # Check that it's the expected error
+
+
+def test_is_option_visible_for_exit():
+    node = DialogNode(
+        node_id=0,
+        options={"Exit": -1},
+        text="Text"
+    )
+
+    dialog = Dialog(
+        dialog_id=0,
+        nodes=[node]
+    )
+
+    assert node.is_option_visible("Exit")
+
+
+def test_is_option_visible_multiple_nodes():
+    """
+    Test that, for a Dialog with multiple valid visible nodes, all return True
+    """
+    node1 = DialogNode(
+        node_id=0,
+        options={"Exit": -1, "node2": 1},
+        text="Text"
+    )
+
+    node2 = DialogNode(
+        node_id=1,
+        options={"Exit": -1},
+        text="Text"
+    )
+
+    dialog = Dialog(dialog_id=0, nodes=[node1, node2])
+
+    assert node1.is_option_visible("Exit") == node1.is_option_visible("node2") == True
+    assert node2.is_option_visible("Exit")
+
+
+def test_is_option_valid_on_exit():
+    node = DialogNode(
+        node_id=0,
+        options={"Exit": -1},
+        text="Text"
+    )
+
+    dialog = Dialog(
+        dialog_id=0,
+        nodes=[node]
+    )
+
+    assert node.is_option_valid("Exit")
