@@ -253,7 +253,8 @@ class FactionRequirement(Requirement):
         LESS_THAN_EQUAL_TO = "lte"
         EQUAL_TO = "eq"
 
-    def __init__(self, faction_id: int, required_affinity: int, mode: str = "gte", *args, **kwargs):
+    def __init__(self, faction_id: int, required_affinity: int,
+                 mode: str = "gte", *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.faction_id: int = faction_id
@@ -264,13 +265,16 @@ class FactionRequirement(Requirement):
         faction_manager = from_cache("managers.FactionManager")
 
         if self.mode == self.Mode.GREATER_THAN_EQUAL_TO:
-            return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+            return faction_manager.get_affinity(self.faction_id) >= \
+                self.required_affinity
 
         elif self.mode == self.Mode.LESS_THAN_EQUAL_TO:
-            return faction_manager.get_affinity(self.faction_id) >= self.required_affinity
+            return faction_manager.get_affinity(self.faction_id) >= \
+                self.required_affinity
 
         elif self.mode == self.Mode.EQUAL_TO:
-            return faction_manager.get_affinity(self.faction_id) == self.required_affinity
+            return faction_manager.get_affinity(self.faction_id) == \
+                self.required_affinity
 
         else:
             raise ValueError(f"Unknown mode {self.mode}")
@@ -280,8 +284,10 @@ class FactionRequirement(Requirement):
         faction_manager = from_cache("managers.FactionManager")
 
         return [
-            f"Must have an affinity of at least {self.required_affinity} with the ",
-            StringContent(value=faction_manager[self.faction_id].name, formatting="faction_name"),
+            f"Must have an affinity of at least {self.required_affinity} with ",
+            StringContent(
+                value=faction_manager[self.faction_id].name,
+                formatting="faction_name"),
             "."
         ]
 
@@ -317,7 +323,10 @@ class FactionRequirement(Requirement):
         if 'mode' in json:
             kwargs['mode'] = json['mode']
 
-        return FactionRequirement(json['faction_id'], json['required_affinity'], **kwargs)
+        return FactionRequirement(
+            json['faction_id'],
+            json['required_affinity'],
+            **kwargs)
 
 
 class CurrencyRequirement(Requirement):
@@ -331,13 +340,17 @@ class CurrencyRequirement(Requirement):
         if not hasattr(entity, "coin_purse"):
             return False
 
-        return entity.coin_purse.balance(self._currency_id) >= self._currency_quantity
+        return entity.coin_purse.balance(self._currency_id) >= \
+            self._currency_quantity
 
     @property
     def description(self) -> list[str | StringContent]:
         return [
             "Must have ",
-            str(from_cache("Managers.CurrencyManager").to_currency(self._currency_id, self._currency_quantity))
+            str(from_cache("Managers.CurrencyManager").to_currency(
+                self._currency_id,
+                self._currency_quantity
+            ))
         ]
 
     @staticmethod

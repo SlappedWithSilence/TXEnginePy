@@ -6,13 +6,16 @@ from game.structures.loadable_factory import LoadableFactory
 
 class FactionBase(ABC):
     """
-    A Faction represents a thematic group set within a game world. A faction's affinity represents how positively or
-    negatively that faction feels towards the player.
+    A Faction represents a thematic group set within a game world. A faction's
+    affinity represents how positively or negatively that faction feels towards
+    the player.
 
-    Faction affinity may be increased or decreased via Events and can be checked via Requirements.
+    Faction affinity may be increased or decreased via Events and can be checked
+    via Requirements.
     """
 
-    def __init__(self, name: str, id: int, tags: list[str] = None, affinity: int = 0):
+    def __init__(self, name: str, id: int, tags: list[str] = None,
+                 affinity: int = 0):
         self.name = name
         self.id = id
         self.tags = tags or []
@@ -31,8 +34,8 @@ class FactionBase(ABC):
         """
         Adjust the value of the Faction's affinity.
 
-        If an int is passed, adjust by a flat value. If a float is passed, adjust by a percentage where
-        % change = quantity * 100
+        If an int is passed, adjust by a flat value. If a float is passed,
+        adjust by a percentage where % change = quantity * 100
 
         Args:
             quantity: The quantity by which to adjust affinity
@@ -44,13 +47,16 @@ class FactionBase(ABC):
         elif type(quantity) == float:
             self._affinity += self._affinity * quantity
         else:
-            raise TypeError(f"Cannot adjust affinity by type {type(quantity)} Must be an int or float!")
+            raise TypeError(f"Cannot adjust affinity by type {type(quantity)} "
+                            f"Must be an int or float!")
 
 
 class Faction(LoadableMixin, FactionBase):
 
-    def __init__(self, name: str, id: int, tags: list[str] = None, affinity: int = 0, **kwargs):
-        super().__init__(name=name, id=id, tags=tags, affinity=affinity, **kwargs)
+    def __init__(self, name: str, id: int, tags: list[str] = None,
+                 affinity: int = 0, **kwargs):
+        super().__init__(name=name, id=id, tags=tags, affinity=affinity,
+                         **kwargs)
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
