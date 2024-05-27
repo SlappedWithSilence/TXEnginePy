@@ -152,7 +152,8 @@ class SkillRequirement(Requirement):
 
 class ResourceRequirement(Requirement):
     """
-    Fulfilled when the target entity has >= the specified quantity of a given resource
+    A requirement that checks that an entity possesses sufficient Resource
+    value.
     """
 
     def __init__(self, resource_name: str, adjust_quantity: int | float, *args, **kwargs):
@@ -248,6 +249,10 @@ class FlagRequirement(Requirement):
 
 
 class FactionRequirement(Requirement):
+    """
+    A requirement that checks that the player possesses sufficient reputation
+    with a given Faction.
+    """
     class Mode(Enum):
         GREATER_THAN_EQUAL_TO = "gte"
         LESS_THAN_EQUAL_TO = "lte"
@@ -330,6 +335,10 @@ class FactionRequirement(Requirement):
 
 
 class CurrencyRequirement(Requirement):
+    """
+    A requirement that verifies that an entity possesses at least 'n' of a
+    given Currency.
+    """
 
     def __init__(self, currency_id: int, currency_quantity: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
