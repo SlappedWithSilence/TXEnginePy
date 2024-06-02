@@ -197,30 +197,45 @@ class ResourceRequirement(Requirement):
         - adjust_quantity (float | int)
         """
 
-        required_fields = [('resource_name', str), ('adjust_quantity', (int, float))]
+        required_fields = [('resource_name', str),
+                           ('adjust_quantity', (int, float))]
         LoadableFactory.validate_fields(required_fields, json)
 
         if json['class'] != "ResourceRequirement":
-            raise ValueError(f"Invalid class field for ResourceRequirement! Got {json['class']} "
-                             f"instead of ResourceRequirement!")
+            raise ValueError(f"Invalid class field for ResourceRequirement! Got"
+                             f" {json['class']} instead of ResourceRequirement!"
+                             )
 
-        return ResourceRequirement(json['resource_name'], json['adjust_quantity'])
+        return ResourceRequirement(json['resource_name'],
+                                   json['adjust_quantity'])
 
 
 class FlagRequirement(Requirement):
     """
-    Fulfilled when the designated flag is set to True.
+    Fulfilled when the designated flag is set to some expected value.
     """
 
-    def __init__(self, flag_name: str, flag_value: bool, description: str, *args, **kwargs):
+    def __init__(self, flag_name: str, description: str,
+                 flag_value: bool = True,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        if not isinstance(flag_name, str):
+            raise TypeError()
+
+        if not isinstance(description, str):
+            raise TypeError()
+
+        if not isinstance(flag_value, bool):
+            raise TypeError()
+
         self.flag = flag_name
         self.flag_value = flag_value
         self._description = [description]
 
     def fulfilled(self, entity) -> bool:
         fm = from_cache("managers.FlagManager")
-        return fm.get_flag(self.flag)
+        return fm.get_flag(self.flag) == self.flag_value
 
     @property
     def description(self) -> list[str | StringContent]:
@@ -245,7 +260,8 @@ class FlagRequirement(Requirement):
 
         LoadableFactory.validate_fields(required_fields, json)
 
-        return FlagRequirement(json['flag_name'], json['flag_value'], json['description'])
+        return FlagRequirement(json['flag_name'], json['flag_value'],
+                               json['description'])
 
 
 class FactionRequirement(Requirement):
