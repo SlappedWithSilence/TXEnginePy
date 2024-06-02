@@ -13,8 +13,9 @@ from game.structures.messages import StringContent
 
 class Requirement(LoadableMixin, ABC):
     """
-    An abstract object that defines broad logical parameters that must be met. Children of this class narrow that logic
-    and allow other objects to compose them to enforce a wide variety of gameplay mechanics.
+    An abstract object that defines broad logical parameters that must be met.
+    Children of this class narrow that logic and allow other objects to compose
+    them to enforce a wide variety of gameplay mechanics.
     """
 
     def fulfilled(self, entity) -> bool:
@@ -30,13 +31,16 @@ class Requirement(LoadableMixin, ABC):
         """
         Args:
         Returns:
-            A list of strings and StringContents that provides the reader with a textual representation of the
-            conditions that are specified for this Requirement to be 'fulfilled' such that self. Fulfilled==True
+            A list of strings and StringContents that provides the reader with a
+            textual representation of the conditions that are specified for this
+            Requirement to be 'fulfilled' such that self. Fulfilled==True
         """
         raise NotImplementedError()
 
     def __str__(self):
-        """Return a conjoined string that strings self. Description of styling data"""
+        """
+        Return a conjoined string that strings self. Description of styling data
+        """
         return " ".join([str(e) for e in self.description])
 
 
@@ -156,19 +160,22 @@ class ResourceRequirement(Requirement):
     value.
     """
 
-    def __init__(self, resource_name: str, adjust_quantity: int | float, *args, **kwargs):
+    def __init__(self, resource_name: str, adjust_quantity: int | float,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource_name: str = resource_name
         self.adjust_quantity: int | float = adjust_quantity
 
     def fulfilled(self, entity) -> bool:
-        if isinstance(self.adjust_quantity, int):  # Resource must be gte adjustment quantity
+        # Resource must be gte adjustment quantity
+        if isinstance(self.adjust_quantity, int):
             if entity.resource_controller[self.resource_name].value < self.adjust_quantity:
                 return False
 
+        # Resource % must be >= adjust_quantity
         elif isinstance(self.adjust_quantity, float):
             _resource = entity.resource_controller[self.resource_name]
-            if _resource.percent_remaining < self.adjust_quantity:  # Resource % must be >= adjust_quantity
+            if _resource.percent_remaining < self.adjust_quantity:
                 return False
 
         else:
