@@ -185,16 +185,17 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
                 if value >= 0:
                     results[key] = f"+{value}"
                 else:
-                    results[key] = f"{value}"
+                    results[key] = f"-{value}"
 
             elif type(value) == float:
                 if value >= 0:
                     results[key] = f"+{value}%"
                 else:
-                    results[key] = f"{value}%"
+                    results[key] = f"-{value}%"
             else:
                 raise TypeError(
-                    f"Unexpected type in resource_mods dict! Expected type int, float, got {type(value)} instead!"
+                    f"Unexpected type in resource_mods dict! Expected type int,"
+                    f" float, got {type(value)} instead!"
                 )
 
         # Insert secondary stats
