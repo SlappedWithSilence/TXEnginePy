@@ -6,10 +6,14 @@ class TagMixin(ABC):
     A mixin that provides a simple interface for storing arbitrary tags.
     """
 
-    def __init__(self, tags: dict[str, float | None] | list[str]):
+    def __init__(self, tags: dict[str, float | None] | list[str] = None, **kwargs):
+        super().__init__(**kwargs)
+
+        if tags is None:
+            self.tags = {}
 
         # Expand a list into a dict where the value is always None
-        if isinstance(tags, list):
+        elif isinstance(tags, list):
             self.tags = {k: None for k in tags}
 
         # Type-check the dict and assign it
@@ -26,7 +30,7 @@ class TagMixin(ABC):
 
         # Boom
         else:
-            raise TypeError()
+            raise TypeError("Unexpected")
 
     def get_tag_value(self, tag: str) -> float:
         """
