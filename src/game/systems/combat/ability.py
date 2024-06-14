@@ -5,6 +5,7 @@ from abc import ABC
 from loguru import logger
 
 from game.cache import cached
+from game.mixins import TagMixin
 from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
@@ -16,8 +17,8 @@ class AbilityBase(ABC):
     """
     The functional base class of Ability.
 
-    This class is required in order to make proper use of the cooperative inheritance constructors specified in
-    LoadableMixin and RequirementsMixin.
+    This class is required in order to make proper use of the cooperative
+    inheritance constructors specified in LoadableMixin and RequirementsMixin.
     """
 
     def __init__(self, name: str, description: str, on_use: str,
@@ -35,7 +36,7 @@ class AbilityBase(ABC):
         self.costs = costs or {}
 
 
-class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
+class Ability(LoadableMixin, RequirementsMixin, TagMixin, AbilityBase):
     """
     Ability objects represent 'moves' that can be used by CombatEntity's during Combat.
 
@@ -45,8 +46,8 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # For each cost, insert a ResourceRequirement that matches the cost to enforce resource-minimums without extra
-        # logic.
+        # For each cost, insert a ResourceRequirement that matches the cost to
+        # enforce resource-minimums without extra logic.
         for resource_name, cost_quantity in self.costs.items():
             logger.debug(f"Adding ResourceRequirement to {self.name}: {resource_name} : {cost_quantity}")
             self.requirements.append(
@@ -79,7 +80,8 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         ]
 
         optional_fields = [
-            ("effects", dict), ("requirements", list), ("costs", dict)
+            ("effects", dict), ("requirements", list), ("costs", dict),
+            ("tags", list)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -95,13 +97,16 @@ class Ability(LoadableMixin, RequirementsMixin, AbilityBase):
         if 'effects' in json:
             effects = {}  # Pass to kwargs once filled
 
-            for phase in json['effects']:  # Effects are sorted into lists based on trigger phase; iterate through phase
+            # Sort Effects into lists by phase; iterate through phase
+            for phase in json['effects']:
                 if phase not in CombatPhase.list():  # Catch bad phase
                     raise ValueError(f"Unknown combat phase: {phase}")
 
                 # Catch broken formatting
                 if type(json['effects'][phase]) != list:
-                    raise TypeError(f"Expected phase {phase} to map to a list, got {type(json['effects'][phase])} instead!")
+                    raise TypeError(
+                        f"Expected phase {phase} to map to a list, got "
+                        f"{type(json['effects'][phase])} instead!")
 
                 # If the phase hasn't been observed yet, make a list for it
                 if CombatPhase(phase) not in effects:

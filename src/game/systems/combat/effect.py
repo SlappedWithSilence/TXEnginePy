@@ -2,6 +2,7 @@ import weakref
 from abc import ABC
 
 from game.cache import cached
+from game.mixins import TagMixin
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
@@ -10,7 +11,7 @@ from game.structures.state_device import FiniteStateDevice
 from game.systems.entity.entities import CombatEntity
 
 
-class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
+class CombatEffect(LoadableMixin, FiniteStateDevice, TagMixin, ABC):
     """
     A container object for combat logic.
 
@@ -21,17 +22,20 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
     - The logic that is run when the effect is triggered
     - Tags
 
-    During an entity's turn, each CombatEffect assigned to it triggers. When a CombatEffect triggers, it decrements its
-    'duration' value. When this value hits zero, the CombatEngine removes the effect from its assigned target. A
-    CombatEffect with a duration of None will never be removed from its target unless explicitly removed. An entity
-    may alter the way that it executes the logic of the Effect based on the relationship of the tags possessed by the
-    CombatEffect and the target Entity.
+    During an entity's turn, each CombatEffect assigned to it triggers.
+    When a CombatEffect triggers, it decrements its 'duration' value. When this
+    value hits zero, the CombatEngine removes the effect from its assigned
+    target. A CombatEffect with a duration of None will never be removed from
+    its target unless explicitly removed. An entity may alter the way that it
+    executes the logic of the Effect based on the relationship of the tags
+    possessed by the CombatEffect and the target Entity.
 
-    An Effect does NOT determine what phase it is assigned to. Whatever spawned the Effect must also assign it to a
-    CombatPhase explicitly.
+    An Effect does NOT determine what phase it is assigned to. Whatever spawned
+    the Effect must also assign it to a CombatPhase explicitly.
 
-    Note that each Effect MUST implement a functional reset() method. A default method is provided, but can be
-    overridden if necessary. NEVER modify an Effect's duration via reset().
+    Note that each Effect MUST implement a functional reset() method. A default
+    method is provided, but can be overridden if necessary. NEVER modify an
+    Effect's duration via reset().
     """
 
     def __init__(self,
@@ -46,7 +50,6 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         self._source_entity: CombatEntity = source_entity  # The entity that spawned the Effect
         self.duration: int | None = duration  # Number of remaining turns before Effect is removed,
         self.on_remove: str | None = on_remove
-        self.tags: list[str] = []
 
     def is_assigned(self) -> bool:
         """
@@ -55,7 +58,8 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
 
         return self._source_entity is not None and self._target_entity is not None
 
-    def assign(self, source_entity: CombatEntity, target_entity: CombatEntity) -> None:
+    def assign(self, source_entity: CombatEntity,
+               target_entity: CombatEntity) -> None:
         """
         Assign a source and target to the Effect. This option should be exercised by the CombatEngine
         """
@@ -75,8 +79,9 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, ABC):
         This method wraps the private abstract function _perform.
         """
         if not isinstance(self._target_entity, CombatEntity):
-            raise TypeError(
-                f"Cannot perform an effect on object of type {type(self._target_entity)}! Expected type Entity")
+            raise TypeError(f"Cannot perform an effect on object of type "
+                            f"{type(self._target_entity)}! Expected type Entity"
+                            )
 
         self._perform(self._target_entity)  # Execute Effect logic
         if self.duration is not None:  # If Effect has finite duration, decrement its remaining uses
@@ -108,14 +113,17 @@ class ResourceEffect(CombatEffect):
     Modify a given resource by a given amount for the target.
     """
 
-    def __init__(self, resource_name: str, adjust_quantity: int | float, trigger_message: str = None, **kwargs):
-        super().__init__(default_input_type=InputType.ANY, states=self.States, **kwargs)
+    def __init__(self, resource_name: str, adjust_quantity: int | float,
+                 trigger_message: str = None, **kwargs):
+        super().__init__(default_input_type=InputType.ANY, states=self.States,
+                         **kwargs)
 
         if type(resource_name) != str:
             raise TypeError("resource_name must be of type str!")
 
         if type(adjust_quantity) != int and type(adjust_quantity) != float:
-            raise TypeError("adjust_quantity must be of type int or type float!")
+            raise TypeError(
+                "adjust_quantity must be of type int or type float!")
 
         self._resource_name = resource_name
         self._adjust_quantity = adjust_quantity
@@ -125,29 +133,35 @@ class ResourceEffect(CombatEffect):
         return f"{self.name}: ({self._resource_name}: {self._adjust_quantity})"
 
     def __copy__(self):
-        return ResourceEffect(self._resource_name, self._adjust_quantity, self.trigger_message)
+        return ResourceEffect(self._resource_name, self._adjust_quantity,
+                              self.trigger_message)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
 
     def _perform(self, target: CombatEntity):
         if self._resource_name not in target.resource_controller:
-            raise ValueError(f"Cannot locate resource {self._resource_name} in entity {target.name}!")
+            raise ValueError(
+                f"Cannot locate resource {self._resource_name} in entity {target.name}!")
 
-        target.resource_controller[self._resource_name].adjust(self._adjust_quantity)
+        target.resource_controller[self._resource_name].adjust(
+            self._adjust_quantity)
 
     def _get_change_message(self) -> list[StringContent | str]:
         """
         The message to be printed when the Effect is viewed.
         """
-        post_change: int = self._target_entity.resource_controller[self._resource_name].test_adjust(
+        post_change: int = self._target_entity.resource_controller[
+            self._resource_name].test_adjust(
             self._adjust_quantity)
-        net = post_change - self._target_entity.resource_controller[self._resource_name].value
+        net = post_change - self._target_entity.resource_controller[
+            self._resource_name].value
         term = "gained" if net > -1 else "lost"
 
         return [
             self._target_entity.name, " ", term, " ", str(abs(net)), " ",
-            StringContent(value=self._resource_name, formatting="resource_name"),
+            StringContent(value=self._resource_name,
+                          formatting="resource_name"),
             "."
         ]
 
@@ -163,14 +177,16 @@ class ResourceEffect(CombatEffect):
             """
             This calculation only works because the client must retrieve state_content before executing state_logic!
             """
-            trigger_message = self.trigger_message.format(target=self._target_entity.name)
+            trigger_message = self.trigger_message.format(
+                target=self._target_entity.name)
             return ComponentFactory.get(
                 [trigger_message] +
                 self._get_change_message()
             )
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "ResourceEffect", LoadableMixin.ATTR_KEY])
+    @cached(
+        [LoadableMixin.LOADER_KEY, "ResourceEffect", LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> any:
         """
         Instantiate a ResourceEffect object from a JSON blob.
@@ -188,6 +204,7 @@ class ResourceEffect(CombatEffect):
         Optional JSON fields:
         - duration: (int)
         - on_remove: (str)
+        - tags: (list)
         """
 
         # Validate that required fields are present and correctly-typed
@@ -198,14 +215,17 @@ class ResourceEffect(CombatEffect):
         ]
 
         optional_fields = [
-            ("duration", int), ("on_remove", str)
+            ("duration", int), ("on_remove", str), ("tags", list)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
-        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json, False)
+        kwargs = LoadableFactory.collect_optional_fields(optional_fields, json,
+                                                         False)
 
         # Type and value validation
         if json["class"] != "ResourceEffect":
-            raise ValueError("Incorrect class field in JSON! Expected class field of value 'ResourceEffect'")
+            raise ValueError(
+                "Incorrect class field in JSON! Expected class field of value 'ResourceEffect'")
 
-        return ResourceEffect(json['resource_name'], json['adjust_quantity'], json['trigger_message'], **kwargs)
+        return ResourceEffect(json['resource_name'], json['adjust_quantity'],
+                              json['trigger_message'], **kwargs)

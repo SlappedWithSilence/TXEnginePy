@@ -4,6 +4,7 @@ import game
 import game.systems.currency as currency
 import game.systems.requirement.requirements as req
 from game.cache import cached, from_cache
+from game.mixins import TagMixin
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.effect import CombatEffect
@@ -156,7 +157,7 @@ class Usable(Item, req.RequirementsMixin):
                       )
 
 
-class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
+class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
     def __init__(self, name: str, iid: int, value: dict[int, int], description: str, functional_description: str,
                  equipment_slot: str, damage_buff: int, damage_resist: int,
@@ -202,6 +203,13 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
         results["Damage"] = str(self.damage_buff)
         results["Resistance"] = str(self.damage_resist)
 
+        # Insert tag resistances
+        for tag, res in self.tags.items():
+            if res is None or res == 0.0:
+                continue
+
+            results[f"Resistance to {tag}: {res * 100}%"]
+
         return results
 
     @staticmethod
@@ -230,6 +238,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
        - start_of_combat_effects: list[CombatEffect]
        - requirements: list[Requirement]
        - resource_modifiers: dict[str, int | float]
+       - tags: dict
        """
 
         required_fields = [
@@ -237,7 +246,8 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, Item):
             ("equipment_slot", str), ("damage_buff", int), ("damage_resist", int)
         ]
         optional_fields = [
-            ("max_quantity", int), ("start_of_combat_effects", list)
+            ("max_quantity", int), ("start_of_combat_effects", list),
+            ("requirements", list), ("resource_modifiers", dict), ("tags", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
