@@ -1,5 +1,5 @@
 from game.systems.entity.entities import CombatEntity
-from game.systems.item.loot import LootTable, LootableMixin
+from game.systems.item.loot import LootTable
 
 
 def test_loot_table_trivial():
