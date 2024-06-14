@@ -154,37 +154,61 @@ class CombatEngine(FiniteStateDevice):
         item_instance.use(self.active_entity)
         self.active_entity.inventory.consume_item(item_id, 1)
 
-    def _handle_use_ability(self, ability_name: str, targets: list[entities.CombatEntity]) -> None:
+    def _handle_use_ability(self, ability_name: str,
+                            targets: list[entities.CombatEntity]) -> None:
         """
         The active entity has chosen to use an Ability. Handle its usage.
+
+        args:
+            ability_name: THe name of the Ability being used
+            targets: A list of Entities that the Ability should target
         """
 
         if type(ability_name) is not str:
             raise TypeError()
 
-        ability = from_cache("managers.AbilityManager").get_instance(ability_name)
+        ability = from_cache(
+            "managers.AbilityManager"
+        ).get_instance(ability_name)
 
         if not ability.is_requirements_fulfilled(self.active_entity):
             raise RuntimeError(
-                f"Cannot activate ability '{ability}! Requirements not met for entity: {self.active_entity}"
+                f"Cannot activate ability '{ability}! Requirements not met for "
+                f"entity: {self.active_entity}"
             )
 
-        # A single-target is an instance of CombatEntity, but logic expects list[CombatEntity]
         # TODO: Single-target should result in an instance of CombatEntity wrapped in a list by default
         _targets = targets if isinstance(targets, list) else [targets]
 
-        for target in _targets:  # For each selected target of the chosen ability
-            for phase, effects in ability.effects.items():  # Unpack the ability's effects into phases
-                for effect in effects:  # Iterate through each effect and assign it to that phase on the target
-                    effect_copy = copy.deepcopy(effect)  # Deepcopy may cause an issue
+        for target in _targets:  # For each target
+
+            # Unpack the ability's effects into phases
+            for phase, effects in ability.effects.items():
+
+                # Iterate through effects and assign to that phase on the target
+                for effect in effects:
+
+                    # Deepcopy each effect. This prevents tangling references
+                    # Note that an improperly defined __copy__ for the effect
+                    # class can result in broken instances of the copy
+                    effect_copy = copy.deepcopy(effect)
 
                     # Assign sources and targets from the deepcopy
-                    logger.debug(f"Assigning effect {effect_copy} to entity {target.name} in phase {phase}")
+                    logger.debug(f"Assigning effect {effect_copy} to entity "
+                                 f"{target.name} in phase {phase}")
                     effect_copy.assign(self.active_entity, target)
                     target.acquire_effect(effect_copy, phase)
 
-            target.resource_controller[get_config()["resources"]["primary_resource"]].adjust(ability.damage * -1)
+            # This is the "damage" step where the primary resource of the target
+            # is decremented by the Ability's `damage` value.
 
+            # TODO: Improve damage calculations to take into account armor and
+            # resistances
+            target.resource_controller[
+                get_config()["resources"]["primary_resource"]
+            ].adjust(ability.damage * -1)
+
+        # Consume resource costs of the ability from its user
         self.active_entity.ability_controller.consume_ability_resources(ability_name)
 
         from game.systems.event.events import TextEvent
