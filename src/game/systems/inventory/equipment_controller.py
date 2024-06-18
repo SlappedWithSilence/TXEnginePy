@@ -188,7 +188,11 @@ class EquipmentController(LoadableMixin):
         instances = [
             from_cache(
                 "managers.ItemManager"
-            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+            ).get_instance(
+                s.item_id
+            ) for s in self._slots.values() if (
+                    s.enabled and s.item_id is not None
+            )
         ]
 
         return sum([e.damage_resist for e in instances])
@@ -202,7 +206,10 @@ class EquipmentController(LoadableMixin):
         instances = [
             from_cache(
                 "managers.ItemManager"
-            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+            ).get_instance(
+                s.item_id
+            ) for s in self._slots.values() if (
+                    s.enabled and s.item_id is not None)
         ]
 
         return sum([e.damage_buff for e in instances])
@@ -216,7 +223,9 @@ class EquipmentController(LoadableMixin):
         instances = [
             from_cache(
                 "managers.ItemManager"
-            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+            ).get_instance(
+                s.item_id)
+            for s in self._slots.values() if s.enabled and s.item_id is not None
         ]
         total_tags: dict[str, list[float]] = {}
         for equipment in instances:

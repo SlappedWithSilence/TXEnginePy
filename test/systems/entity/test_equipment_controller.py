@@ -20,7 +20,6 @@ def _get_equipment(slot: str, dmg_buff: int = 0, dmg_res: int = 0,
                    tags: dict[str, float] = None, iid: int = 0,
                    name="Test Equipment"
                    ) -> Equipment:
-
     e = Equipment(name, iid, {}, "", "", slot, dmg_buff, dmg_res)
 
     if tags:
@@ -34,6 +33,7 @@ def test_total_res_zero():
 
     assert ce.equipment_controller.total_dmg_resistance == 0
     assert len(ce.equipment_controller.total_tag_resistance) == 0
+
 
 def test_total_dmg_res():
     ce = _get_test_entity([-114, -115])
