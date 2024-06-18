@@ -23,7 +23,8 @@ class EquipmentController(LoadableMixin):
         super().__init__(*args, **kwargs)
         self.owner = owner
         self.player_mode: bool = False
-        self._slots: dict[str, SlotProperties] = get_cache()['managers']['EquipmentManager'].get_slots()
+        self._slots: dict[str, SlotProperties] = get_cache()['managers'][
+            'EquipmentManager'].get_slots()
 
     def __contains__(self, item: str) -> bool:
         return self._slots.__contains__(item)
@@ -54,10 +55,12 @@ class EquipmentController(LoadableMixin):
 
             ref = item_manager.get_ref(value)
             if not isinstance(ref, it.Equipment):
-                raise ValueError(f"Cannot assign item {str(ref)} to slot {key}! Item {str(ref)} is not an Equipment!")
+                raise ValueError(
+                    f"Cannot assign item {str(ref)} to slot {key}! Item {str(ref)} is not an Equipment!")
 
             if ref.slot != key:
-                raise ValueError(f"Cannot assign item {str(ref)} to slot {key}! Wrong slot! {key} != {ref.slot}")
+                raise ValueError(
+                    f"Cannot assign item {str(ref)} to slot {key}! Wrong slot! {key} != {ref.slot}")
 
             self._slots[key].item_id = value
 
@@ -67,7 +70,8 @@ class EquipmentController(LoadableMixin):
 
         # That's not right
         else:
-            raise TypeError(f"Unknown type for value! Expected int, bool, or None. Got {type(value)}!")
+            raise TypeError(
+                f"Unknown type for value! Expected int, bool, or None. Got {type(value)}!")
 
     def equip(self, item_id: int) -> bool:
         """
@@ -104,7 +108,8 @@ class EquipmentController(LoadableMixin):
 
             return True
 
-        raise TypeError(f"Cannot equip item of type {type(item_ref)}! Expected item of type Equipment")
+        raise TypeError(
+            f"Cannot equip item of type {type(item_ref)}! Expected item of type Equipment")
 
     def unequip(self, slot: str) -> bool:
         """
@@ -141,7 +146,6 @@ class EquipmentController(LoadableMixin):
 
         return [self._slots[slot].as_option() for slot in self._slots]
 
-
     @property
     def owner(self) -> any:
         return self._owner
@@ -154,7 +158,8 @@ class EquipmentController(LoadableMixin):
         """
         from game.systems.entity import Entity, Player
         if entity is not None and not isinstance(entity, Entity):
-            raise TypeError(f"Cannot assign an owner of type {type(entity)}, owner must of type entities.Entity")
+            raise TypeError(
+                f"Cannot assign an owner of type {type(entity)}, owner must of type entities.Entity")
 
         elif isinstance(entity, Player):
             self._owner = entity
@@ -183,6 +188,20 @@ class EquipmentController(LoadableMixin):
         return sum([e.damage_resist for e in instances])
 
     @property
+    def total_dmg_buff(self) -> int:
+        """
+        Calculate and return the total resistance of equipment attached to the
+        entity in all enabled slots
+        """
+        instances = [
+            from_cache(
+                "managers.ItemManager"
+            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+        ]
+
+        return sum([e.damage_buff for e in instances])
+
+    @property
     def total_tag_resistance(self) -> dict[str, list[float]]:
         """
         Collect and return lists of tag resistances from all enabled slots
@@ -201,9 +220,11 @@ class EquipmentController(LoadableMixin):
 
                 total_tags[tag].append(equipment.tags[tag])
 
+        return total_tags
 
     @staticmethod
-    @cached([LoadableMixin.LOADER_KEY, "EquipmentController", LoadableMixin.ATTR_KEY])
+    @cached([LoadableMixin.LOADER_KEY, "EquipmentController",
+             LoadableMixin.ATTR_KEY])
     def from_json(json: dict[str, any]) -> "EquipmentController":
 
         class_key: str = "EquipmentController"
@@ -216,10 +237,12 @@ class EquipmentController(LoadableMixin):
                 raise ValueError(f"Required field {field} not in JSON!")
 
         if json["class"] != class_key:
-            raise ValueError(f"Cannot load JSON for object of class {json['class']}")
+            raise ValueError(
+                f"Cannot load JSON for object of class {json['class']}")
 
         if type(json[slots_key]) != dict:
-            raise TypeError(f"Field {slots_key} must be of type dict! Got {type(json[slots_key])} instead.")
+            raise TypeError(
+                f"Field {slots_key} must be of type dict! Got {type(json[slots_key])} instead.")
 
         ec = EquipmentController()
 
