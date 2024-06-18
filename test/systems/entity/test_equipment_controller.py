@@ -37,5 +37,10 @@ def test_total_res_zero():
 
 def test_total_dmg_res():
     ce = _get_test_entity([-114, -115])
-    assert ce.equipment_controller.total_dmg_resistance == 8
-    assert ce.equipment_controller.total_dmg_buff == 8
+    res = ce.equipment_controller["ring"].instance.damage_resist + \
+          ce.equipment_controller["chest"].instance.damage_resist
+    dmg = ce.equipment_controller["ring"].instance.damage_buff + \
+          ce.equipment_controller["chest"].instance.damage_buff
+
+    assert ce.equipment_controller.total_dmg_resistance == res
+    assert ce.equipment_controller.total_dmg_buff == dmg
