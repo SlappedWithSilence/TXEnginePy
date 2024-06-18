@@ -36,8 +36,7 @@ I recommend using Jetbrains PyCharm as your IDE when developing for TXEngine. As
  - Open TXEnginePy in PyCharm
  - Install the [Pydantic PyCharm plugin](https://docs.pydantic.dev/pycharm_plugin/)
  - Run the application:
-   - `cd TXEnginePy\src`
-   - `Uvicorn main::app_server --reload`
+   - `uvicorn --app-dir=src/ main:tx_engine --reload`
    - For more info, [see here](https://fastapi.tiangolo.com/tutorial/first-steps/)
 - Run a TXEnginePY Client
   - TXEnginePY comes bundled with a primitive client, suitable only for debugging. It implements the bare minimum features to simulate what a user of a proper client would see.
