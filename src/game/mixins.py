@@ -9,8 +9,10 @@ class TagMixin(ABC):
     def __init__(self, tags: dict[str, float | None] | list[str] = None, **kwargs):
         super().__init__(**kwargs)
 
+        self.tags: dict[str, float] = {}
+
         if tags is None:
-            self.tags = {}
+            pass
 
         # Expand a list into a dict where the value is always None
         elif isinstance(tags, list):
