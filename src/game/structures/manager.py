@@ -24,8 +24,9 @@ class Manager(ABC):
             logger.debug("Creating managers cache...")
             cache.get_cache()["managers"] = {}
 
-        logger.debug(f"[{self.name}] Registering manager with cache...")
-        cache.get_cache()["managers"][self.name] = weakref.proxy(self)
+        if self.name not in cache.get_cache()["managers"]:
+            logger.debug(f"[{self.name}] Registering manager with cache...")
+            cache.get_cache()["managers"][self.name] = self
 
         self.command_handlers: dict[str, typing.Callable] = {
             "list": self._command_list
@@ -62,7 +63,8 @@ class Manager(ABC):
             for field in parts:
 
                 if not hasattr(obj, field):
-                    raise AttributeError(f"Object of type {type(obj)} has no attribute {field}!")
+                    raise AttributeError(
+                        f"Object of type {type(obj)} has no attribute {field}!")
 
                 sub_buffer += str(getattr(obj, field)) + " "
 
@@ -80,4 +82,3 @@ class Manager(ABC):
             return f"Unknown command: {parts[0]}"
 
         return self.command_handlers[parts[0]](" ".join(parts[1:]))
-
