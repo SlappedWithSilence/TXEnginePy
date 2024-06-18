@@ -1,6 +1,6 @@
 import game
 import game.systems.item.item as it
-from game.cache import get_cache, cached
+from game.cache import get_cache, cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent
 from game.systems.event.add_item_event import AddItemEvent
@@ -9,12 +9,14 @@ from game.systems.inventory.equipment_manager import SlotProperties
 
 class EquipmentController(LoadableMixin):
     """
-    An EquipmentController's duties are to manage the items that an entities.Entity equips. This includes handling
-    the equipping and unequipping processes, validating that an item is allowed to fit into a slot.
+    An EquipmentController's duties are to manage the items that an
+    entities.Entity equips. This includes handling the equipping and unequipped
+     processes, validating that an item is allowed to fit into a slot.
 
-    An instance of EquipmentController can behave in one of two ways: PlayerMode and EntityMode. While in PlayerMode,
-    all attempts to equip equipment are checked against that item's Requirements. While in EntityMode, Requirements are
-    ignored.
+    An instance of EquipmentController can behave in one of two ways: PlayerMode
+    and EntityMode. While in PlayerMode, all attempts to equip equipment are
+    checked against that item's Requirements. While in EntityMode, Requirements
+    are ignored.
     """
 
     def __init__(self, owner=None, *args, **kwargs):
@@ -33,8 +35,9 @@ class EquipmentController(LoadableMixin):
         """
         A wrapper for EquipmentManager::_slots::__set_item__.
 
-        If the value passed is of type bool, it is assumed that this value is intended for the SlotProperties::enabled
-        field. If the value is of type int or None, it is assumed that this value is intended for the
+        If the value passed is of type bool, it is assumed that this value is
+        intended for the SlotProperties::enabled field. If the value is of type
+        int or None, it is assumed that this value is intended for the
         SlotProperties::item_id field.
         """
 
@@ -68,7 +71,8 @@ class EquipmentController(LoadableMixin):
 
     def equip(self, item_id: int) -> bool:
         """
-        Pops the item currently in the slot for the item and returns its ID, then sets slot's id to item_id
+        Pops the item currently in the slot for the item and returns its ID,
+        then sets slot's id to item_id
 
         args:
             item_id: The ID of the item to equip
@@ -131,8 +135,8 @@ class EquipmentController(LoadableMixin):
 
     def get_equipment_as_options(self) -> list[list[str | StringContent]]:
         """
-        Get a list of lists intended to be passed as an `options` JSON field in a Frame. Content of the lists describes
-        each Equipment.
+        Get a list of lists intended to be passed as an `options` JSON field in
+        a Frame. Content of the lists describes each Equipment.
         """
 
         return [self._slots[slot].as_option() for slot in self._slots]
@@ -145,8 +149,8 @@ class EquipmentController(LoadableMixin):
     @owner.setter
     def owner(self, entity) -> None:
         """
-        The Entity instance that encapsulates this object. Check if the Entity is an instance of Player and set
-        player_mode accordingly.
+        The Entity instance that encapsulates this object. Check if the Entity
+        is an instance of Player and set player_mode accordingly.
         """
         from game.systems.entity import Entity, Player
         if entity is not None and not isinstance(entity, Entity):
@@ -163,6 +167,40 @@ class EquipmentController(LoadableMixin):
     @property
     def enabled_slots(self) -> list[str]:
         return [slot for slot in self._slots if self._slots[slot].enabled]
+
+    @property
+    def total_dmg_resistance(self) -> int:
+        """
+        Calculate and return the total resistance of equipment attached to the
+        entity in all enabled slots
+        """
+        instances = [
+            from_cache(
+                "managers.ItemManager"
+            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+        ]
+
+        return sum([e.damage_resist for e in instances])
+
+    @property
+    def total_tag_resistance(self) -> dict[str, list[float]]:
+        """
+        Collect and return lists of tag resistances from all enabled slots
+        """
+
+        instances = [
+            from_cache(
+                "managers.ItemManager"
+            ).get_instance(s.item_id) for s in self._slots.values() if s.enabled
+        ]
+        total_tags: dict[str, list[float]] = {}
+        for equipment in instances:
+            for tag, value in equipment.tags.items():
+                if tag not in total_tags:
+                    total_tags[tag] = []
+
+                total_tags[tag].append(equipment.tags[tag])
+
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "EquipmentController", LoadableMixin.ATTR_KEY])
