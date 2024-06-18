@@ -33,12 +33,14 @@ class InventoryController(LoadableMixin):
         self.fragmented: bool = False
         self.items: list[Stack] = []
 
-        # We cannot query the cache for the default capacity on class definition since there's no guarantee the config
+        # We cannot query the cache for the default capacity on class definition
+        # since there's no guarantee the config
         # will already be loaded.
         if not self.capacity:
             self.capacity = get_default_capacity()
 
-        # Insert each stack of items. This process may re-arrange the index of each stack.
+        # Insert each stack of items. This process may re-arrange the index of
+        # each stack.
 
         if items is not None:
             for t in items:
