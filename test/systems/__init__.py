@@ -41,8 +41,8 @@ def pre_collect_setup():
     te3 = Item(f"{TEST_PREFIX} Item 3", -112, {-110: 2, -111: 3}, "A simple test item", 3)
     te4 = Item(f"{TEST_PREFIX} Item 4", -113, {-110: 3, -111: 4}, "Another test item", 3)
 
-    te5 = Equipment(f"{TEST_PREFIX} Equipment 1", -114, {-110: 1}, "", "ring", "ring", 0, 0)
-    te6 = Equipment(f"{TEST_PREFIX} Equipment 2", -115, {-110: 1}, "", "chest", "chest", 0, 0,
+    te5 = Equipment(f"{TEST_PREFIX} Equipment 1", -114, {-110: 1}, "", "ring", "ring", 3, 3)
+    te6 = Equipment(f"{TEST_PREFIX} Equipment 2", -115, {-110: 1}, "", "chest", "chest", 5, 5,
                     resource_modifiers={f"{TEST_PREFIX}health": 3})
     te7 = Equipment(f"{TEST_PREFIX} Equipment 3", -116, {-110: 1}, "", "legs", "legs", 0, 0,
                     resource_modifiers={f"{TEST_PREFIX}health": 0.1})
