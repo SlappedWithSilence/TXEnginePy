@@ -17,8 +17,9 @@ if TYPE_CHECKING:
 
 class ItemManager(Manager):
     """
-    The global manager for Item objects. Stores master copies of all instances of Item objects, creates copies, and
-    handles IO for Item assets at load time.
+    The global manager for Item objects. Stores master copies of all instances
+    of Item objects, creates copies, and handles IO for Item assets at load
+    time.
     """
 
     ITEM_ASSET_PATH = "items"
@@ -35,7 +36,8 @@ class ItemManager(Manager):
         from game.systems.item.item import Item
         if isinstance(item_object, Item):
             if item_object.id in self._manifest:
-                raise ValueError(f"Item with ID {item_object.id} already registered!")
+                raise ValueError(f"Item with ID {item_object.id} already "
+                                 f"registered!")
 
             self._manifest[item_object.id] = item_object
 
@@ -58,21 +60,24 @@ class ItemManager(Manager):
         Args:
             item_id: The ID of the item whose value to retrieve
 
-        Returns: A dict that maps an items value in a specific currency to that currency's id
+        Returns: A dict that maps an items value in a specific currency to
+        that currency's id
         """
 
         return self._manifest[item_id].value
 
-    def get_cost(self, item_id: int, currency_id: int, as_currency: bool = False) -> int | currency.Currency:
+    def get_cost(self, item_id: int,
+                 currency_id: int,
+                 as_currency: bool = False) -> int | currency.Currency:
         """
         Get the value of an item in a specific currency
 
-        Args:
-            item_id: The ID of the item to look up
-            currency_id: The ID of the currency to look up
-            as_currency: If True, return an instance of a currency instead of an int
+        Args: item_id: The ID of the item to look up currency_id: The ID of
+        the currency to look up as_currency: If True, return an instance of a
+        currency instead of an int
 
-        Returns: An int value representing the item's cost in currency 'currency_id'
+        Returns: An int value representing the item's cost in currency
+        'currency_id'
         """
         if not as_currency:
             return self._manifest[item_id].value[currency_id]
@@ -81,7 +86,8 @@ class ItemManager(Manager):
 
     def get_instance(self, item_id: int) -> Item:
         """
-        Create and return a deep-copied instance of the item with item.id == 'item_id'
+        Create and return a deep-copied instance of the item with item.id ==
+        'item_id'
 
         Args:
             item_id: The ID of the item whose instance to create
@@ -89,7 +95,8 @@ class ItemManager(Manager):
         Returns: A deep copy of the requested item
         """
         if type(item_id) != int:
-            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
+            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)}"
+                            f" instead.")
 
         if item_id not in self._manifest:
             raise ValueError(f"No such item with ID {item_id}!")
@@ -98,15 +105,18 @@ class ItemManager(Manager):
 
     def get_ref(self, item_id: int) -> Item:
         """
-        Get a direct reference to the master object copy stored in the ItemManager.
+        Get a direct reference to the master object copy stored in the
+        ItemManager.
 
         Use sparingly.
         """
         if type(item_id) != int:
-            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
+            raise TypeError(f"Item IDs must be of type int! Got {type(item_id)}"
+                            f" instead.")
 
         if item_id not in self._manifest:
-            logger.error(f"ItemManager @ {self.__repr__()} failed to find item with ID {item_id}")
+            logger.error(f"ItemManager @ {self.__repr__()} failed to find item "
+                         f"with ID {item_id}")
             logger.error(self._manifest)
             raise ValueError(f"No such item with ID {item_id}!")
 
@@ -122,7 +132,8 @@ class ItemManager(Manager):
 
             from game.systems.item.item import Item
             if not isinstance(item, Item):
-                raise TypeError(f"Expected object of type Ability, got {type(item)} instead!")
+                raise TypeError(f"Expected object of type Ability, got "
+                                f"{type(item)} instead!")
 
             self.register_item(item)
 
