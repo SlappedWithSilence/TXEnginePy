@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from typing import TYPE_CHECKING
 from abc import ABC
 
 from loguru import logger
@@ -9,8 +9,10 @@ from game.mixins import TagMixin
 from game.structures.enums import CombatPhase, TargetMode
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
-from game.systems.combat.effect import CombatEffect
 from game.systems.requirement.requirements import RequirementsMixin, ResourceRequirement
+
+if TYPE_CHECKING:
+    from game.systems.combat.effect import CombatEffect
 
 
 class AbilityBase(ABC):

@@ -1,11 +1,18 @@
+from __future__ import annotations
 import copy
 import weakref
+
+from typing import TYPE_CHECKING
+
+from loguru import logger
 
 from game.structures.loadable_factory import LoadableFactory
 from game.structures.manager import Manager
 from game.systems import currency as currency
-from game.systems.item.item import Item
 from game.util.asset_utils import get_asset
+
+if TYPE_CHECKING:
+    from game.systems.item.item import Item
 
 
 class ItemManager(Manager):
@@ -24,6 +31,8 @@ class ItemManager(Manager):
         """
         Register an item object with the ItemManager.
         """
+
+        from game.systems.item.item import Item
         if isinstance(item_object, Item):
             if item_object.id in self._manifest:
                 raise ValueError(f"Item with ID {item_object.id} already registered!")
@@ -97,6 +106,8 @@ class ItemManager(Manager):
             raise TypeError(f"Item IDs must be of type int! Got {type(item_id)} instead.")
 
         if item_id not in self._manifest:
+            logger.error(f"ItemManager @ {self.__repr__()} failed to find item with ID {item_id}")
+            logger.error(self._manifest)
             raise ValueError(f"No such item with ID {item_id}!")
 
         return weakref.proxy(self._manifest[item_id])
@@ -108,6 +119,8 @@ class ItemManager(Manager):
         raw_asset: dict[str, any] = get_asset(self.ITEM_ASSET_PATH)
         for raw_item in raw_asset['content']:
             item = LoadableFactory.get(raw_item)
+
+            from game.systems.item.item import Item
             if not isinstance(item, Item):
                 raise TypeError(f"Expected object of type Ability, got {type(item)} instead!")
 

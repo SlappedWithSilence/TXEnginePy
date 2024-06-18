@@ -10,7 +10,6 @@ from game.structures.loadable_factory import LoadableFactory
 from game.systems.combat.effect import CombatEffect
 from game.systems.entity.resource import ResourceModifierMixin
 from game.systems.event.events import Event
-from game.systems.inventory import equipment_manager
 
 
 class Item(LoadableMixin):
@@ -166,9 +165,13 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
                  equipment_slot: str, damage_buff: int, damage_resist: int,
                  start_of_combat_effects: list[CombatEffect] = None,
                  **kwargs):
-        super().__init__(name=name, iid=iid, value=value, description=description, **kwargs)
+        super().__init__(name=name,
+                         iid=iid,
+                         value=value,
+                         description=description, **kwargs)
         self.functional_description: str = functional_description
-        self.slot: str = equipment_manager.is_valid_slot(equipment_slot)
+        self.slot: str = from_cache(
+            "managers.EquipmentManager").is_valid_slot(equipment_slot)
         self.start_of_combat_effects: list[CombatEffect] = start_of_combat_effects or []
 
         self.damage_buff: int = damage_buff

@@ -1,24 +1,6 @@
 import enum
 
 
-class EquipmentType(enum.Enum):
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-
-    WEAPON = "weapon"
-    # Armor
-    HEAD = "head"
-    CHEST = "chest"
-    HANDS = "hands"
-    LEGS = "legs"
-    FEET = "feet"
-    # Jewelry
-    RING = "ring"
-    NECKLACE = "necklace"
-
-
 class InputType(enum.Enum):
     AFFIRMATIVE = "affirmative"  # Get a yes or no
     INT = "int"  # Get an int
@@ -54,3 +36,19 @@ class TargetMode(enum.Enum):
     SELF = "self"  # Targets the caster
 
 
+class EquipmentType(enum.Enum):
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    WEAPON = "weapon"
+    # Armor
+    HEAD = "head"
+    CHEST = "chest"
+    HANDS = "hands"
+    LEGS = "legs"
+    FEET = "feet"
+    # Jewelry
+    RING = "ring"
+    NECKLACE = "necklace"

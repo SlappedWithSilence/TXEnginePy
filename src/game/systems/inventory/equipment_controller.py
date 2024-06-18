@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import game
-import game.systems.item.item as it
 from game.cache import get_cache, cached, from_cache
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import StringContent
-from game.systems.event.add_item_event import AddItemEvent
-from game.systems.inventory.equipment_manager import SlotProperties
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from systems.inventory.structures import EquipSlot
 
 
 class EquipmentController(LoadableMixin):
@@ -23,13 +27,13 @@ class EquipmentController(LoadableMixin):
         super().__init__(*args, **kwargs)
         self.owner = owner
         self.player_mode: bool = False
-        self._slots: dict[str, SlotProperties] = get_cache()['managers'][
+        self._slots: dict[str, EquipSlot] = get_cache()['managers'][
             'EquipmentManager'].get_slots()
 
     def __contains__(self, item: str) -> bool:
         return self._slots.__contains__(item)
 
-    def __getitem__(self, item: str) -> SlotProperties:
+    def __getitem__(self, item: str) -> EquipSlot:
         return self._slots.__getitem__(item)
 
     def __setitem__(self, key: str, value: bool | int | None) -> None:
@@ -54,7 +58,10 @@ class EquipmentController(LoadableMixin):
             from game.systems.item import item_manager
 
             ref = item_manager.get_ref(value)
-            if not isinstance(ref, it.Equipment):
+
+            from game.systems.item.item import Equipment
+
+            if not isinstance(ref, Equipment):
                 raise ValueError(
                     f"Cannot assign item {str(ref)} to slot {key}! Item "
                     f"{str(ref)} is not an Equipment!")
@@ -90,7 +97,9 @@ class EquipmentController(LoadableMixin):
 
         item_ref = item_manager.get_ref(item_id)
 
-        if isinstance(item_ref, it.Equipment):
+        from game.systems.item.item import Equipment
+
+        if isinstance(item_ref, Equipment):
             if not self._slots[item_ref.slot].enabled:
                 raise RuntimeError(
                     f"Cannot equip {item_ref.name} to slot {item_ref.slot} "
@@ -136,6 +145,8 @@ class EquipmentController(LoadableMixin):
 
         # Add-item-event to handle moving the item back in player inventory
         if self.player_mode and temp is not None:
+
+            from game.systems.event.add_item_event import AddItemEvent
             game.state_device_controller.add_state_device(AddItemEvent(temp, 1))
         elif not self.player_mode and temp is not None:
             self.owner.inventory.new_stack(temp, 1)

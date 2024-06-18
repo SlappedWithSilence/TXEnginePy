@@ -46,9 +46,13 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, TagMixin, ABC):
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_states()
-        self._target_entity: CombatEntity = target_entity  # The entity the effect is assigned
-        self._source_entity: CombatEntity = source_entity  # The entity that spawned the Effect
-        self.duration: int | None = duration  # Number of remaining turns before Effect is removed,
+
+        # The entity the effect is assigned to
+        self._target_entity: CombatEntity = target_entity
+        # The entity that spawned the Effect
+        self._source_entity: CombatEntity = source_entity
+        # Number of remaining turns before Effect is removed
+        self.duration: int | None = duration
         self.on_remove: str | None = on_remove
 
     def is_assigned(self) -> bool:
@@ -61,7 +65,8 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, TagMixin, ABC):
     def assign(self, source_entity: CombatEntity,
                target_entity: CombatEntity) -> None:
         """
-        Assign a source and target to the Effect. This option should be exercised by the CombatEngine
+        Assign a source and target to the Effect. This option should be
+        exercised by the CombatEngine
         """
 
         if not isinstance(source_entity, CombatEntity):
@@ -84,7 +89,9 @@ class CombatEffect(LoadableMixin, FiniteStateDevice, TagMixin, ABC):
                             )
 
         self._perform(self._target_entity)  # Execute Effect logic
-        if self.duration is not None:  # If Effect has finite duration, decrement its remaining uses
+
+        # If Effect has finite duration, decrement its remaining uses
+        if self.duration is not None:
             self.duration -= 1
 
     def _setup_states(self):

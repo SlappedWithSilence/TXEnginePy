@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from .enums import InputType
 from game.formatting import get_style
-from ..cache import from_cache, get_config
+from game.cache import from_cache, get_config
 
 
 def _to_style_args(form: list[str] | str) -> list[str]:
