@@ -18,7 +18,9 @@ class Item(LoadableMixin):
     A basic item. Objects of this type are inert.
     """
 
-    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, max_quantity: int = 10,
+    def __init__(self, name: str, iid: int, value: dict[int, int],
+                 description: str,
+                 max_quantity: int = 10,
                  **kwargs):
         super().__init__(**kwargs)
         self.name: str = name  # Name of item
@@ -159,7 +161,8 @@ class Usable(Item, req.RequirementsMixin):
 
 class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
-    def __init__(self, name: str, iid: int, value: dict[int, int], description: str, functional_description: str,
+    def __init__(self, name: str, iid: int, value: dict[int, int],
+                 description: str, functional_description: str,
                  equipment_slot: str, damage_buff: int, damage_resist: int,
                  start_of_combat_effects: list[CombatEffect] = None,
                  **kwargs):
