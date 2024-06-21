@@ -24,4 +24,21 @@ def calculate_target_resistance(ability: Ability, target: CombatEntity) -> float
         raise TypeError("ability.tags should be of type Set! Got type"
                         f"{type(ability.tags)} instead!")
 
-    # TODO: Implement
+    tag_values: list[float] = [0.0]
+    tags_on_target: dict[str, list[float]] = target.equipment_controller.total_tag_resistance()
+
+    # Iterate through tags on Ability
+    for ability_tag in ability.tags:
+
+        # Check if tag is present in target's Equipments
+        if ability_tag in tags_on_target:
+            tag_values += tags_on_target[ability_tag] # Add resistances to queue
+
+    tag_values = sorted(tag_values, reverse=True)
+
+    total_res = tag_values[0]
+
+    for tag in tag_values[1:]:
+        total_res = total_res * (1 + tag)
+
+    return total_res
