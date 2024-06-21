@@ -191,7 +191,7 @@ def test_get_target_single(source_entity_type: str, ability: str, valid_targets:
             case _:
                 raise RuntimeError("No such group")
 
-    for entity in engine.get_ability_targets(
+    for entity in engine.get_valid_ability_targets(
             translate_target_str(source_entity_type)[0],
             ability):
         assert entity in translate_target_str(valid_targets)
@@ -226,7 +226,7 @@ def test_get_target_group(source_entity_type, ability, valid_group):
             case _:
                 raise RuntimeError("No such group")
 
-    resulting_group = engine.get_ability_targets(
+    resulting_group = engine.get_valid_ability_targets(
         translate_target_str(source_entity_type)[0],
         ability
     )

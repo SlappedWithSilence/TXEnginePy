@@ -106,7 +106,7 @@ class PlayerCombatChoiceEvent(Event):
         # CHOOSE_ABILITY_TARGET
         @FiniteStateDevice.state_logic(self, self.States.CHOOSE_SINGLE_ABILITY_TARGET, InputType.INT,
                                        input_min=-1,
-                                       input_max=lambda: len(from_cache("combat").get_ability_targets(
+                                       input_max=lambda: len(from_cache("combat").get_valid_ability_targets(
                                            self._entity,
                                            from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
                                        )) - 1
@@ -120,14 +120,14 @@ class PlayerCombatChoiceEvent(Event):
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
             self._choice_data = ChoiceData(
                 ChoiceData.ChoiceType.ABILITY, ability_name=chosen_ability,
-                ability_target=from_cache("combat").get_ability_targets(self._entity, chosen_ability)[entity_index]
+                ability_target=from_cache("combat").get_valid_ability_targets(self._entity, chosen_ability)[entity_index]
             )
             self.set_state(self.States.SUBMIT_CHOICE)
 
         @FiniteStateDevice.state_content(self, self.States.CHOOSE_SINGLE_ABILITY_TARGET)
         def content() -> dict:
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
-            targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
+            targets = from_cache("combat").get_valid_ability_targets(self._entity, chosen_ability)
             ci = from_cache("combat")
 
             return ComponentFactory.get(["Select a target:"],
@@ -137,7 +137,7 @@ class PlayerCombatChoiceEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.CONFIRM_GROUP_ABILITY_TARGET, InputType.AFFIRMATIVE)
         def logic(user_input: bool) -> None:
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
-            targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
+            targets = from_cache("combat").get_valid_ability_targets(self._entity, chosen_ability)
 
             if user_input:
                 self._choice_data = ChoiceData(
@@ -153,7 +153,7 @@ class PlayerCombatChoiceEvent(Event):
         def content() -> dict:
             ci = from_cache("combat")
             chosen_ability = from_storage(self._links["CHOOSE_AN_ABILITY"]["selected_element"])
-            targets = from_cache("combat").get_ability_targets(self._entity, chosen_ability)
+            targets = from_cache("combat").get_valid_ability_targets(self._entity, chosen_ability)
 
             return ComponentFactory.get(
                 [f"{chosen_ability} targets the following entities. Are you sure?"],

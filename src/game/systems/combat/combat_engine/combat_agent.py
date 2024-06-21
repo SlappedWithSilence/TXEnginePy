@@ -121,7 +121,7 @@ class CombatAgentMixin:
 
         r = random.Random()
         ab: str = r.choice(self.usable_abilities)
-        targets = from_cache("combat").get_ability_targets(self, ab)
+        targets = from_cache("combat").get_valid_ability_targets(self, ab)
 
         target = r.choice(targets)
         logger.debug(f"Entity {self.name} used ability {ab} on entity {target.name}")
@@ -175,7 +175,7 @@ class CombatAgentMixin:
                     if ab.target_mode in [TargetMode.SINGLE, TargetMode.SINGLE_ENEMY, TargetMode.NOT_SELF]:
                         logger.debug(
                             f"Selecting single target for ability: {ab.target_mode} via mode {ab.target_mode}")
-                        targets = from_cache("combat").get_ability_targets(self, ab.name)
+                        targets = from_cache("combat").get_valid_ability_targets(self, ab.name)
                         t = sorted(targets, key=lambda x: x.resource_controller.primary_resource.value, reverse=True)[0]
 
                         logger.debug(f"Selected {t.name}!")
@@ -187,7 +187,7 @@ class CombatAgentMixin:
                         return ChoiceData(
                             ChoiceData.ChoiceType.ABILITY,
                             ability_name=ab.name,
-                            ability_target=from_cache("combat").get_ability_targets(self, ab.name)
+                            ability_target=from_cache("combat").get_valid_ability_targets(self, ab.name)
                         )
 
         return ChoiceData(ChoiceData.ChoiceType.PASS)
