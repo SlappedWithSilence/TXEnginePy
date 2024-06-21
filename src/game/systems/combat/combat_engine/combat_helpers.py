@@ -42,3 +42,32 @@ def calculate_target_resistance(ability: Ability, target: CombatEntity) -> float
         total_res = total_res * (1 + tag)
 
     return total_res
+
+
+def calculate_damage_to_entity(ability: Ability, target: CombatEntity) -> int:
+    """
+    For a given Ability, compute the total amount of damage dealt to the target.
+
+    The damage formula is as follows:
+
+    total damage = (ability_base_damage) - target_armor - (1 - total_tag_res)
+
+    Args:
+        ability: The Ability to check against
+        target: The CombatEntity that the ability should be targeting
+
+    Returns: An int representing how much damage should be dealt to the target
+    """
+
+    if not isinstance(ability, Ability):
+        raise TypeError(f"Expected ability to be of type Ability, got "
+                        f"{type(ability)} instead!")
+
+    if not isinstance(target, CombatEntity):
+        raise TypeError("Expected target to be of type CombatEntity, got "
+                        f"{type(target)} instead!")
+
+    target_tag_res = calculate_target_resistance(ability, target)
+    target_armor_res = target.equipment_controller.total_dmg_resistance
+
+    return (ability.damage - target_armor_res) * (1 - target_tag_res)
