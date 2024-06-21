@@ -4,14 +4,16 @@ from game.cache import from_cache
 from game.systems.combat import Ability
 from game.systems.entity.entities import CombatEntity
 
-from game.systems.combat.combat_engine.combat_helpers import calculate_target_resistance
-
+from game.systems.combat.combat_engine.combat_helpers import \
+    calculate_target_resistance
 
 calculate_target_resistance_cases = [
 
 ]
 
-@pytest.mark.parametrize("ability_id, target, expected_resistance")
+
+@pytest.mark.parametrize("ability_id, target, expected_resistance",
+                         calculate_target_resistance_cases)
 def test_calculate_target_resistance(ability_id: str,
                                      target: CombatEntity,
                                      expected_resistance: float):
@@ -25,6 +27,7 @@ def test_calculate_target_resistance(ability_id: str,
     Returns: None
     """
 
-    instance: Ability = from_cache("managers.AbilityManager").get_instance(ability_id)
+    instance: Ability = from_cache("managers.AbilityManager").get_instance(
+        ability_id)
 
     assert calculate_target_resistance(instance, target) == expected_resistance
