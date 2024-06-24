@@ -18,10 +18,12 @@ TEST_PREFIX = "_tr_"
 
 def pre_collect_setup():
     """
-    Run some setup code that MUST be run before PyTest attempts to collect tests from the files in this directory and
+    Run some setup code that MUST be run before PyTest attempts to collect tests
+     from the files in this directory and
     its subdirectories.
 
-    This particular pre_collect_setup registering important mock items with global backend systems so that they can be
+    This particular pre_collect_setup registering important mock items with
+    global backend systems so that they can be
     initialized within the parameters of parameterized tests.
     """
     logger.info("Setting up test currencies...")
