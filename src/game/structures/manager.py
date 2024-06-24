@@ -1,11 +1,9 @@
 import typing
-
-import game.cache as cache
-
 from abc import ABC
-import weakref
 
 from loguru import logger
+
+import game.cache as cache
 
 
 class Manager(ABC):
@@ -37,6 +35,13 @@ class Manager(ABC):
 
     def save(self) -> None:
         raise NotImplementedError
+
+    def is_id(self, id: any) -> bool:
+        """
+        Check if a given ID has already been taken
+        """
+
+        return id in self._manifest
 
     def _command_list(self, fields: str) -> list[str]:
         """
