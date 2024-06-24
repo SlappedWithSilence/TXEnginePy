@@ -32,7 +32,8 @@ class UseItemEvent(Event):
 
             self._item_instance = from_cache('managers.ItemManager').get_instance(item_id)
 
-            # Check that the entity actually owns enough of the item to use it. If not, raise and Error since it
+            # Check that the entity actually owns enough of the item to use it.
+            # If not, raise and Error since it
             # shouldn't be possible to get to this point normally.
             if self.target.inventory.total_quantity(self.item_id) < 1:
                 raise RuntimeError(
