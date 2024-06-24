@@ -28,7 +28,7 @@ class ItemManager(Manager):
         super().__init__()
         self._manifest: dict[int, Item] = {}
 
-    def register_item(self, item_object: Item | list[Item]):
+    def register_item(self, item_object: Item | list[Item]) -> None:
         """
         Register an item object with the ItemManager.
         """
