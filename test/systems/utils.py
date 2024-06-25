@@ -3,6 +3,8 @@ from typing import Iterable
 
 from game.systems.item import ItemManager
 from game.systems.item.item import Item
+from systems.entity import EntityManager
+from systems.entity.entities import CombatEntity
 
 
 @contextmanager
@@ -39,3 +41,46 @@ def temporary_item(items: Iterable[Item]) -> ItemManager:
 
                     # Delete from the manager permanently
                     del item_manager._manifest[item.id]
+
+@contextmanager
+def temporary_entity(entities: Iterable[CombatEntity]) -> EntityManager:
+    """
+    A context manager that temporarily registers a collection of Entity objects
+    with the global EntityManager instance and then deletes them when the scope
+    exits.
+    """
+
+    for entity in entities:
+        from game.systems.entity import entity_manager
+        entity_manager.register_entity(entity)
+
+    try:
+        from game.systems.entity import entity_manager
+        yield entity_manager
+
+    finally:
+
+        # In order to "safely" delete items from the manager, check that the
+        # Item registered to that ID has the same name as the temporary Item.
+        # This way, an exit that occurs due to a collision doesn't break the
+        # Item Manager
+
+        from game.systems.entity import entity_manager
+        for entity in entities:
+
+            # Make sure item ID exists in manager
+            if entity_manager.is_id(entity.id):
+
+                # Make sure items are the same
+                if entity_manager.get_instance(entity.id).name == entity.name:
+
+                    # Delete from the manager permanently
+                    del entity_manager._manifest[entity.id]
+
+@contextmanager
+def temporary_assets(
+        entities: Iterable[CombatEntity] = None, items: Iterable[Item] = None
+) -> dict[str, dict]:
+    """
+    A combo context manager that temporarily registers assets.
+    """
