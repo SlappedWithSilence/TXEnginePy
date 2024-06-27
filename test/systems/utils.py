@@ -3,8 +3,8 @@ from typing import Iterable
 
 from game.systems.item import ItemManager
 from game.systems.item.item import Item
-from systems.entity import EntityManager
-from systems.entity.entities import CombatEntity
+from game.systems.entity import EntityManager
+from game.systems.entity.entities import CombatEntity
 
 
 @contextmanager
