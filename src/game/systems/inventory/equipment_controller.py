@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from loguru import logger
+
 import game
 from game.cache import get_cache, cached, from_cache
 from game.structures.loadable import LoadableMixin
@@ -23,12 +25,37 @@ class EquipmentController(LoadableMixin):
     are ignored.
     """
 
-    def __init__(self, owner=None, *args, **kwargs):
+    def __init__(self, owner=None, equipment: list[int] = None,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.owner = owner
         self.player_mode: bool = False
         self._slots: dict[str, EquipSlot] = get_cache()['managers'][
             'EquipmentManager'].get_slots()
+
+        # If the equipment list is not None
+        if equipment is not None and isinstance(equipment, list):
+
+            # For each equipment id
+            for item_id in equipment:
+
+                from game.systems.item.item import Equipment
+
+                inst = from_cache("managers.ItemManager").get_instance(item_id)
+                if not isinstance(inst, Equipment):
+                    raise TypeError("Cannot instantiate a EquipmentController"
+                                    "with items not of type Equipment! Got "
+                                    f"object of type  {type(inst)}.")
+
+                if not self._slots[inst.slot].enabled:
+                    logger.error(f"Failed to equip item with id: {item_id}")
+                    raise RuntimeError("Cannot equip item to disabled slot!")
+
+                if self._slots[inst.slot].item_id is not None:
+                    logger.error(f"Failed to equip item with id: {item_id}")
+                    raise RuntimeError("Cannot equip item to occupied slot")
+
+                self.equip(item_id)
 
     def __contains__(self, item: str) -> bool:
         return self._slots.__contains__(item)
