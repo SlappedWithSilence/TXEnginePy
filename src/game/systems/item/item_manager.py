@@ -45,7 +45,8 @@ class ItemManager(Manager):
             for obj in item_object:
                 self.register_item(obj)
         else:
-            raise TypeError("Expected object of type Item or type list[Item]")
+            raise TypeError(f"Expected object of type Item or type list[Item],"
+                            f" got type {type(item_object)} instead.")
 
     def get_name(self, item_id: int) -> str:
         return self._manifest[item_id].name
