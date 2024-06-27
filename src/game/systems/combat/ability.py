@@ -40,12 +40,28 @@ class AbilityBase(ABC):
 
 class Ability(LoadableMixin, RequirementsMixin, TagMixin, AbilityBase):
     """
-    Ability objects represent 'moves' that can be used by CombatEntity's during Combat.
+    Ability objects represent 'moves' that can be used by CombatEntity's during
+    Combat.
 
-    Abilities are one of the two ways that a CombatEntity may be assigned a CombatEffect.
+    Abilities are one of the two ways that a CombatEntity may be assigned a
+    CombatEffect.
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        kwargs:
+            name: Name of the Ability. Also functions as a global ID
+            description: User-facing description of ability.
+            on_use: A string printed to user when
+            effects: A map of CombatEffects to their respective trigger phases
+            target_mode: Which target mode the Ability should use
+            damage: Flat value for how much raw damage the Ability should deal
+            costs: Any resource costs associated with using the Ability
+            requirements: A list of Requirement objects that restrict conditions
+                for using the Ability
+            tags: A dict of tags associated with the Ability. The keys are the
+                tag names and the values are always None.
+        """
         super().__init__(*args, **kwargs)
 
         # For each cost, insert a ResourceRequirement that matches the cost to
