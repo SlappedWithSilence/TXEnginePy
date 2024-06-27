@@ -20,12 +20,12 @@ def calculate_target_resistance(ability: Ability, target: CombatEntity) -> float
         raise TypeError("Expected target to be of type CombatEntity, got "
                         f"{type(target)} instead!")
 
-    if not isinstance(ability.tags, set):
-        raise TypeError("ability.tags should be of type Set! Got type"
+    if not isinstance(ability.tags, dict):
+        raise TypeError("ability.tags should be of type dict! Got type"
                         f"{type(ability.tags)} instead!")
 
     tag_values: list[float] = [0.0]
-    tags_on_target: dict[str, list[float]] = target.equipment_controller.total_tag_resistance()
+    tags_on_target: dict[str, list[float]] = target.equipment_controller.total_tag_resistance
 
     # Iterate through tags on Ability
     for ability_tag in ability.tags:
@@ -41,7 +41,7 @@ def calculate_target_resistance(ability: Ability, target: CombatEntity) -> float
     for tag in tag_values[1:]:
         total_res = total_res * (1 + tag)
 
-    return total_res
+    return round(total_res, 2)
 
 
 def calculate_damage_to_entity(ability: Ability, target: CombatEntity) -> int:
