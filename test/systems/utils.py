@@ -38,9 +38,9 @@ def temporary_item(items: Iterable[Item]) -> ItemManager:
 
                 # Make sure items are the same
                 if item_manager.get_ref(item.id).name == item.name:
-
                     # Delete from the manager permanently
                     del item_manager._manifest[item.id]
+
 
 @contextmanager
 def temporary_entity(entities: Iterable[CombatEntity]) -> EntityManager:
@@ -73,14 +73,5 @@ def temporary_entity(entities: Iterable[CombatEntity]) -> EntityManager:
 
                 # Make sure items are the same
                 if entity_manager.get_instance(entity.id).name == entity.name:
-
                     # Delete from the manager permanently
                     del entity_manager._manifest[entity.id]
-
-@contextmanager
-def temporary_assets(
-        entities: Iterable[CombatEntity] = None, items: Iterable[Item] = None
-) -> dict[str, dict]:
-    """
-    A combo context manager that temporarily registers assets.
-    """
