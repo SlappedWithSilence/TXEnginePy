@@ -5,12 +5,13 @@ from loguru import logger
 import game
 from game.cache import get_cache, cached, from_cache
 from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from systems.inventory.structures import EquipSlot
+    from game.systems.inventory.structures import EquipSlot
 
 
 class EquipmentController(LoadableMixin):
@@ -284,19 +285,13 @@ class EquipmentController(LoadableMixin):
         slots_key: str = "slots"
 
         # Type and field checking
-        required_fields = [class_key, slots_key]
-        for field in required_fields:
-            if field not in json:
-                raise ValueError(f"Required field {field} not in JSON!")
+        required_fields = [("slots", dict)]
+
+        LoadableFactory.validate_fields(required_fields, json)
 
         if json["class"] != class_key:
             raise ValueError(
                 f"Cannot load JSON for object of class {json['class']}")
-
-        if type(json[slots_key]) != dict:
-            raise TypeError(
-                f"Field {slots_key} must be of type dict! Got "
-                f"{type(json[slots_key])} instead.")
 
         ec = EquipmentController()
 
