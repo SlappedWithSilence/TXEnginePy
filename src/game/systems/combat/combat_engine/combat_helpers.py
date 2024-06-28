@@ -70,4 +70,4 @@ def calculate_damage_to_entity(ability: Ability, target: CombatEntity) -> int:
     target_tag_res = calculate_target_resistance(ability, target)
     target_armor_res = target.equipment_controller.total_dmg_resistance
 
-    return (ability.damage - target_armor_res) * (1 - target_tag_res)
+    return int((ability.damage - target_armor_res) * (1 - target_tag_res))
