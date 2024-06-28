@@ -59,6 +59,12 @@
           [8, 1]
         ]
       },
+      "equipment_controller" : {
+        "class" : "EquipmentController",
+        "slots" : {
+          "head" : 14
+        }
+      },
       "naive" : false
     }
 

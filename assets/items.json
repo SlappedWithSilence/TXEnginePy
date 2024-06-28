@@ -155,6 +155,19 @@
       "damage_buff" : 1,
       "damage_resist" : 0,
       "resource_modifiers" : {}
+    },
+    {
+      "class" : "Equipment",
+      "name" : "Dunce Cap",
+      "id" : 14,
+      "value" : {"0" :  1},
+      "description" : "A basic protective helm. It has an unfortunate appearance.",
+      "functional_description" : "Grants the user +5 damage resistance and 10% resistance to intelligent-typed Abilities.",
+      "equipment_slot" : "head",
+      "damage_buff" : 0,
+      "damage_resist" : 5,
+      "resource_modifiers" : {},
+      "tags" : {"intelligent" : 0.1}
     }
   ]
 }
