@@ -9,7 +9,6 @@ from game.cache import from_cache
 from game.structures.enums import TargetMode
 from game.structures.errors import CombatError
 from game.systems.combat.combat_engine.choice_data import ChoiceData
-from game.systems.event import ResourceEvent
 from game.systems.requirement.requirements import ResourceRequirement
 
 
@@ -57,6 +56,8 @@ class CombatAgentMixin:
     def _is_restorative_item(cls, usable, resource_name: str) -> bool:
         """Attempt to classify a Usable as 'restorative'. If the Usable adds value to primary_resource, then it is
         counted as restorative."""
+        from game.systems.event import ResourceEvent
+
         for e in usable.on_use_events:
             if isinstance(e, ResourceEvent):
                 if e.stat_name == resource_name and not e.harmful:
