@@ -3,7 +3,7 @@ import pytest
 from game.structures.enums import TargetMode
 from game.systems.combat import Ability
 from game.systems.combat.combat_engine.combat_helpers import \
-    calculate_target_resistance
+    calculate_target_resistance, calculate_damage_to_entity
 from game.systems.entity.entities import CombatEntity
 from game.systems.item.item import Equipment
 from game.systems.inventory import EquipmentController
@@ -88,3 +88,26 @@ def test_target_resistance_multi_tag():
                 calculated_res = calculate_target_resistance(ab_inst, ce_inst)
 
                 assert calculated_res == 0.36
+
+def test_dmg_to_trivial():
+    """
+    Test that an ability with 1 damage deals 1 damage to an entity with zero
+    armor resistance and zero tag resistance.
+    """
+
+    with temporary_ability([
+        Ability(name="temp_ab", description="", on_use="",
+                target_mode=TargetMode.SINGLE, damage=1,
+                tags={"tag_a": None})
+    ]) as ability_manager:
+        with temporary_entity([
+            CombatEntity(id=-256, name="temp_ce")
+        ]) as entity_manager:
+            ab_inst = ability_manager.get_instance("temp_ab")
+            ce_inst = entity_manager.get_instance(-256)
+            calculated_res = calculate_target_resistance(ab_inst, ce_inst)
+
+            assert calculated_res == 0
+            assert ce_inst.equipment_controller.total_dmg_resistance == 0
+
+            assert calculate_damage_to_entity(ab_inst, ce_inst) == 1
