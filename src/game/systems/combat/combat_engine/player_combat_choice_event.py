@@ -77,7 +77,7 @@ class PlayerCombatChoiceEvent(Event):
         def logic(_: any) -> None:
             choose_ability_event = SelectElementEventFactory.get_select_ability_event(self._entity, False, False)
             self._links["CHOOSE_AN_ABILITY"] = choose_ability_event.link()
-            game.state_device_controller.add_state_device(choose_ability_event)
+            game.add_state_device(choose_ability_event)
             self.set_state(self.States.CHECK_ABILITY_USABLE)
 
         # CHECK_ABILITY_USABLE
@@ -181,7 +181,7 @@ class PlayerCombatChoiceEvent(Event):
             self._links['CHOOSE_AN_ITEM'] = select_usable_event.link()
 
             # Add s_u_e to event stack
-            game.state_device_controller.add_state_device(select_usable_event)
+            game.add_state_device(select_usable_event)
 
             # Transition state
             self.set_state(self.States.DETECT_ITEM_USABLE)
@@ -256,7 +256,7 @@ class PlayerCombatChoiceEvent(Event):
             event = SelectElementEventFactory.get_select_entity_event(from_cache("combat").allies)
             self._links["INSPECT_ENTITY"] = event.link()
 
-            game.state_device_controller.add_state_device(event)
+            game.add_state_device(event)
             self.set_state(self.States.INSPECT_ENTITY)
 
         # INSPECT_ENEMIES
@@ -264,7 +264,7 @@ class PlayerCombatChoiceEvent(Event):
         def logic(_: any) -> None:
             event = SelectElementEventFactory.get_select_entity_event(from_cache("combat").enemies)
             self._links["INSPECT_ENTITY"] = event.link()
-            game.state_device_controller.add_state_device(event)
+            game.add_state_device(event)
             self.set_state(self.States.INSPECT_ENTITY)
 
         # INSPECT_ENTITY
@@ -280,7 +280,7 @@ class PlayerCombatChoiceEvent(Event):
 
             # Build an inspection event and add it to the stack
             event = InspectEntityEvent(target=entity)
-            game.state_device_controller.add_state_device(event)
+            game.add_state_device(event)
 
             # Look back in the state history to the previous state (before this one). Use this to determine if the
             # Inspected entity was an ally or enemy. Accordingly, set the NEXT state back to the correct listing state

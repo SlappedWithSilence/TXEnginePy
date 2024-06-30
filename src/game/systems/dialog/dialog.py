@@ -178,7 +178,7 @@ class DialogNodeBase(ABC):
         """
 
         for event in self.get_events():
-            game.state_device_controller.add_state_device(event)
+            game.add_state_device(event)
 
 
 class DialogNode(RequirementsMixin, LoadableMixin, DialogNodeBase):
@@ -474,7 +474,7 @@ class DialogEvent(Event):
                     # node's main text.
                     # This will allow the user to read the text of the node
                     # before "seeing" the triggered events.
-                    game.state_device_controller.add_state_device(TextEvent(
+                    game.add_state_device(TextEvent(
                         self.current_node.text
                     ))
 

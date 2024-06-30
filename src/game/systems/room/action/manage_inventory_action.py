@@ -166,7 +166,7 @@ class ManageInventoryAction(Action):
 
         @FiniteStateDevice.state_logic(self, self.States.USE_ITEM, InputType.SILENT)
         def logic(_: any) -> None:
-            game.state_device_controller.add_state_device(
+            game.add_state_device(
                 uie.UseItemEvent(
                     self.player_ref.inventory.items[self.stack_index].id
                 )

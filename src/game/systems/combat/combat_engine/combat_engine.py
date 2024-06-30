@@ -230,7 +230,7 @@ class CombatEngine(FiniteStateDevice):
                 get_config()["resources"]["primary_resource"]
             ].adjust(dmg * -1)
 
-            game.state_device_controller.add_state_device(
+            game.add_state_device(
                 TextEvent(f"{target.name} took {dmg} damage.")
             )
 
@@ -238,7 +238,7 @@ class CombatEngine(FiniteStateDevice):
         self.active_entity.ability_controller.consume_ability_resources(
             ability_name)
 
-        game.state_device_controller.add_state_device(
+        game.add_state_device(
             TextEvent(
                 [
                     self.active_entity.name, " used ", StringContent(
@@ -576,8 +576,7 @@ class CombatEngine(FiniteStateDevice):
             from game.systems.event.events import TextEvent
 
             for i, q in loot.items():
-                game.state_device_controller.add_state_device(
-                    AddItemEvent(i, q))
+                game.add_state_device(AddItemEvent(i, q))
 
             loot_preview = "\n".join(
                 [
@@ -586,8 +585,7 @@ class CombatEngine(FiniteStateDevice):
                 ]
             )
 
-            game.state_device_controller.add_state_device(
-                TextEvent(f"You looted: \n{loot_preview}"))
+            game.add_state_device(TextEvent(f"You looted: \n{loot_preview}"))
 
         @FiniteStateDevice.state_content(self, self.States.PLAYER_VICTORY)
         def content() -> dict:

@@ -175,7 +175,7 @@ class EquipmentController(LoadableMixin):
         if self.player_mode and temp is not None:
 
             from game.systems.event.add_item_event import AddItemEvent
-            game.state_device_controller.add_state_device(AddItemEvent(temp, 1))
+            game.add_state_device(AddItemEvent(temp, 1))
         elif not self.player_mode and temp is not None:
             self.owner.inventory.new_stack(temp, 1)
 

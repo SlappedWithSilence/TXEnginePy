@@ -159,7 +159,7 @@ class CraftingController:
         # Insert each product of the recipe into the player's inventory 'n'
         # times, where 'n' is num_crafts
         for item_id, quantity in recipe_manager.get_recipe(recipe_id).items_out:
-            game.state_device_controller.add_state_device(
+            game.add_state_device(
                 AddItemEvent(item_id, quantity * num_crafts)
             )
 
@@ -167,4 +167,4 @@ class CraftingController:
 
         # Give skill-xp as needed
         for skill_id, skill_xp in recipe_manager.get_recipe(recipe_id).xp_reward.items():
-            game.state_device_controller.add_state_device(SkillXPEvent(skill_id, skill_xp * num_crafts))
+            game.add_state_device(SkillXPEvent(skill_id, skill_xp * num_crafts))

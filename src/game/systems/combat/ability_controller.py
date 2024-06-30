@@ -103,7 +103,7 @@ class AbilityController:
         inst = from_cache("managers.AbilityManager").get_instance(ability_name)
 
         for res, quantity in inst.costs.items():
-            game.state_device_controller.add_state_device(
+            game.add_state_device(
                 ResourceEvent(res, abs(quantity) * -1, self.owner)
             )
 

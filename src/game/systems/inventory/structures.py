@@ -1,11 +1,9 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
-
-from loguru import logger
-
 from game.cache import from_cache
 from game.structures.messages import StringContent
+
+from loguru import logger
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

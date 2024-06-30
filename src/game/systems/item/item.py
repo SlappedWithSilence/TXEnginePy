@@ -105,7 +105,7 @@ class Usable(Item, req.RequirementsMixin):
             elif hasattr(dce, "target"):
                 dce.target = target
 
-            game.state_device_controller.add_state_device(dce)
+            game.add_state_device(dce)
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Usable", LoadableMixin.ATTR_KEY])

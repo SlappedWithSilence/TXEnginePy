@@ -64,12 +64,12 @@ class SkillBase(ABC):
 
         if level in self.level_up_events:
             for event in self.level_up_events[level]:
-                game.state_device_controller.add_state_device(copy.deepcopy(event))
+                game.add_state_device(copy.deepcopy(event))
 
         from game.systems.event.events import TextEvent
         # Add user prompt for level-up LAST so that it is executed before all
         # the level-up events
-        game.state_device_controller.add_state_device(
+        game.add_state_device(
             TextEvent(
                 [
                     f"Congratulations! ",

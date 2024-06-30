@@ -815,7 +815,7 @@ class CombatEvent(Event):
         def logic(_: any) -> None:
             combat = CombatEngine(self._allies, self._enemies,
                                   self._termination_conditions)
-            game.state_device_controller.add_state_device(combat)
+            game.add_state_device(combat)
             self.set_state(self.States.TERMINATE)
 
     @staticmethod

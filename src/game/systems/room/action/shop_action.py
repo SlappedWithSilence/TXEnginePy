@@ -116,7 +116,7 @@ class ShopAction(Action):
                 player: entities.Player = get_cache()['player']
                 if player.coin_purse.test_purchase(self.ware_of_interest.id, self.default_currency):
                     player.coin_purse.spend(self.ware_of_interest.get_currency_value(self.default_currency))
-                    game.state_device_controller.add_state_device(
+                    game.add_state_device(
                         AddItemEvent(self.ware_of_interest.id))  # Spawn a new AddItemEvent
                     self.set_state(self.States.DISPLAY_WARES)
 
