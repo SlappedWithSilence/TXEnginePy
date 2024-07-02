@@ -129,14 +129,18 @@ class InventoryController(LoadableMixin):
     @property
     def size(self) -> int:
         """
-        A property that returns the size of the inventory (total number of stacks)
-        Returns: An int that represents the number of stacks currently in the inventory
+        A property that returns the size of the inventory (total number of
+        stacks).
+
+        Returns: An int that represents the number of stacks currently in the
+        inventory.
         """
         return len(self.items)
 
     def consume_item(self, item_id: int, quantity: int) -> bool:
         """
-        Removes a specific quantity of item from the inventory. If there are not enough of the given item, return False
+        Removes a specific quantity of item from the inventory. If there are not
+         enough of the given item, return False
         Args:
             item_id: The id the of the item to consume
             quantity: The quantity of the given item to consume
@@ -146,7 +150,8 @@ class InventoryController(LoadableMixin):
         """
         if type(item_id) != int or type(quantity) != int:
             raise TypeError(
-                f"item_id and quantity must be of type int! Got type {type(item_id)} and {type(quantity)} instead.")
+                f"item_id and quantity must be of type int! Got type "
+                f"{type(item_id)} and {type(quantity)} instead.")
 
         if self.total_quantity(item_id) < quantity:
             return False
@@ -154,14 +159,17 @@ class InventoryController(LoadableMixin):
         already_consumed: int = 0
         while already_consumed < quantity:
 
-            # If the loop is started over a list of zero stacks, raise an error to avoid an infinite loop
+            # If the loop is started over a list of zero stacks, raise an error
+            # to avoid an infinite loop
             if len(self._all_stack_indexes(item_id)) < 1:
-                raise ValueError(f"Something went wrong while trying to consume item::{item_id}.")
+                raise ValueError(f"Something went wrong while trying to consume"
+                                 f" item::{item_id}.")
 
             offset = 0
             for stack_index in self._all_stack_indexes(item_id):
 
-                # If the current stack is bigger than needed, adjust its size and return True
+                # If the current stack is bigger than needed, adjust its size
+                # and return True
                 if self.items[stack_index - offset].quantity > quantity - already_consumed:
                     self.items[stack_index - offset] = Stack(item_id, self.items[stack_index - offset].quantity - (
                             quantity - already_consumed))
@@ -169,7 +177,8 @@ class InventoryController(LoadableMixin):
                     self._consolidate_stacks()
                     return True
 
-                # If the current stack is exactly the size needed, delete it and return True
+                # If the current stack is exactly the size needed, delete it and
+                # return True
                 elif self.items[stack_index - offset].quantity == quantity - already_consumed:
 
                     del self.items[stack_index - offset]
@@ -178,7 +187,8 @@ class InventoryController(LoadableMixin):
                     self._consolidate_stacks()
                     return True
 
-                # If the stack is too small, record its size as consumed and delete it.
+                # If the stack is too small, record its size as consumed and
+                # delete it.
                 else:
                     already_consumed = already_consumed + self.items[stack_index - offset].quantity
 
@@ -197,7 +207,8 @@ class InventoryController(LoadableMixin):
         from game.systems.item.item import Item
 
         if type(element) != int and type(element) != Item:
-            logger.warning(f"Attempted to search inventory for object of type {type(element)}")
+            logger.warning(f"Attempted to search inventory for object of type "
+                           f"{type(element)}")
             return False
 
         search_for = element if type(element) == int else element.id
@@ -218,9 +229,11 @@ class InventoryController(LoadableMixin):
 
             results.append(
                 [
-                    StringContent(value=stack.ref.name, formatting="item_name"),
+                    StringContent(value=stack.ref.name,
+                                  formatting="item_name"),
                     "\t",
-                    StringContent(value=f"{stack.quantity}x", formatting="item_quantity")
+                    StringContent(value=f"{stack.quantity}x",
+                                  formatting="item_quantity")
                 ]
             )
 
@@ -231,27 +244,31 @@ class InventoryController(LoadableMixin):
         Remove a stack from the inventory.
 
         Args:
-            stack_index: The index of the stack within the player's inventory. Zero-indexed.
+            stack_index: The index of the stack within the player's inventory.
+            Zero-indexed.
 
         Returns: None
         """
 
         if stack_index >= len(self.items):
-            raise ValueError(f"Can't drop stack! {stack_index} is out of range, inventory is of size {len(self.items)}")
+            raise ValueError(f"Can't drop stack! {stack_index} is out of range,"
+                             f" inventory is of size {len(self.items)}")
 
         del self.items[stack_index]
 
     def is_collidable(self, item_id: int, quantity: int) -> bool:
         """
-        Test if 'quantity' of an item with id=='item_id' can be inserted into the inventory without
-        creating an overflow.
+        Test if 'quantity' of an item with id=='item_id' can be inserted into
+        the inventory without creating an overflow.
 
         Flow:
-            - Calculate 'stacks * item.max_quantity' where 'stacks' is the number of empty slots in the inventory
-            - Sum the amount of capacity remaining in each stack where stack.id == item_id
+            - Calculate 'stacks * item.max_quantity' where 'stacks' is the
+                number of empty slots in the inventory
+            - Sum the amount of capacity remaining in each stack where
+                stack.id == item_id
             - Sum those two values
-            - Check if 'quantity' is greater than the sum. If so, the quantity of 'item_id' cannot be inserted without
-            an overflow.
+            - Check if 'quantity' is greater than the sum. If so, the quantity
+                of 'item_id' cannot be inserted without an overflow.
 
         Args:
             item_id: The id of the item to check against
@@ -273,8 +290,8 @@ class InventoryController(LoadableMixin):
 
     def new_stack(self, item_id: int, quantity: int, force: bool = False) -> int:
         """
-        Creates a new stack in the inventory with the given item_id and item_quantity. If quantity > item.max_stack,
-        return the difference.
+        Creates a new stack in the inventory with the given item_id and
+        item_quantity. If quantity > item.max_stack, return the difference.
 
         Args:
             item_id: The ID of the item to make the stack for
@@ -302,8 +319,9 @@ class InventoryController(LoadableMixin):
         """
         Inserts 'quantity' of the item with id 'item_id' into the inventory.
 
-        This process starts with filling up existing stacks of 'item_id' and then creating new stacks. The process
-        terminates when the inventory becomes full or all items have been inserted, whichever comes first.
+        This process starts with filling up existing stacks of 'item_id' and
+        then creating new stacks. The process terminates when the inventory
+        becomes full or all items have been inserted, whichever comes first.
 
         Args:
             item_id: An int that represents the id of the item to insert
