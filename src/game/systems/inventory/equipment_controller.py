@@ -254,7 +254,7 @@ class EquipmentController(LoadableMixin):
         return sum([e.damage_buff for e in instances])
 
     @property
-    def total_tag_resistance(self) -> dict[str, list[float]]:
+    def all_tag_resistance(self) -> dict[str, list[float]]:
         """
         Collect and return lists of tag resistances from all enabled slots
         """
@@ -275,6 +275,43 @@ class EquipmentController(LoadableMixin):
                 total_tags[tag].append(equipment.tags[tag])
 
         return total_tags
+
+    @property
+    def sum_tag_resistance(self) -> dict[str, float]:
+        """
+        Collect and return a dict mapping the name of a tag to the total
+        resistance associated with that tag.
+
+        Returns: A dict containing the total resistance for each given tag
+        """
+
+        from game.systems.combat.combat_engine.combat_helpers import sum_a_tag
+
+        total_resistances: dict[str, float] = {}
+
+        for tag in self.all_tag_resistance:
+            total_resistances[tag] = sum_a_tag(self.all_tag_resistance[tag])
+
+        return total_resistances
+
+    def get_tag_resistances_as_options(self) -> list[list[str | StringContent]]:
+        """
+        Generate info about the total tag resistances across all items.
+
+        Returns:a list of lists containing style-formatted strings
+        """
+
+        opts = []
+
+        for tag, value in self.sum_tag_resistance.items():
+            opts.append(
+                [
+                    StringContent(value=tag, formatting="equipment_tag"), ": ",
+                    value
+                 ]
+            )
+
+        return opts
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "EquipmentController",
