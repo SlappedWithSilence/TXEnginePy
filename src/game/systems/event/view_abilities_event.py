@@ -42,6 +42,8 @@ class ViewAbilitiesEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+            self._selected_instance = None
+            self.selected_ability = None
 
             if self.target is None:
                 self.target = from_cache('player')
@@ -78,12 +80,17 @@ class ViewAbilitiesEvent(Event):
         def logic(_: any) -> None:
             self.set_state(self.States.DEFAULT)
 
+        # TODO: Improve state to account for zero tags
         @FiniteStateDevice.state_content(self, self.States.INSPECT_ABILITY)
         def content() -> dict:
             return ComponentFactory.get(
                 [
                     self.selected_ability + "\n",
-                    self.selected_ability_instance.description
+                    self.selected_ability_instance.description + "\n\n",
+                    "Types: \n",
+                    "\n".join(
+                        [f"- {t}" for t in self.selected_ability_instance.tags]
+                    )
                 ],
                 self.selected_ability_instance.get_requirements_as_options()
             )
