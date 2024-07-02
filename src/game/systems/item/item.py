@@ -248,8 +248,9 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
        """
 
         required_fields = [
-            ("name", str), ("id", int), ("value", dict), ("description", str), ("functional_description", str),
-            ("equipment_slot", str), ("damage_buff", int), ("damage_resist", int)
+            ("name", str), ("id", int), ("value", dict), ("description", str),
+            ("functional_description", str), ("equipment_slot", str),
+            ("damage_buff", int), ("damage_resist", int)
         ]
         optional_fields = [
             ("max_quantity", int), ("start_of_combat_effects", list),
