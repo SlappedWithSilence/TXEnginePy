@@ -9,7 +9,7 @@ from loguru import logger
 from game.structures.enums import EquipmentType
 
 if TYPE_CHECKING:
-    from systems.inventory.structures import EquipSlot
+    from game.systems.inventory.structures import EquipSlot
 
 
 class EquipmentManager(Manager):
