@@ -50,7 +50,8 @@ class ViewAbilitiesEvent(Event):
 
             from game.systems.entity.mixins.ability_mixin import AbilityMixin
             if not isinstance(self.target, AbilityMixin):
-                raise TypeError(f"Cannot view Abilities for non-AbilityMixin entity! ({self.target})")
+                raise TypeError(f"Cannot view Abilities for non-AbilityMixin "
+                                f"entity! ({self.target})")
 
             if len(self.target.ability_controller.abilities) < 1:
                 self.set_state(self.States.EMPTY)
@@ -59,7 +60,8 @@ class ViewAbilitiesEvent(Event):
             self.set_state(self.States.VIEW_ABILITIES)
 
         # This state is highly inefficient. TODO: Improve
-        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES, InputType.INT, -1,
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES,
+                                       InputType.INT, -1,
                                        lambda: len(list(self.target.ability_controller.abilities)) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
@@ -107,5 +109,5 @@ class ViewAbilitiesEvent(Event):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewAbilitiesEvent", LoadableMixin.ATTR_KEY])
-    def from_json(json: dict[str, any]) -> any:
+    def from_json(_) -> any:
         return ViewAbilitiesEvent()
