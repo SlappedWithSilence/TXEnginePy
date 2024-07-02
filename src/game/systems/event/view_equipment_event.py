@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from pprint import pprint
 
 import rich.pretty
 
@@ -24,14 +25,15 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
         SLOT_IS_EMPTY = 3
         TERMINATE = -1
 
-    def __init__(self, target: CombatEntity, **kwargs):
+    def __init__(self, target: CombatEntity, item_id: int = None, **kwargs):
         super().__init__(default_input_type=InputType.SILENT,
                          states=self.States,
                          default_state=self.States.DEFAULT,
                          target=target,
                          **kwargs)
 
-        self._inspect_item_id: int = None
+        self._inspect_item_id: int = item_id
+        self._one_shot = True
 
         if not isinstance(self.target, CombatEntity):
             raise TypeError(f"ViewEquipmentEvent.target must be of type CombatEntity! Got {type(self.target)} instead.")
@@ -41,7 +43,10 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
     def _setup_states(self):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
-            self.set_state(self.States.DISPLAY_EQUIPMENT)
+            if self._inspect_item_id:
+                self.set_state(self.States.INSPECT_EQUIPMENT)
+            else:
+                self.set_state(self.States.DISPLAY_EQUIPMENT)
 
         @FiniteStateDevice.state_logic(self, self.States.DISPLAY_EQUIPMENT, InputType.INT, input_min=-1,
                                        input_max=lambda: len(self.target.equipment_controller.enabled_slots) - 1)
@@ -77,12 +82,20 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
 
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_EQUIPMENT, InputType.ANY)
         def logic(_: any) -> None:
-            return self.set_state(self.States.DISPLAY_EQUIPMENT)
+            if self._one_shot:
+
+                self.set_state(self.States.TERMINATE)
+            else:
+                self.set_state(self.States.DISPLAY_EQUIPMENT)
 
         @FiniteStateDevice.state_content(self, self.States.INSPECT_EQUIPMENT)
         def content() -> dict:
-            ref: Equipment = from_cache("managers.ItemManager").get_instance(self._inspect_item_id)
-            rich.pretty.pprint(ref.__dict__)
+            ref: Equipment = from_cache(
+                "managers.ItemManager"
+            ).get_instance(self._inspect_item_id)
+
+            pprint(ref.__dict__)
+
             return ComponentFactory.get(
                 [
                     ref.name, "'s Summary",
@@ -91,9 +104,15 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
                     "\n",
                     ref.description,
                     "\n",
-                    "damage: ", StringContent(value=str(ref.damage_buff), style="combat_damage"),
+                    "damage: ", StringContent(value=str(ref.damage_buff),
+                                              formatting="combat_damage"),
                     "\n"
-                    "armor: ", StringContent(value=str(ref.damage_resist), style="combat_resist")
+                    "armor: ", StringContent(value=str(ref.damage_resist),
+                                             formatting="combat_resist"),
+                    "\n\n"
+                    "Type Resistances:",
+                    "\n",
+                    "\n".join([f"- {t}: {v}" for t, v in ref.tags.items()])
                 ]
             )
 
