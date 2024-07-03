@@ -3,18 +3,14 @@ from __future__ import annotations
 from enum import Enum
 from pprint import pprint
 
-import rich.pretty
-
 from game.cache import from_cache
-from game.structures import enums
 from game.structures.enums import InputType
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
+from game.systems.entity.entities import CombatEntity
 from game.systems.event import Event
 from game.systems.event.events import EntityTargetMixin
 from game.systems.item.item import Equipment
-
-from game.systems.entity.entities import CombatEntity
 
 
 class ViewEquipmentEvent(EntityTargetMixin, Event):
@@ -33,10 +29,11 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
                          **kwargs)
 
         self._inspect_item_id: int = item_id
-        self._one_shot = True
+        self._one_shot = True if item_id is not None else False
 
         if not isinstance(self.target, CombatEntity):
-            raise TypeError(f"ViewEquipmentEvent.target must be of type CombatEntity! Got {type(self.target)} instead.")
+            raise TypeError(f"ViewEquipmentEvent.target must be of type "
+                            f"CombatEntity! Got {type(self.target)} instead.")
 
         self._setup_states()
 
