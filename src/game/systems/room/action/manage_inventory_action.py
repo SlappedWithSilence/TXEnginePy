@@ -9,8 +9,8 @@ from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems import entity
 from game.systems.event import use_item_event as uie
+from game.systems.event.view_equipment_event import InspectItemEvent
 from game.systems.room.action.actions import Action
-from game.systems.event.view_equipment_event import ViewEquipmentEvent
 
 
 class ManageInventoryAction(Action):
@@ -22,13 +22,11 @@ class ManageInventoryAction(Action):
         CONFIRM_DROP_STACK = 4
         USE_ITEM = 5
         DESC_ITEM = 6
-        DESC_EQUIPMENT = 7
         EQUIP_ITEM = 8
         EMPTY = 9
-        CHECK_INSPECT_TYPE = 10
         TERMINATE = -1
 
-    stack_inspect_options = {"Inspect": States.CHECK_INSPECT_TYPE,
+    stack_inspect_options = {"Inspect": States.DESC_ITEM,
                              "Use": States.USE_ITEM,
                              "Equip": States.EQUIP_ITEM,
                              "Drop": States.CONFIRM_DROP_STACK}
@@ -156,47 +154,12 @@ class ManageInventoryAction(Action):
                 ]
             )
 
-        # DESC_ITEM
-
-        @FiniteStateDevice.state_logic(self, self.States.CHECK_INSPECT_TYPE, InputType.SILENT)
-        def logic(_: any) -> None:
-            ref = self.player_ref.inventory.items[self.stack_index].ref
-
-            from game.systems.item.item import Equipment
-
-            if isinstance(ref, Equipment):
-                self.set_state(self.States.DESC_EQUIPMENT)
-            else:
-                self.set_state(self.States.DESC_ITEM)
-
         @FiniteStateDevice.state_logic(self, self.States.DESC_ITEM,
-                                       InputType.ANY)
+                                       InputType.SILENT)
         def logic(_: any) -> None:
-            self.set_state(self.States.INSPECT_STACK)
-
-        @FiniteStateDevice.state_content(self, self.States.DESC_ITEM)
-        def content() -> dict:
             ref = self.player_ref.inventory.items[self.stack_index].ref
-            return ComponentFactory.get(
-                [
-                    StringContent(value=ref.name, formatting="item_name"),
-                    StringContent(
-                        value=f"\n{ref.functional_description}",
-                        formatting="func_desc") if hasattr(ref,
-                                                           "functional_description") else "",
-                    "\n\n",
-                    ref.description
-                ]
-            )
 
-        @FiniteStateDevice.state_logic(self, self.States.DESC_EQUIPMENT, InputType.SILENT)
-        def logic(_: any) -> None:
-            game.add_state_device(
-                ViewEquipmentEvent(
-                    self.player_ref,
-                    self.player_ref.inventory.items[self.stack_index].id
-                )
-            )
+            game.add_state_device(InspectItemEvent(ref.id))
             self.set_state(self.States.INSPECT_STACK)
 
         # USE_ITEM
@@ -247,6 +210,7 @@ class ManageInventoryAction(Action):
         LoadableFactory.validate_fields([], json)
         if json['class'] != 'ManageInventoryAction':
             raise ValueError(
-                f"Cannot load object of type {json['class']} via ManageInventoryAction.from_json!")
+                f"Cannot load object of type {json['class']} via "
+                f"ManageInventoryAction.from_json!")
 
         return ManageInventoryAction()
