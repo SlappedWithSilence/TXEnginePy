@@ -10,7 +10,7 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.add_item_event import AddItemEvent
-from game.systems.event.view_equipment_event import InspectItemEvent
+from game.systems.event.inspect_item_event import InspectItemEvent
 from game.systems.item.item import Item
 from game.systems.room.action.actions import Action
 

@@ -9,7 +9,7 @@ from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems import entity
 from game.systems.event import use_item_event as uie
-from game.systems.event.view_equipment_event import InspectItemEvent
+from game.systems.event.inspect_item_event import InspectItemEvent
 from game.systems.room.action.actions import Action
 
 
