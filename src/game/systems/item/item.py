@@ -39,7 +39,8 @@ class Item(LoadableMixin, TradeMixin, ItemBase):
     """
 
     def __init__(self, name: str, iid: int, description: str, max_quantity: int = 10, **kwargs):
-        super().__init__(name, iid, description, max_quantity, **kwargs)
+        super().__init__(name=name, iid=iid, description=description,
+                         max_quantity=max_quantity, **kwargs)
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "Item", LoadableMixin.ATTR_KEY])
@@ -91,13 +92,12 @@ class Usable(Item, req.RequirementsMixin):
     triggered in sequence.
     """
 
-    def __init__(self, name: str, iid: int, value: dict[int, int],
+    def __init__(self, name: str, iid: int,
                  description: str, functional_description: str,
                  max_quantity: int = 10, on_use_events: list[Event] = None,
                  consumable: bool = False, **kwargs):
-        super().__init__(name=name, iid=iid, value=value,
-                         description=description, max_quantity=max_quantity,
-                         **kwargs)
+        super().__init__(name=name, iid=iid, description=description,
+                         max_quantity=max_quantity, **kwargs)
 
         self.on_use_events: list[
             Event] = on_use_events or []  # List of Events that trigger when item is used
@@ -138,7 +138,6 @@ class Usable(Item, req.RequirementsMixin):
         Required JSON fields:
         - name: str
         - id: int
-        - value: {int, int}
         - description: str
         - functional_description: str
 
@@ -151,12 +150,13 @@ class Usable(Item, req.RequirementsMixin):
         """
 
         required_fields = [
-            ("name", str), ("id", int), ("value", dict), ("description", str),
+            ("name", str), ("id", int), ("description", str),
             ("functional_description", str),
         ]
 
         optional_fields = [
-            ("max_quantity", int), ("on_use_events", list), ("consumable", bool)
+            ("max_quantity", int), ("on_use_events", list),
+            ("consumable", bool), ("trade_values", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -164,13 +164,16 @@ class Usable(Item, req.RequirementsMixin):
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
+        if "trade_values" in kwargs:
+            kwargs["trade_values"] = {int(k): v for k, v in
+                                      kwargs["trade_values"].items()}
+
         if 'on_use_events' in kwargs:
             kwargs['on_use_events'] = [LoadableFactory.get(raw_effect) for
                                        raw_effect in kwargs['on_use_events']]
 
         return Usable(json['name'],
                       json['id'],
-                      {int(k): v for k, v in json['value'].items()},
                       json['description'],
                       json['functional_description'],
                       **kwargs
@@ -179,14 +182,13 @@ class Usable(Item, req.RequirementsMixin):
 
 class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
-    def __init__(self, name: str, iid: int, value: dict[int, int],
-                 description: str, functional_description: str,
-                 equipment_slot: str, damage_buff: int, damage_resist: int,
+    def __init__(self, name: str, iid: int, description: str,
+                 functional_description: str, equipment_slot: str,
+                 damage_buff: int, damage_resist: int,
                  start_of_combat_effects: list[CombatEffect] = None,
                  **kwargs):
         super().__init__(name=name,
                          iid=iid,
-                         value=value,
                          description=description, **kwargs)
         self.functional_description: str = functional_description
         self.slot: str = from_cache(
@@ -252,7 +254,6 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
        Required JSON fields:
        - name: str
        - id: int
-       - value: {int, int}
        - description: str
        - functional_description: str
        - equipment_slot: str
@@ -265,16 +266,18 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
        - requirements: list[Requirement]
        - resource_modifiers: dict[str, int | float]
        - tags: dict
+       - trade_values: dict[int, int]
        """
 
         required_fields = [
-            ("name", str), ("id", int), ("value", dict), ("description", str),
+            ("name", str), ("id", int), ("description", str),
             ("functional_description", str), ("equipment_slot", str),
             ("damage_buff", int), ("damage_resist", int)
         ]
         optional_fields = [
             ("max_quantity", int), ("start_of_combat_effects", list),
-            ("requirements", list), ("resource_modifiers", dict), ("tags", dict)
+            ("requirements", list), ("resource_modifiers", dict),
+            ("tags", dict), ("trade_values", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -282,6 +285,10 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
         # Implicitly collect requirements, resource_modifiers
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
+
+        if "trade_values" in kwargs:
+            kwargs["trade_values"] = {int(k): v for k, v in
+                                      kwargs["trade_values"].items()}
 
         # Overwrite SOCE since its contents must be cast to Python via LoadableFactory
         start_of_combat_effects = []
@@ -298,7 +305,6 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
         return Equipment(json['name'],
                          json['id'],
-                         {int(k): v for k, v in json['value'].items()},
                          json['description'],
                          json['functional_description'],
                          json['equipment_slot'],
