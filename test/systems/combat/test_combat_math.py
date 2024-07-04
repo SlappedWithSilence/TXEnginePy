@@ -38,7 +38,7 @@ def test_target_resistance_single_tag():
     """
 
     with temporary_item([
-        Equipment("helm", -256, {-112: 0}, "", "", "head", 0, 0,
+        Equipment("helm", -256, "", "", "head", 0, 0,
                   tags={"tag_a": 0.33})
     ]) as item_manager:
         with temporary_ability([
@@ -67,9 +67,9 @@ def test_target_resistance_multi_tag():
     """
 
     with temporary_item([
-        Equipment("helm", -256, {-112: 0}, "", "", "head", 0, 0,
+        Equipment("helm", -256, "", "", "head", 0, 0,
                   tags={"tag_a": 0.33}),
-        Equipment("chest", -257, {-112: 0}, "", "", "chest", 0, 0,
+        Equipment("chest", -257, "", "", "chest", 0, 0,
                   tags={"tag_a": 0.10})
     ]) as item_manager:
         with temporary_ability([
@@ -120,7 +120,7 @@ def test_dmg_to_single_armor():
     armor resistance and zero tag resistance.
     """
     with temporary_item([
-        Equipment("head", -256, {-113: 0}, "", "", "head", 0, 6)
+        Equipment("head", -256, "", "", "head", 0, 6)
     ]) as item_manager:
         with temporary_ability([
             Ability(name="temp_ab", description="", on_use="",
@@ -149,8 +149,8 @@ def test_dmg_to_multi_armor():
     armor resistance and zero tag resistance.
     """
     with temporary_item([
-        Equipment("head", -256, {-113: 0}, "", "", "head", 0, 3),
-        Equipment("chest", -257, {-113: 0}, "", "", "chest", 0, 4)
+        Equipment("head", -256, "", "", "head", 0, 3),
+        Equipment("chest", -257, "", "", "chest", 0, 4)
 
     ]) as item_manager:
         with temporary_ability([
@@ -181,9 +181,9 @@ def test_dmg_to_multi_armor_multi_res():
     armor resistance and .3 and .1 tag resistance.
     """
     with temporary_item([
-        Equipment("head", -256, {-113: 0}, "", "", "head", 0, 3,
+        Equipment("head", -256, "", "", "head", 0, 3,
                   tags={"a": 0.3}),
-        Equipment("chest", -257, {-113: 0}, "", "", "chest", 0, 4,
+        Equipment("chest", -257, "", "", "chest", 0, 4,
                   tags={"a": 0.1})
 
     ]) as item_manager:
