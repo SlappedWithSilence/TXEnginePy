@@ -38,6 +38,12 @@ class Currency(LoadableMixin, BaseCurrency):
     A Currency must have a first stage with a value of 1.
     """
 
+    def __init__(self, id: int, name: str, stages: dict[str, int],
+                 quantity: int = 0, allow_negative: bool = False, **kwargs):
+
+        super().__init__(id=id, name=name, stages=stages, quantity=quantity,
+                         allow_negative=allow_negative, **kwargs)
+
     @property
     def key(self) -> tuple[int, str]:
         return self.id, self.name
