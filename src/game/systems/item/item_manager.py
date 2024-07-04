@@ -54,7 +54,7 @@ class ItemManager(Manager):
     def get_desc(self, item_id: int) -> str:
         return self._manifest[item_id].description
 
-    def get_costs(self, item_id: int) -> dict[int, int]:
+    def get_currency_values(self, item_id: int) -> dict[int, int]:
         """
         Get the value of an item in all currencies
 
@@ -65,11 +65,10 @@ class ItemManager(Manager):
         that currency's id
         """
 
-        return self._manifest[item_id].value
+        return self._manifest[item_id].trade_values
 
-    def get_cost(self, item_id: int,
-                 currency_id: int,
-                 as_currency: bool = False) -> int | currency.Currency:
+    def get_currency_value(self, item_id: int, currency_id: int,
+                           as_currency: bool = False) -> int | currency.Currency:
         """
         Get the value of an item in a specific currency
 
@@ -81,9 +80,9 @@ class ItemManager(Manager):
         'currency_id'
         """
         if not as_currency:
-            return self._manifest[item_id].value[currency_id]
+            return self._manifest[item_id].trade_values[currency_id]
         else:
-            return self._manifest[item_id].get_currency_value(currency_id)
+            return self._manifest[item_id].get_market_value(currency_id)
 
     def get_instance(self, item_id: int) -> Item:
         """

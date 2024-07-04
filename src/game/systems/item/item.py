@@ -86,7 +86,7 @@ class Item(LoadableMixin, TradeMixin, ItemBase):
                     )
 
 
-class Usable(Item, req.RequirementsMixin):
+class Usable(req.RequirementsMixin, Item):
     """
     A consumable item. When consumed, this item's stack quantity decreases by 1 and the Events in 'use_events' are
     triggered in sequence.

@@ -122,7 +122,8 @@ class CoinPurse(LoadableMixin):
 
     def test_currency(self, cur: int | Currency, quantity: int) -> bool:
         """
-        Test if there is enough of currency 'currency_id' such that currency.quantity >= quantity
+        Test if there is enough of currency 'currency_id' such that
+        currency.quantity >= quantity
 
         Args:
             cur: The ID of the currency to test or an instance of the currency to test
@@ -144,33 +145,37 @@ class CoinPurse(LoadableMixin):
 
     def test_all_purchase(self, item_id: int) -> list[int]:
         """
-        Test if the item with item_id can be purchased using any currency and return a list of valid currency IDs
+        Test if the item with item_id can be purchased using any currency and
+        return a list of valid currency IDs
 
         Args:
             item_id: The ID of the item to test against
 
-        Returns: A list of currency IDs that can be used to purchase the item with item IDs
+        Returns: A list of currency IDs that can be used to purchase the item
+            with item IDs
         """
         from game.systems.item import item_manager
 
-        costs: dict[int, int] = item_manager.get_costs(item_id)
+        costs: dict[int, int] = item_manager.get_currency_values(item_id)
         return [cur_id for cur_id, value in costs.items() if self.test_currency(cur_id, value)]
 
     def test_purchase(self, item_id: int, currency_id: int) -> bool:
         """
-        Test if the item with id 'item_id' can be purchased using currency with id 'currency_id'.
+        Test if the item with id 'item_id' can be purchased using currency with
+        id 'currency_id'.
 
         Args:
             item_id: The ID of the item to test the purchase
             currency_id: The ID of the currency to use to test
 
-        Returns: True if the there is a sufficient quantity of currency with id 'currency_id', False otherwise
+        Returns: True if the there is a sufficient quantity of currency with id
+            'currency_id', False otherwise
         """
         from game.systems.item import item_manager
 
         item = item_manager.get_ref(item_id)
 
-        return self.test_currency(currency_id, item.value[currency_id])
+        return self.test_currency(currency_id, item.trade_values[currency_id])
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "CoinPurse", LoadableMixin.ATTR_KEY])
