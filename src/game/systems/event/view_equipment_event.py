@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from enum import Enum
-from pprint import pprint
-from typing import Type
 
+import game
 from game.cache import from_cache
 from game.structures.enums import InputType
-from game.structures.messages import ComponentFactory, StringContent
+from game.structures.messages import ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.entity.entities import CombatEntity
 from game.systems.event import Event
 from game.systems.event.events import EntityTargetMixin
-from game.systems.item.item import Equipment
 
 
 class InspectItemEvent(Event):
@@ -39,12 +37,13 @@ class InspectItemEvent(Event):
         self.item_id = item_id
         self.ref = from_cache("managers.ItemManager").get_instance(self.item_id)
 
-
-        @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)
 
-        @FiniteStateDevice.state_logic(self, self.States.CHECK_TYPE, InputType.SILENT)
+        @FiniteStateDevice.state_logic(self, self.States.CHECK_TYPE,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
             from game.systems.item.item import Item, Usable, Equipment
 
@@ -57,27 +56,14 @@ class InspectItemEvent(Event):
             else:
                 raise TypeError("ref did not fetch an Item instance!")
 
-        @FiniteStateDevice.state_logic(self, self.States.INSPECT_ITEM, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_ITEM,
+                                       InputType.ANY)
         def logic(_: any) -> None:
             self.set_state(self.States.TERMINATE)
 
         @FiniteStateDevice.state_content(self, self.States.INSPECT_ITEM)
         def content() -> dict:
-            """
-            Print in the following format:
-                * item.name
-                * Value:
-                * |cur.name\t|cur.value\t|
-                * item.desc
-            """
-            return ComponentFactory.get(
-                [
-                    StringContent(
-                        value=self.ref.name,
-                        formatting="item_name"),
-                    self.ref.description
-                ]
-            )
+            return ComponentFactory.get()
 
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_USABLE,
                                        InputType.ANY)
@@ -95,7 +81,35 @@ class InspectItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.INSPECT_EQUIPMENT)
         def content() -> dict:
-            return ComponentFactory.get()
+            """
+                        Print in the following format:
+                            * item.name
+                            * Value:
+                            * |cur.name\t|cur.value\t|
+                            * item.desc
+                        """
+            return ComponentFactory.get(
+                [
+                    self.ref.name, "'s Summary",
+                    "\n",
+                    self.ref.functional_description,
+                    "\n",
+                    self.ref.description,
+                    "\n",
+                    "Stats:",
+                    "\n",
+                    "\n".join(
+                        [f"{k}: {v}" for k, v in self.ref.get_stats().items()]),
+                    "\n\n"
+                    "Type Resistances:",
+                    "\n",
+                    "\n".join([f"- {t}: {v}" for t, v in self.ref.tags.items()]),
+                    "\n\n",
+                    "Market Values:",
+                    "\n",
+                    "\n".join([f"{k}: {v}" for k, v in self.ref.market_values.items()])
+                ]
+            )
 
 
 class ViewEquipmentEvent(EntityTargetMixin, Event):
@@ -168,41 +182,11 @@ class ViewEquipmentEvent(EntityTargetMixin, Event):
             )
 
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_EQUIPMENT,
-                                       InputType.ANY)
+                                       InputType.SILENT)
         def logic(_: any) -> None:
-            if self._one_shot:
+            game.add_state_device(InspectItemEvent(self._inspect_item_id))
+            self.set_state(self.States.DISPLAY_EQUIPMENT)
 
-                self.set_state(self.States.TERMINATE)
-            else:
-                self.set_state(self.States.DISPLAY_EQUIPMENT)
-
-        @FiniteStateDevice.state_content(self, self.States.INSPECT_EQUIPMENT)
-        def content() -> dict:
-            ref: Equipment = from_cache(
-                "managers.ItemManager"
-            ).get_instance(self._inspect_item_id)
-
-            pprint(ref.__dict__)
-
-            return ComponentFactory.get(
-                [
-                    ref.name, "'s Summary",
-                    "\n",
-                    ref.functional_description,
-                    "\n",
-                    ref.description,
-                    "\n",
-                    "damage: ", StringContent(value=str(ref.damage_buff),
-                                              formatting="combat_damage"),
-                    "\n"
-                    "armor: ", StringContent(value=str(ref.damage_resist),
-                                             formatting="combat_resist"),
-                    "\n\n"
-                    "Type Resistances:",
-                    "\n",
-                    "\n".join([f"- {t}: {v}" for t, v in ref.tags.items()])
-                ]
-            )
 
     @staticmethod
     def from_json(json: dict[str, any]) -> any:
