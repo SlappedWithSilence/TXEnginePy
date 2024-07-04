@@ -203,7 +203,8 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
 
     def get_stats(self) -> dict[str, str]:
         """
-        Return all relevant 'stats' as a dict mapping their user-facing descriptions to their values in str-form
+        Return all relevant 'stats' as a dict mapping their user-facing
+        descriptions to their values in str-form
         """
 
         # Insert results from resource_mods first

@@ -50,7 +50,9 @@ class TradeMixin(ABC):
                                f" {currency_id}")
 
         return from_cache(
-            "managers.CurrencyManager").to_currency(currency_id, self.trade_values[currency_id])
+            "managers.CurrencyManager").to_currency(currency_id,
+                                                    self.trade_values[
+                                                        currency_id])
 
     def get_market_values_as_options(self) -> list[list[str, StringContent]]:
         """
