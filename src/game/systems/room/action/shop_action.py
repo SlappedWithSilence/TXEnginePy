@@ -10,6 +10,7 @@ from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.add_item_event import AddItemEvent
+from game.systems.event.view_equipment_event import InspectItemEvent
 from game.systems.item.item import Item
 from game.systems.room.action.actions import Action
 
@@ -43,7 +44,7 @@ class ShopAction(Action):
         DEFAULT = 0
         DISPLAY_WARES = 2,
         WARE_SELECTED = 3,
-        READ_WARE_DESC = 5,
+        INSPECT_WARE = 5,
         CONFIRM_WARE_PURCHASE = 8,
         PURCHASE_FAILURE = 10,
         TERMINATE = -1
@@ -58,7 +59,8 @@ class ShopAction(Action):
         super().__init__(menu_name, activation_text, ShopAction.States,
                          ShopAction.States.DISPLAY_WARES,
                          InputType.INT, *args, **kwargs)
-        self.wares: list[int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
+        self.wares: list[
+            int] = wares  # list of tuples where idx[0] == item_id and idx[1] == item_cost
         self._ware_of_interest: Item = None  # The tuple of the ware last selected by the user
         self.default_currency: int = default_currency
 
@@ -88,7 +90,7 @@ class ShopAction(Action):
             elif user_input == 0:
                 self.set_state(self.States.CONFIRM_WARE_PURCHASE)
             elif user_input == 1:
-                self.set_state(self.States.READ_WARE_DESC)
+                self.set_state(self.States.INSPECT_WARE)
 
         @FiniteStateDevice.state_content(self, self.States.WARE_SELECTED)
         def content():
@@ -103,20 +105,11 @@ class ShopAction(Action):
                 self._get_ware_options()
             )
 
-        @FiniteStateDevice.state_logic(self, self.States.READ_WARE_DESC,
-                                       InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.INSPECT_WARE,
+                                       InputType.SILENT)
         def logic(_: any) -> None:
+            game.add_state_device(InspectItemEvent(self.ware_of_interest.id))
             self.set_state(self.States.WARE_SELECTED)
-
-        @FiniteStateDevice.state_content(self, self.States.READ_WARE_DESC)
-        def content():
-            return ComponentFactory.get([
-                self.get_text_header(),
-                StringContent(value=self.ware_of_interest.name + ":\n",
-                              formatting="item_name"),
-                self.ware_of_interest.description
-            ]
-            )
 
         @FiniteStateDevice.state_logic(self, self.States.CONFIRM_WARE_PURCHASE,
                                        InputType.AFFIRMATIVE)

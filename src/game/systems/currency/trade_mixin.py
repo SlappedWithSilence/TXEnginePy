@@ -16,10 +16,18 @@ class TradeMixin(ABC):
     A mixin that defines an interface for assigning currency value to an object.
     """
 
-    def __init__(self, trade_values: dict[int, int] = None, **kwargs):
+    def __init__(self, market_values: dict[int, int] = None, **kwargs):
         super().__init__(**kwargs)
 
-        self.trade_values: dict[int, int] = trade_values or {}
+        self._market_values: dict[int, int] = market_values or {}
+
+    @property
+    def market_values(self) -> list[Currency]:
+        return [
+            from_cache(
+                "managers.CurrencyManager"
+            ).to_currency(k, v) for k, v in self._market_values.items()
+        ]
 
     def has_market_value(self, currency_id: int) -> bool:
         """
@@ -32,7 +40,7 @@ class TradeMixin(ABC):
             otherwise.
         """
 
-        return currency_id in self.trade_values
+        return currency_id in self._market_values
 
     def get_market_value(self, currency_id: int) -> Currency:
         """
@@ -51,7 +59,7 @@ class TradeMixin(ABC):
 
         return from_cache(
             "managers.CurrencyManager").to_currency(currency_id,
-                                                    self.trade_values[
+                                                    self._market_values[
                                                         currency_id])
 
     def get_market_values_as_options(self) -> list[list[str, StringContent]]:
@@ -62,7 +70,7 @@ class TradeMixin(ABC):
 
         res = []
 
-        for cur_id, cur_value in self.trade_values.items():
+        for cur_id, cur_value in self._market_values.items():
             cur: Currency = from_cache(
                 "managers.CurrencyManager").to_currency(cur_id, cur_value)
             res.append(

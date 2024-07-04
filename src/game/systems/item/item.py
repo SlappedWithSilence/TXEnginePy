@@ -35,10 +35,11 @@ class Item(LoadableMixin, TradeMixin, ItemBase):
         id: The unique ID of the item
         description: The user-facing flavor description of the item
         max_quantity: The max quantity of the item allowed per inventory stack
-        trade_values: A map of Currency ID to Currency value
+        market_values: A map of Currency ID to Currency value
     """
 
-    def __init__(self, name: str, iid: int, description: str, max_quantity: int = 10, **kwargs):
+    def __init__(self, name: str, iid: int, description: str,
+                 max_quantity: int = 10, **kwargs):
         super().__init__(name=name, iid=iid, description=description,
                          max_quantity=max_quantity, **kwargs)
 
@@ -60,7 +61,7 @@ class Item(LoadableMixin, TradeMixin, ItemBase):
 
         Optional JSON fields:
         - max_quantity: int (default value 10)
-        - trade_values: dict[int, int]
+        - market_values: dict[int, int]
         """
 
         required_fields = [
@@ -68,16 +69,16 @@ class Item(LoadableMixin, TradeMixin, ItemBase):
         ]
 
         optional_fields = [
-            ("max_quantity", int), ("trade_values", dict)
+            ("max_quantity", int), ("market_values", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
         LoadableFactory.validate_fields(optional_fields, json, False, False)
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        if "trade_values" in kwargs:
-            kwargs["trade_values"] = {int(k): v for k, v in
-                                      kwargs["trade_values"].items()}
+        if "market_values" in kwargs:
+            kwargs["market_values"] = {int(k): v for k, v in
+                                      kwargs["market_values"].items()}
 
         return Item(name=json['name'],
                     iid=json['id'],
@@ -147,6 +148,7 @@ class Usable(req.RequirementsMixin, Item):
         - on_use_events: [Event]
         - consumable: bool
         - requirements: [Requirement]
+        - market_values: dict[int, int]
         """
 
         required_fields = [
@@ -156,7 +158,7 @@ class Usable(req.RequirementsMixin, Item):
 
         optional_fields = [
             ("max_quantity", int), ("on_use_events", list),
-            ("consumable", bool), ("trade_values", dict)
+            ("consumable", bool), ("market_values", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -164,9 +166,9 @@ class Usable(req.RequirementsMixin, Item):
 
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        if "trade_values" in kwargs:
-            kwargs["trade_values"] = {int(k): v for k, v in
-                                      kwargs["trade_values"].items()}
+        if "market_values" in kwargs:
+            kwargs["market_values"] = {int(k): v for k, v in
+                                      kwargs["market_values"].items()}
 
         if 'on_use_events' in kwargs:
             kwargs['on_use_events'] = [LoadableFactory.get(raw_effect) for
@@ -267,7 +269,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
        - requirements: list[Requirement]
        - resource_modifiers: dict[str, int | float]
        - tags: dict
-       - trade_values: dict[int, int]
+       - market_values: dict[int, int]
        """
 
         required_fields = [
@@ -278,7 +280,7 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
         optional_fields = [
             ("max_quantity", int), ("start_of_combat_effects", list),
             ("requirements", list), ("resource_modifiers", dict),
-            ("tags", dict), ("trade_values", dict)
+            ("tags", dict), ("market_values", dict)
         ]
 
         LoadableFactory.validate_fields(required_fields, json)
@@ -287,9 +289,9 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
         # Implicitly collect requirements, resource_modifiers
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 
-        if "trade_values" in kwargs:
-            kwargs["trade_values"] = {int(k): v for k, v in
-                                      kwargs["trade_values"].items()}
+        if "market_values" in kwargs:
+            kwargs["market_values"] = {int(k): v for k, v in
+                                      kwargs["market_values"].items()}
 
         # Overwrite SOCE since its contents must be cast to Python via LoadableFactory
         start_of_combat_effects = []

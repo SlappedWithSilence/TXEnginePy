@@ -40,7 +40,7 @@ class InspectItemEvent(Event):
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT,
                                        InputType.SILENT)
         def logic(_: any) -> None:
-            self.set_state(self.States.TERMINATE)
+            self.set_state(self.States.CHECK_TYPE)
 
         @FiniteStateDevice.state_logic(self, self.States.CHECK_TYPE,
                                        InputType.SILENT)
@@ -63,7 +63,18 @@ class InspectItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.INSPECT_ITEM)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(
+                [
+                    self.ref.name, "'s Summary",
+                    "\n",
+                    self.ref.description,
+                    "\n\n",
+                    "Market Values:",
+                    "\n",
+                    "\n".join([f" - {c.name}: {str(c)}" for c in
+                               self.ref.market_values])
+                ]
+            )
 
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_USABLE,
                                        InputType.ANY)
@@ -72,7 +83,20 @@ class InspectItemEvent(Event):
 
         @FiniteStateDevice.state_content(self, self.States.INSPECT_USABLE)
         def content() -> dict:
-            return ComponentFactory.get()
+            return ComponentFactory.get(
+                [
+                    self.ref.name, "'s Summary",
+                    "\n",
+                    self.ref.functional_description,
+                    "\n",
+                    self.ref.description,
+                    "\n\n",
+                    "Market Values:",
+                    "\n",
+                    "\n".join([f" - {c.name}: {str(c)}" for c in
+                               self.ref.market_values])
+                ]
+            )
 
         @FiniteStateDevice.state_logic(self, self.States.INSPECT_EQUIPMENT,
                                        InputType.ANY)
@@ -99,15 +123,16 @@ class InspectItemEvent(Event):
                     "Stats:",
                     "\n",
                     "\n".join(
-                        [f"{k}: {v}" for k, v in self.ref.get_stats().items()]),
+                        [f" - {k}: {v}" for k, v in self.ref.get_stats().items()]),
                     "\n\n"
                     "Type Resistances:",
                     "\n",
-                    "\n".join([f"- {t}: {v}" for t, v in self.ref.tags.items()]),
+                    "\n".join([f" - {t}: {v}" for t, v in self.ref.tags.items()]),
                     "\n\n",
                     "Market Values:",
                     "\n",
-                    "\n".join([f"{k}: {v}" for k, v in self.ref.market_values.items()])
+                    "\n".join([f" - {c.name}: {str(c)}" for c in
+                               self.ref.market_values])
                 ]
             )
 
