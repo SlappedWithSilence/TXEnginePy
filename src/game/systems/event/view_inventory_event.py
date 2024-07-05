@@ -1,11 +1,13 @@
 from enum import Enum
 
+import game
 from game.cache import cached, from_cache
 from game.structures.enums import InputType
 from game.structures.loadable import LoadableMixin
 from game.structures.messages import ComponentFactory, StringContent
 from game.structures.state_device import FiniteStateDevice
 from game.systems.event.events import EntityTargetMixin, Event
+from game.systems.event.inspect_item_event import InspectItemEvent
 
 
 class ViewInventoryEvent(EntityTargetMixin, Event):
@@ -102,20 +104,14 @@ class ViewInventoryEvent(EntityTargetMixin, Event):
                                                    back_out_state=self.States.CHOOSE_ITEM)
             self.set_state(self.States.CHOOSE_ITEM_INSPECTION_OPTION)
 
-        @FiniteStateDevice.state_logic(self, self.States.VIEW_DESC, InputType.ANY)
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_DESC, InputType.SILENT)
         def logic(_: any) -> None:
+            game.add_state_device(
+                InspectItemEvent(
+                    self.target.inventory.items[self.stack_index].id
+                )
+            )
             self.set_state(self.States.CHOOSE_ITEM_INSPECTION_OPTION)
-
-        @FiniteStateDevice.state_content(self, self.States.VIEW_DESC)
-        def content() -> dict:
-            """
-            Return a content dict displaying the selected-item's name and description
-            """
-            return ComponentFactory.get([
-                StringContent(value=self.target.inventory.items[self.stack_index].ref.name, formatting="item_name"),
-                "\n",
-                self.target.inventory.items[self.stack_index].ref.description
-            ])
 
         @FiniteStateDevice.state_logic(self, self.States.VIEW_FUNCTIONAL_DESC, InputType.ANY)
         def logic(_: any) -> None:
