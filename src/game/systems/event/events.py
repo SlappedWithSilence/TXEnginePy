@@ -2,13 +2,13 @@
 A collection of Event sublasses.
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from abc import ABC
 from enum import Enum
 
 import game
 import game.systems.currency as currency
-import game.systems.entity as entities
 import game.systems.flag as flag
 from game.cache import from_cache, cached
 from game.structures.enums import InputType
@@ -21,6 +21,9 @@ from game.systems.combat.combat_engine.termination_handler import \
     TerminationHandler
 from game.systems.crafting import recipe_manager
 from game.systems.entity.resource import ResourceController
+
+if TYPE_CHECKING:
+    from game.systems.entity.entities import CombatEntity
 
 
 class Event(FiniteStateDevice, LoadableMixin, ABC):
@@ -41,15 +44,18 @@ class EntityTargetMixin(ABC):
     type-checking, getter and setter methods, and more.
     """
 
-    def __init__(self, target: entities.Entity = None, **kwargs):
+    def __init__(self, target: CombatEntity = None, **kwargs):
         super().__init__(**kwargs)
-        if target is not None and not isinstance(target, entities.Entity):
+
+        from game.systems.entity.entities import CombatEntity
+
+        if target is not None and not isinstance(target, CombatEntity):
             raise TypeError(f"Invalid target of type {type(target)}")
 
-        self._target = target
+        self._target: CombatEntity= target
 
     @property
-    def target(self) -> entities.Entity:
+    def target(self) -> CombatEntity:
         """
         Dynamically returns a reference to a target entity.
 
@@ -60,7 +66,10 @@ class EntityTargetMixin(ABC):
 
     @target.setter
     def target(self, entity) -> None:
-        if not isinstance(entity, entities.Entity):
+
+        from game.systems.entity.entities import CombatEntity
+
+        if not isinstance(entity, CombatEntity):
             raise TypeError(
                 f"Invalid target entity type! Got type {type(entity)}, "
                 f"expected type Entity")
