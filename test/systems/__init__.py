@@ -38,7 +38,7 @@ def pre_collect_setup():
                                                 }))
 
     logger.info("Setting up test items...")
-    te1 = Item(f"{TEST_PREFIX} Item 1", -110, "A simple test item", 3, trade_values={-110: 2, -111: 3})
+    te1 = Item(f"{TEST_PREFIX} Item 1", -110, "A simple test item", 3, market_values={-110: 2, -111: 3})
     te2 = Item(f"{TEST_PREFIX} Item 2", -111, "A simple test item", 3)
     te3 = Item(f"{TEST_PREFIX} Item 3", -112, "A simple test item", 3)
     te4 = Item(f"{TEST_PREFIX} Item 4", -113, "Another test item", 3)

@@ -65,7 +65,7 @@ class ItemManager(Manager):
         that currency's id
         """
 
-        return self._manifest[item_id].trade_values
+        return self._manifest[item_id]._market_values
 
     def get_currency_value(self, item_id: int, currency_id: int,
                            as_currency: bool = False) -> int | currency.Currency:
