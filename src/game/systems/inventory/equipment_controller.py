@@ -5,12 +5,13 @@ from loguru import logger
 import game
 from game.cache import get_cache, cached, from_cache
 from game.structures.loadable import LoadableMixin
+from game.structures.loadable_factory import LoadableFactory
 from game.structures.messages import StringContent
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from systems.inventory.structures import EquipSlot
+    from game.systems.inventory.structures import EquipSlot
 
 
 class EquipmentController(LoadableMixin):
@@ -174,7 +175,7 @@ class EquipmentController(LoadableMixin):
         if self.player_mode and temp is not None:
 
             from game.systems.event.add_item_event import AddItemEvent
-            game.state_device_controller.add_state_device(AddItemEvent(temp, 1))
+            game.add_state_device(AddItemEvent(temp, 1))
         elif not self.player_mode and temp is not None:
             self.owner.inventory.new_stack(temp, 1)
 
@@ -253,7 +254,7 @@ class EquipmentController(LoadableMixin):
         return sum([e.damage_buff for e in instances])
 
     @property
-    def total_tag_resistance(self) -> dict[str, list[float]]:
+    def all_tag_resistance(self) -> dict[str, list[float]]:
         """
         Collect and return lists of tag resistances from all enabled slots
         """
@@ -275,6 +276,43 @@ class EquipmentController(LoadableMixin):
 
         return total_tags
 
+    @property
+    def sum_tag_resistance(self) -> dict[str, float]:
+        """
+        Collect and return a dict mapping the name of a tag to the total
+        resistance associated with that tag.
+
+        Returns: A dict containing the total resistance for each given tag
+        """
+
+        from game.systems.combat.combat_engine.combat_helpers import sum_a_tag
+
+        total_resistances: dict[str, float] = {}
+
+        for tag in self.all_tag_resistance:
+            total_resistances[tag] = sum_a_tag(self.all_tag_resistance[tag])
+
+        return total_resistances
+
+    def get_tag_resistances_as_options(self) -> list[list[str | StringContent]]:
+        """
+        Generate info about the total tag resistances across all items.
+
+        Returns:a list of lists containing style-formatted strings
+        """
+
+        opts = []
+
+        for tag, value in self.sum_tag_resistance.items():
+            opts.append(
+                [
+                    StringContent(value=tag, formatting="equipment_tag"), ": ",
+                    value
+                 ]
+            )
+
+        return opts
+
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "EquipmentController",
              LoadableMixin.ATTR_KEY])
@@ -284,19 +322,13 @@ class EquipmentController(LoadableMixin):
         slots_key: str = "slots"
 
         # Type and field checking
-        required_fields = [class_key, slots_key]
-        for field in required_fields:
-            if field not in json:
-                raise ValueError(f"Required field {field} not in JSON!")
+        required_fields = [("slots", dict)]
+
+        LoadableFactory.validate_fields(required_fields, json)
 
         if json["class"] != class_key:
             raise ValueError(
                 f"Cannot load JSON for object of class {json['class']}")
-
-        if type(json[slots_key]) != dict:
-            raise TypeError(
-                f"Field {slots_key} must be of type dict! Got "
-                f"{type(json[slots_key])} instead.")
 
         ec = EquipmentController()
 

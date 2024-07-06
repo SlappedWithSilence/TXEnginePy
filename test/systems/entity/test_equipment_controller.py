@@ -32,7 +32,7 @@ def test_total_res_zero():
     ce = _get_test_entity()
 
     assert ce.equipment_controller.total_dmg_resistance == 0
-    assert len(ce.equipment_controller.total_tag_resistance) == 0
+    assert len(ce.equipment_controller.all_tag_resistance) == 0
 
 
 def test_total_dmg_res():

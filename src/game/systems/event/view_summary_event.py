@@ -93,7 +93,7 @@ class ViewSummaryEvent(Event):
                 return
 
             selected_option = self.options[user_input][0]
-            game.state_device_controller.add_state_device(self._options[selected_option]['class'](self.target))
+            game.add_state_device(self._options[selected_option]['class'](self.target))
 
         @FiniteStateDevice.state_content(self, self.States.DEFAULT)
         def content() -> dict:

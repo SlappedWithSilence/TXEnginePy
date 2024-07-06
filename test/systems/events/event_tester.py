@@ -25,7 +25,7 @@ class EventTester:
 
         # TODO: Use an internal copy of the state device controller
         game.state_device_controller.state_device_stack.clear()
-        game.state_device_controller.add_state_device(self._event)
+        game.add_state_device(self._event)
         game.state_device_controller.get_current_frame()
 
         previous_state = None

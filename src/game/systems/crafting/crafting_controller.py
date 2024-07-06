@@ -5,9 +5,6 @@ from game.systems.crafting import recipe_manager
 
 from loguru import logger
 
-from game.systems.event.add_item_event import AddItemEvent
-from game.systems.event.events import SkillXPEvent
-
 
 class CraftingController:
     """
@@ -146,19 +143,28 @@ class CraftingController:
         """
 
         if num_crafts > self.get_max_crafts(recipe_id):
-            raise ValueError(f"Cannot execute recipe:{recipe_id} {num_crafts} times! Insufficient ingredients!")
+            raise ValueError(f"Cannot execute recipe:{recipe_id} {num_crafts} "
+                             f"times! Insufficient ingredients!")
 
-        if not recipe_manager.get_recipe(recipe_id).is_requirements_fulfilled(self._owner):
+        if not recipe_manager.get_recipe(
+                recipe_id).is_requirements_fulfilled(self._owner):
             raise RuntimeError("Cannot perform recipe, requirements not met!")
 
-        # Consume each ingredient in the recipe 'n' times, where 'n' is num_crafts
-        for item_id, item_quantity in recipe_manager.get_recipe(recipe_id).items_in:
-            self._owner.inventory.consume_item(item_id, item_quantity * num_crafts)
+        from game.systems.event.add_item_event import AddItemEvent
 
-        # Insert each product of the recipe into the player's inventory 'n' times, where 'n' is num_crafts
-        for item_id, item_quantity in recipe_manager.get_recipe(recipe_id).items_out:
-            game.state_device_controller.add_state_device(AddItemEvent(item_id, item_quantity * num_crafts))
+        # Consume each ingredient in recipe 'n' times, where 'n' is num_crafts
+        for item_id, quantity in recipe_manager.get_recipe(recipe_id).items_in:
+            self._owner.inventory.consume_item(item_id, quantity * num_crafts)
+
+        # Insert each product of the recipe into the player's inventory 'n'
+        # times, where 'n' is num_crafts
+        for item_id, quantity in recipe_manager.get_recipe(recipe_id).items_out:
+            game.add_state_device(
+                AddItemEvent(item_id, quantity * num_crafts)
+            )
+
+        from game.systems.event.events import SkillXPEvent
 
         # Give skill-xp as needed
         for skill_id, skill_xp in recipe_manager.get_recipe(recipe_id).xp_reward.items():
-            game.state_device_controller.add_state_device(SkillXPEvent(skill_id, skill_xp * num_crafts))
+            game.add_state_device(SkillXPEvent(skill_id, skill_xp * num_crafts))

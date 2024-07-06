@@ -1,10 +1,13 @@
+from __future__ import annotations
 from dataclasses import dataclass
+from game.cache import from_cache
+from game.structures.messages import StringContent
 
 from loguru import logger
 
-from game.cache import from_cache
-from game.structures.messages import StringContent
-from game.systems.item.item import Equipment
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from game.systems.item.item import Equipment
 
 
 @dataclass

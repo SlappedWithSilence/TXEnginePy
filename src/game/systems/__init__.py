@@ -7,3 +7,7 @@ import game.systems.combat as combat
 import game.systems.flag as flag
 import game.systems.room as room
 import game.systems.requirement as requirement
+import game.systems.dialog as dialog
+import game.systems.skill as skill
+import game.systems.faction as faction
+import game.systems.crafting as crafting

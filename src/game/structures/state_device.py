@@ -413,7 +413,6 @@ class FiniteStateDevice(StateDevice, ABC):
 
         # Assign max
         if callable(self.state_data[next_state.value]['max']):
-            logger.debug("Calling max enum...")
             self.domain_max = self.state_data[next_state.value]['max']()
         else:
             self.domain_max = self.state_data[next_state.value]['max']

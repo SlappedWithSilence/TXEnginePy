@@ -122,10 +122,10 @@ class WrapperAction(Action):
 
             if type(self.wrapped_device) == list:
                 for device in self.wrapped_device:
-                    game.state_device_controller.add_state_device(device)
+                    game.add_state_device(device)
 
             elif isinstance(self.wrapped_device, StateDevice):
-                game.state_device_controller.add_state_device(self.wrapped_device)
+                game.add_state_device(self.wrapped_device)
 
             else:
                 raise TypeError(f"Invalid type of wrapped object: {type(self.wrapped_device)}!")

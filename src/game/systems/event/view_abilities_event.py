@@ -42,13 +42,16 @@ class ViewAbilitiesEvent(Event):
 
         @FiniteStateDevice.state_logic(self, self.States.DEFAULT, InputType.SILENT)
         def logic(_: any) -> None:
+            self._selected_instance = None
+            self.selected_ability = None
 
             if self.target is None:
                 self.target = from_cache('player')
 
             from game.systems.entity.mixins.ability_mixin import AbilityMixin
             if not isinstance(self.target, AbilityMixin):
-                raise TypeError(f"Cannot view Abilities for non-AbilityMixin entity! ({self.target})")
+                raise TypeError(f"Cannot view Abilities for non-AbilityMixin "
+                                f"entity! ({self.target})")
 
             if len(self.target.ability_controller.abilities) < 1:
                 self.set_state(self.States.EMPTY)
@@ -57,7 +60,8 @@ class ViewAbilitiesEvent(Event):
             self.set_state(self.States.VIEW_ABILITIES)
 
         # This state is highly inefficient. TODO: Improve
-        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES, InputType.INT, -1,
+        @FiniteStateDevice.state_logic(self, self.States.VIEW_ABILITIES,
+                                       InputType.INT, -1,
                                        lambda: len(list(self.target.ability_controller.abilities)) - 1)
         def logic(user_input: int) -> None:
             if user_input == -1:
@@ -78,12 +82,17 @@ class ViewAbilitiesEvent(Event):
         def logic(_: any) -> None:
             self.set_state(self.States.DEFAULT)
 
+        # TODO: Improve state to account for zero tags
         @FiniteStateDevice.state_content(self, self.States.INSPECT_ABILITY)
         def content() -> dict:
             return ComponentFactory.get(
                 [
                     self.selected_ability + "\n",
-                    self.selected_ability_instance.description
+                    self.selected_ability_instance.description + "\n\n",
+                    "Types: \n",
+                    "\n".join(
+                        [f"- {t}" for t in self.selected_ability_instance.tags]
+                    )
                 ],
                 self.selected_ability_instance.get_requirements_as_options()
             )
@@ -100,5 +109,5 @@ class ViewAbilitiesEvent(Event):
 
     @staticmethod
     @cached([LoadableMixin.LOADER_KEY, "ViewAbilitiesEvent", LoadableMixin.ATTR_KEY])
-    def from_json(json: dict[str, any]) -> any:
+    def from_json(_) -> any:
         return ViewAbilitiesEvent()

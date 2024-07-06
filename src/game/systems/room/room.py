@@ -80,10 +80,10 @@ class Room(LoadableMixin, FiniteStateDevice):
 
         @FiniteStateDevice.state_logic(self, self.States.REQ_MET, InputType.SILENT)
         def logic(_) -> None:
-            game.state_device_controller.add_state_device(self.visible_actions[self._action_index])
+            game.add_state_device(self.visible_actions[self._action_index])
 
             if self.visible_actions[self._action_index].activation_text not in [None, ""]:
-                game.state_device_controller.add_state_device(
+                game.add_state_device(
                     TextEvent([self.visible_actions[self._action_index].activation_text])
                 )
 

@@ -8,15 +8,18 @@ import game
 from game.cache import cached
 from game.structures.loadable import LoadableMixin
 from game.structures.loadable_factory import LoadableFactory
-import game.systems.event.events as events
 from game.structures.messages import StringContent
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from game.systems.event.events import Event
 
 
 class SkillBase(ABC):
 
     def __init__(self, name: str, id: int, description: str,
                  level: int = 1, xp: int = 0, initial_level_up_limit: int = 5, next_level_ratio: float = 1.3,
-                 level_up_events: dict[int, list[events.Event]] = None):
+                 level_up_events: dict[int, list[Event]] = None):
         self.name: str = name  # Skill name
         self.id: int = id  # Unique id associate with this skill
         self.description: str = description
@@ -29,7 +32,7 @@ class SkillBase(ABC):
         self.level_up_limit: int = self._xp_ceiling(self.level)  # Current limit to level up against
 
         self.level_up_events: dict[
-            int, list[events.Event]] = level_up_events or {}  # events.Events that are triggered on level up
+            int, list[Event]] = level_up_events or {}  # events.Events that are triggered on level up
 
         # Detect invalid next_level_ratios
         if self.next_level_ratio < 1.0:
@@ -61,11 +64,13 @@ class SkillBase(ABC):
 
         if level in self.level_up_events:
             for event in self.level_up_events[level]:
-                game.state_device_controller.add_state_device(copy.deepcopy(event))
+                game.add_state_device(copy.deepcopy(event))
 
-        # Add user prompt for level-up LAST so that it is executed before all the level-up events
-        game.state_device_controller.add_state_device(
-            events.TextEvent(
+        from game.systems.event.events import TextEvent
+        # Add user prompt for level-up LAST so that it is executed before all
+        # the level-up events
+        game.add_state_device(
+            TextEvent(
                 [
                     f"Congratulations! ",
                     StringContent(value=self.name, formatting="skill_name"),
@@ -87,27 +92,33 @@ class SkillBase(ABC):
 
     def _check_level_up(self) -> None:
         """
-        A helper function that detects if enough xp has been gained to level the skill up. If so, all appropriate events
-        are scheduled and the level and level_up fields are updated. If there is enough remaining xp to level up again,
-        return True
+        A helper function that detects if enough xp has been gained to level the
+         skill up. If so, all appropriate events are scheduled and the level and
+          level_up fields are updated. If there is enough remaining xp to level
+          up again, return True
         """
 
         if self.xp >= self.level_up_limit:  # Check for a level-up
-            remaining_xp = self.xp - self.level_up_limit  # Calculate how much xp carries into the next level
 
+            # Calculate how much xp carries into the next level
+            remaining_xp = self.xp - self.level_up_limit
+
+            # Update level_up_limit
             self.level += 1
-            self.level_up_limit = self._xp_ceiling(self.level)  # Update level_up_limit
+            self.level_up_limit = self._xp_ceiling(self.level)
 
             self.xp = remaining_xp  # Update xp value to carry-over value
             cur_level = self.level
             if self.xp >= self.level_up_limit:  # Detect a hanging level up
-                self._check_level_up()  # Recursive call. This will make the lowest-level events resolve first.
+                # Recursive call. Lowest-level events resolve first.
+                self._check_level_up()
 
             self._trigger_level_up_events(cur_level)
 
     def gain_xp(self, xp: int) -> None:
         """
-        Add XP to the skill. This will automatically trigger a level-up event if necessary.
+        Add XP to the skill. This will automatically trigger a level-up event if
+        necessary.
         """
         self.xp += xp
         self._check_level_up()
@@ -150,7 +161,7 @@ class Skill(LoadableMixin, SkillBase):
 
         LoadableFactory.validate_fields(required_fields, json)
 
-        level_up_events: dict[int, list[events.Event]] = {}
+        level_up_events: dict[int, list[Event]] = {}
 
         for str_level in json['level_up_events']:
             try:
@@ -162,14 +173,19 @@ class Skill(LoadableMixin, SkillBase):
                 raise ValueError(f"Duplicate entries for level {true_level}!")
 
             level_up_events[true_level] = []
+
+            from game.systems.event.events import Event
+
             for raw_event in json['level_up_events'][str_level]:
                 obj = LoadableFactory.get(raw_event)
-                if not isinstance(obj, events.Event):
-                    raise TypeError(f"Cannot add object of type {type(obj)} to level_up_event list!")
+                if not isinstance(obj, Event):
+                    raise TypeError(f"Cannot add object of type {type(obj)} to "
+                                    f"level_up_event list!")
                 level_up_events[true_level].append(obj)
 
         # Verify that the optional fields are typed correctly if they're present
-        optional_fields = [('level', int), ('xp', int), ('initial_level_up_limit', int), ('next_level_ratio', float)]
+        optional_fields = [('level', int), ('xp', int), (
+            'initial_level_up_limit', int), ('next_level_ratio', float)]
         LoadableFactory.validate_fields(optional_fields, json, required=False)
         kwargs = LoadableFactory.collect_optional_fields(optional_fields, json)
 

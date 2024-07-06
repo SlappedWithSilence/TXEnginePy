@@ -75,7 +75,7 @@ class ConsumeItemRequirement(ItemRequirement):
         ]
 
         entity.inventory.consume_item(self.item_id, self.item_quantity)
-        game.state_device_controller.add_state_device(TextEvent(prompt))
+        game.add_state_device(TextEvent(prompt))
         return True
 
     @property

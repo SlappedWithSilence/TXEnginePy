@@ -14,6 +14,8 @@ from game.structures.errors import CombatError
 from game.structures.messages import StringContent, ComponentFactory
 from game.structures.state_device import FiniteStateDevice
 from game.systems.combat.combat_engine.choice_data import ChoiceData
+from game.systems.combat.combat_engine.combat_helpers import \
+    calculate_damage_to_entity
 from game.systems.combat.combat_engine.phase_handler import PhaseHandler, \
     EffectActivator, ChoiceActivator
 from game.systems.combat.combat_engine.termination_handler import \
@@ -200,6 +202,7 @@ class CombatEngine(FiniteStateDevice):
         # TODO: Single-target should result in an instance of CombatEntity wrapped in a list by default
         _targets = targets if isinstance(targets, list) else [targets]
 
+        from game.systems.event.events import TextEvent
         for target in _targets:  # For each target
 
             # Unpack the ability's effects into phases
@@ -221,24 +224,27 @@ class CombatEngine(FiniteStateDevice):
             # This is the "damage" step where the primary resource of the target
             # is decremented by the Ability's `damage` value.
 
-            # TODO: Improve damage calculations to take into account armor and
-            # resistances
+            dmg = calculate_damage_to_entity(ability, target)
+
             target.resource_controller[
                 get_config()["resources"]["primary_resource"]
-            ].adjust(ability.damage * -1)
+            ].adjust(dmg * -1)
+
+            game.add_state_device(
+                TextEvent(f"{target.name} took {dmg} damage.")
+            )
 
         # Consume resource costs of the ability from its user
         self.active_entity.ability_controller.consume_ability_resources(
             ability_name)
 
-        from game.systems.event.events import TextEvent
-        game.state_device_controller.add_state_device(
+        game.add_state_device(
             TextEvent(
                 [
                     self.active_entity.name, " used ", StringContent(
-                    value=ability_name,
-                    formatting="ability_name"
-                ),
+                        value=ability_name,
+                        formatting="ability_name"
+                    ),
                     "\n",
                     ability.on_use.format(
                         wielder=self.active_entity.name,
@@ -292,7 +298,8 @@ class CombatEngine(FiniteStateDevice):
                 f"Failed to get relative enemies! Unknown entity: {entity}")
 
     def get_valid_ability_targets(self, entity: entities.CombatEntity,
-                                  ability_name: str) -> list[entities.CombatEntity]:
+                                  ability_name: str) -> list[
+        entities.CombatEntity]:
         """
         Fetch a list of entities that can be targeted by a given ability.
 
@@ -569,8 +576,7 @@ class CombatEngine(FiniteStateDevice):
             from game.systems.event.events import TextEvent
 
             for i, q in loot.items():
-                game.state_device_controller.add_state_device(
-                    AddItemEvent(i, q))
+                game.add_state_device(AddItemEvent(i, q))
 
             loot_preview = "\n".join(
                 [
@@ -579,8 +585,7 @@ class CombatEngine(FiniteStateDevice):
                 ]
             )
 
-            game.state_device_controller.add_state_device(
-                TextEvent(f"You looted: \n{loot_preview}"))
+            game.add_state_device(TextEvent(f"You looted: \n{loot_preview}"))
 
         @FiniteStateDevice.state_content(self, self.States.PLAYER_VICTORY)
         def content() -> dict:

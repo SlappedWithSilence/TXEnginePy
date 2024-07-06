@@ -14,7 +14,8 @@
       "description" : "Does 1 mental damage to anyone around",
       "on_use" : "{wielder} mistakenly thought we care about its opinions.",
       "damage" : 1,
-      "target_mode": "all"
+      "target_mode": "all",
+      "tags" : ["Psychic"]
     },
     {
       "class" : "Ability",
@@ -54,7 +55,8 @@
       "target_mode" : "single_enemy",
       "costs" : {
         "Stamina" : 0.5
-      }
+      },
+      "tags" : ["Physical"]
     },
     {
       "class" : "Ability",

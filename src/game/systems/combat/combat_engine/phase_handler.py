@@ -51,13 +51,13 @@ class EffectActivator(PhaseHandler):
                 if effect.on_remove:
                     from game.systems.event.events import TextEvent
 
-                    game.state_device_controller.add_state_device(TextEvent(effect.on_remove))
+                    game.add_state_device(TextEvent(effect.on_remove))
 
                 expired_effects.append(effect)
                 continue
 
             effect.reset()  # Reset the Effect state device in case it was previously used
-            game.state_device_controller.add_state_device(effect)  # Add it to the stack
+            game.add_state_device(effect)  # Add it to the stack
 
         # Removed expired effecs
         for effect in expired_effects:

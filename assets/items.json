@@ -4,21 +4,21 @@
       "class" : "Item",
       "name" : "Generic Item",
       "id" : 0,
-      "value" : {"0" : 10},
+      "market_values" : {"0" : 10},
       "description" : "A generic Item. It does nothing and is nothing."
     },
     {
       "class" : "Item",
       "name" : "Item Number Two",
       "id" : 1,
-      "value" : {"0" : 15},
+      "market_values" : {"0" : 15},
       "description" : "The second Item ever created."
     },
     {
       "class" : "Item",
       "name" : "Shiny Key",
       "id" : 2,
-      "value" : {"0" :  1},
+      "market_values" : {"0" :  1},
       "description" : "A simple key.",
       "max_quantity" : 1
     },
@@ -26,7 +26,7 @@
       "class" : "Item",
       "name" : "Iron Ore",
       "id" : 3,
-      "value" : {"0" : 5},
+      "market_values" : {"0" : 5},
       "description" : "A heavy, dull chunk of earth, interwoven with beads of glittering iron. This looks to be refinable.",
       "max_quantity" : 10
     },
@@ -34,7 +34,7 @@
       "class" : "Item",
       "name" : "Iron Ingot",
       "id" : 4,
-      "value" : {"0" : 10},
+      "market_values" : {"0" : 10},
       "description" : "A solid ingot of pure iron.",
       "max_quantity" : 20
     },
@@ -42,7 +42,7 @@
       "class" : "Usable",
       "name" : "Unstable Health Potion",
       "id" : 5,
-      "value" : {"0" : 3},
+      "market_values" : {"0" : 3},
       "description" : "A volatile health potion, rejected by its maker for failing quality control.",
       "functional_description" : "Restores 5 Health",
       "max_quantity" : 5,
@@ -59,7 +59,7 @@
       "class" : "Equipment",
       "name" : "Blacksteel Cloak",
       "id" : 6,
-      "value" : {"0": 100},
+      "market_values" : {"0": 100},
       "description" : "Grants invincibility and fame to its wearer, but only against edgy teens.",
       "functional_description" : "Grants +10 dmg and +10 res. User receives +20 Health and -5 Mana",
       "max_quantity" : 1,
@@ -80,20 +80,23 @@
       "class" : "Equipment",
       "name" : "Godstring",
       "id" : 7,
-      "value" : {"0" :  150},
+      "market_values" : {"0" :  150},
       "description" : "A worn golden string, blessed by the gods.",
       "functional_description" : "Wearer receives +10% faith and +10% mana.",
       "max_quantity" : 2,
       "equipment_slot" : "chest",
       "damage_buff" : 0,
       "damage_resist" : 0,
-      "resource_modifiers" : {"Faith" : 0.1,"Mana" : 0.1}
-      },
+      "resource_modifiers" : {"Faith" : 0.1,"Mana" : 0.1},
+      "tags" : {
+        "Faith" : 0.2
+      }
+    },
     {
       "class" : "Usable",
       "name" : "Pint of Ale",
       "id" : 8,
-      "value" : {"0" : 7},
+      "market_values" : {"0" : 7},
       "description" : "A crisp pint of ale, topped with a tantalizing cap of bubbling white foam.",
       "functional_description" : "Restores 5 Health",
       "max_quantity" : 5,
@@ -110,7 +113,7 @@
       "class" : "Usable",
       "name" : "Roughshod Steak",
       "id" : 9,
-      "value" : {"0" : 11},
+      "market_values" : {"0" : 11},
       "description" : "A crudely-cut steak, coated in a variety of common spices, cooked over an open flame.",
       "functional_description" : "Restores 5 Health and 10% Stamina",
       "max_quantity" : 3,
@@ -132,7 +135,7 @@
       "class" : "Item",
       "name" : "Copper Ore",
       "id" : 10,
-      "value" : {"0" : "5"},
+      "market_values" : {"0" : "5"},
       "description" : "A dull hunk of crudely gathered copper ore.",
       "max_quantity" : 10
     },
@@ -140,7 +143,7 @@
       "class" : "Item",
       "name" : "Copper Ingot",
       "id" : 11,
-      "value" : {"0" : "9"},
+      "market_values" : {"0" : "9"},
       "description" : "A glimmering ingot of copper.",
       "max_quantity" : 10
     },
@@ -148,13 +151,26 @@
       "class" : "Equipment",
       "name" : "Standard-Issue Pickaxe",
       "id" : 13,
-      "value" : {"0" :  1},
+      "market_values" : {"0" :  1},
       "description" : "An inexpensive, but effective, pickaxe. Capable of extracting most common ores.",
       "functional_description" : "Grants the user +1 damage.",
       "equipment_slot" : "weapon",
       "damage_buff" : 1,
       "damage_resist" : 0,
       "resource_modifiers" : {}
+    },
+    {
+      "class" : "Equipment",
+      "name" : "Dunce Cap",
+      "id" : 14,
+      "market_values" : {"0" :  1},
+      "description" : "A basic protective helm. It has an unfortunate appearance.",
+      "functional_description" : "Grants the user +5 damage resistance and 10% resistance to intelligent-typed Abilities.",
+      "equipment_slot" : "head",
+      "damage_buff" : 0,
+      "damage_resist" : 5,
+      "resource_modifiers" : {},
+      "tags" : {"intelligent" : 0.1}
     }
   ]
 }

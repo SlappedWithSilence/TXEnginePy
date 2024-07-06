@@ -182,7 +182,10 @@ spend_cases_false = [
 
 @pytest.mark.parametrize("cur, start, offset", spend_cases_false)
 def test_spend_false(cur: int, start: int, offset: int):
-    """Test that CoinPurse::spend correctly returns False when presented with an impossible request"""
+    """
+    Test that CoinPurse::spend correctly returns False when presented with an
+    impossible request
+    """
     cp = CoinPurse()
     assert cp.balance(cur) == 0
     cp.currencies[cur].quantity = start
@@ -343,8 +346,6 @@ test_test_all_purchase_cases = [
 @pytest.mark.parametrize("item, bal, results", test_test_all_purchase_cases)
 def test_test_all_purchase(item: int, bal: dict[int, int], results: list[int]):
     cp = CoinPurse()
-
-
 
     for cur in bal:
         cp.adjust(cur, bal[cur])

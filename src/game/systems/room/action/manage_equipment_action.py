@@ -11,7 +11,8 @@ from game.systems.room.action.actions import Action
 
 class ManageEquipmentAction(Action):
     """
-    A room Action that allows the user to comprehensively inspect and manage their equipped items.
+    A room Action that allows the user to comprehensively inspect and manage
+    their equipped items.
     """
 
     class States(Enum):
