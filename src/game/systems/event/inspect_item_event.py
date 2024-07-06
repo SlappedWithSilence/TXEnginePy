@@ -125,7 +125,7 @@ class InspectItemEvent(Event):
                     "\n\n"
                     "Type Resistances:",
                     "\n",
-                    "\n".join([f" - {t}: {v}" for t, v in self.ref.tags.items()])
+                    "\n".join([f" - {t}: {v * 100}%" for t, v in self.ref.tags.items()])
                 ] if len(self.ref.tags) else []) + [
                     "\n\n",
                     "Market Values:",

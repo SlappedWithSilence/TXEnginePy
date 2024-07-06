@@ -201,8 +201,6 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
         self.damage_buff: int = damage_buff
         self.damage_resist: int = damage_resist
 
-        self.resource_mods: dict[str, int | float] = {}
-
     def get_stats(self) -> dict[str, str]:
         """
         Return all relevant 'stats' as a dict mapping their user-facing
@@ -233,13 +231,6 @@ class Equipment(req.RequirementsMixin, ResourceModifierMixin, TagMixin, Item):
         # Insert secondary stats
         results["Damage"] = str(self.damage_buff)
         results["Resistance"] = str(self.damage_resist)
-
-        # Insert tag resistances
-        for tag, res in self.tags.items():
-            if res is None or res == 0.0:
-                continue
-
-            results[f"Resistance to {tag}: {res * 100}%"]
 
         return results
 
