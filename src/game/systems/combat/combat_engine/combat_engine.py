@@ -580,7 +580,7 @@ class CombatEngine(FiniteStateDevice):
             self.set_state(self.States.TERMINATE)
 
             loot = {}
-            for enemy in self.enemies:
+            for enemy in self._enemies:
                 logger.debug(f"Getting loot for {enemy.name}")
                 loot.update(enemy.get_loot())
 
