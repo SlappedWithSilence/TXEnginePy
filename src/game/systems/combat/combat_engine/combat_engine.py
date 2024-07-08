@@ -47,7 +47,8 @@ class CombatEngine(FiniteStateDevice):
     @classmethod
     def is_dead(cls, entity: entities.CombatEntity) -> bool:
         """
-        Compute if the entity is dead. Check if the primary_resource has been depleted.
+        Compute if the entity is dead. Check if the primary_resource has been
+        depleted.
         """
         res: bool = entity.resource_controller.primary_resource.value < 1
 
@@ -81,7 +82,8 @@ class CombatEngine(FiniteStateDevice):
 
         if not (win_con_found and loss_con_found):
             raise ValueError(
-                "CombatEngine must have at least 1 win termination condition and 1 loss termination condition!"
+                "CombatEngine must have at least 1 win termination condition "
+                "and 1 loss termination condition!"
             )
 
         if len(enemy_entity_ids) < 1:
@@ -333,7 +335,8 @@ class CombatEngine(FiniteStateDevice):
 
             # Return a list of all entities
             case TargetMode.SINGLE:
-                return self.allies + self.enemies
+                return \
+                        self.allies + self.enemies
 
             # Return a list containing only the active entity
             case TargetMode.SELF:
@@ -392,7 +395,8 @@ class CombatEngine(FiniteStateDevice):
         """
         Perform the logic for executing the choice made by the active entity.
         """
-
+        logger.debug(f"Now running Action Phase for entity "
+                     f"{self.active_entity.name}")
         if choice.choice_type == ChoiceData.ChoiceType.ITEM:
             self._handle_use_item(choice.item_id)
         elif choice.choice_type == ChoiceData.ChoiceType.ABILITY:
@@ -429,11 +433,11 @@ class CombatEngine(FiniteStateDevice):
 
     @property
     def enemies(self) -> list[entities.CombatEntity]:
-        return self._enemies
+        return [e for e in self._enemies if not self.is_dead(e)]
 
     @property
     def allies(self) -> list[entities.CombatEntity]:
-        return self._allies
+        return [e for e in self._allies if not self.is_dead(e)]
 
     # Class Methods
 
@@ -498,11 +502,13 @@ class CombatEngine(FiniteStateDevice):
                 self.set_state(self.States.START_TURN_CYCLE)
                 return
 
-            logger.debug(f"Starting turn for entity {self.active_entity}")
+            logger.debug(f"Starting turn for entity {self.active_entity.name}")
 
             if self.is_dead(self.active_entity):
                 # Skip this entity's turn and then check if combat should have
                 # ended.
+                logger.debug(f"Detected that {self.active_entity.name} is dead."
+                             f" Skipping...")
                 self.set_state(self.States.DETECT_COMBAT_TERMINATION)
                 return
 
@@ -560,6 +566,12 @@ class CombatEngine(FiniteStateDevice):
             elif win:
                 self.set_state(self.States.PLAYER_VICTORY)
             else:
+                # If there is no termination but the active entity is dead,
+                # simply start the turn of the next entity.
+                if self.is_dead(self.active_entity):
+                    self.set_state(self.States.START_ENTITY_TURN)
+                    return
+
                 self.set_state(self.States.NEXT_PHASE)
 
         @FiniteStateDevice.state_logic(self, self.States.PLAYER_VICTORY,
